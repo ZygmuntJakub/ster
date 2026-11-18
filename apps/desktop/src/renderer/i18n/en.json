@@ -28,7 +28,11 @@
     "continue": "Continue",
     "notResumable": "This agent cannot resume the session.",
     "newInFolder": "New session in this folder",
-    "delete": "Delete"
+    "delete": "Delete",
+    "deletePrompt": "Delete this session’s conversation. What should happen to its run records?",
+    "deleteWithRuns": "Delete runs too",
+    "keepRuns": "Keep runs (erase request text)",
+    "deleteCancel": "Cancel"
   },
   "conversation": {
     "title": "Conversation",
@@ -113,7 +117,10 @@
     "cancel": "Cancel",
     "start": "Start",
     "failedTitle": "Session failed",
-    "restart": "Restart"
+    "restart": "Restart",
+    "rename": "Rename",
+    "renameSave": "Save",
+    "renameCancel": "Cancel"
   },
   "login": {
     "title": "Sign in required",
@@ -201,6 +208,8 @@
     "title": "Runs",
     "empty": "No run records yet",
     "export": "Export",
+    "deleteFiltered": "Delete filtered",
+    "deleteFilteredConfirm": "Delete {{count}} filtered run records?",
     "filterAgent": "Agent id",
     "filterModel": "Model",
     "filterOutcome": "Outcome",

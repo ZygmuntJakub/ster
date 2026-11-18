@@ -28,7 +28,11 @@
     "continue": "Kontynuuj",
     "notResumable": "Ten agent nie może wznowić sesji.",
     "newInFolder": "Nowa sesja w tym folderze",
-    "delete": "Usuń"
+    "delete": "Usuń",
+    "deletePrompt": "Usuń rozmowę tej sesji. Co zrobić z zapisami przebiegów?",
+    "deleteWithRuns": "Usuń też przebiegi",
+    "keepRuns": "Zachowaj przebiegi (usuń treść zapytań)",
+    "deleteCancel": "Anuluj"
   },
   "conversation": {
     "title": "Rozmowa",
@@ -113,7 +117,10 @@
     "cancel": "Anuluj",
     "start": "Start",
     "failedTitle": "Sesja zakończyła się błędem",
-    "restart": "Uruchom ponownie"
+    "restart": "Uruchom ponownie",
+    "rename": "Zmień nazwę",
+    "renameSave": "Zapisz",
+    "renameCancel": "Anuluj"
   },
   "login": {
     "title": "Wymagane logowanie",
@@ -201,6 +208,8 @@
     "title": "Przebiegi",
     "empty": "Brak zapisanych przebiegów",
     "export": "Eksportuj",
+    "deleteFiltered": "Usuń przefiltrowane",
+    "deleteFilteredConfirm": "Usunąć {{count}} przefiltrowanych przebiegów?",
     "filterAgent": "Id agenta",
     "filterModel": "Model",
     "filterOutcome": "Wynik",

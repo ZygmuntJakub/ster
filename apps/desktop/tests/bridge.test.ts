@@ -148,6 +148,19 @@ describe("bridge surface", () => {
     expect(() => validateBridgePayload("factory.revoke", { folder: "/tmp/project" })).toThrow(
       /Invalid payload/,
     );
+    expect(
+      validateBridgePayload("runs.delete", {
+        model: "gpt",
+        from: "2026-01-01",
+        to: "2026-01-31",
+        userRatingMin: 3,
+      }),
+    ).toEqual({
+      model: "gpt",
+      from: "2026-01-01",
+      to: "2026-01-31",
+      userRatingMin: 3,
+    });
     expect(validateBridgePayload("runs.get", { runId: "run-1" })).toEqual({ runId: "run-1" });
     expect(validateBridgePayload("runs.rate", { runId: "run-1", value: 4 })).toEqual({
       runId: "run-1",

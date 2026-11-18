@@ -209,5 +209,9 @@ describe("run records (SC-019)", () => {
     expect(userOnly.totals.count).toBeGreaterThanOrEqual(1);
     const agentOnly = await core.runs.list({ agentScoreMin: 8, agentScoreMax: 8 }, { limit: 20 });
     expect(agentOnly.totals.count).toBeGreaterThanOrEqual(1);
+
+    const day = run.startedAt.slice(0, 10);
+    const sameDay = await core.runs.list({ from: day, to: day }, { limit: 20 });
+    expect(sameDay.runs.some((item) => item.id === run.id)).toBe(true);
   });
 });

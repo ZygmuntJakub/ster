@@ -88,6 +88,19 @@ function latestScore(scores: readonly RunScore[], source: "user" | "agent"): Run
   return filtered[filtered.length - 1] ?? null;
 }
 
+const DATE_ONLY = /^\d{4}-\d{2}-\d{2}$/;
+
+/**
+ * Date-only filter bounds are calendar-day inclusive (FR-071).
+ * Full ISO timestamps are compared as-is.
+ */
+function normalizeFilterInstant(value: string, edge: "start" | "end"): string {
+  if (!DATE_ONLY.test(value)) {
+    return value;
+  }
+  return edge === "start" ? `${value}T00:00:00.000Z` : `${value}T23:59:59.999Z`;
+}
+
 function matchesFilter(run: RunRecord, filter: RunFilter): boolean {
   if (filter.ids !== undefined && !filter.ids.includes(run.id)) {
     return false;
@@ -110,11 +123,17 @@ function matchesFilter(run: RunRecord, filter: RunFilter): boolean {
   if (filter.kind !== undefined && run.kind !== filter.kind) {
     return false;
   }
-  if (filter.from !== undefined && run.startedAt < filter.from) {
-    return false;
+  if (filter.from !== undefined) {
+    const fromBound = normalizeFilterInstant(filter.from, "start");
+    if (run.startedAt < fromBound) {
+      return false;
+    }
   }
-  if (filter.to !== undefined && run.startedAt > filter.to) {
-    return false;
+  if (filter.to !== undefined) {
+    const toBound = normalizeFilterInstant(filter.to, "end");
+    if (run.startedAt > toBound) {
+      return false;
+    }
   }
   const user = latestScore(run.scores, "user");
   if (filter.userRatingMin !== undefined) {

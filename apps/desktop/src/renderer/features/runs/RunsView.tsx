@@ -48,7 +48,7 @@ export function RunsView(): JSX.Element {
   const [userRatingMin, setUserRatingMin] = useState("");
   const [agentScoreMin, setAgentScoreMin] = useState("");
 
-  const reload = (): void => {
+  const buildFilter = (): Record<string, string | number> => {
     const filter: Record<string, string | number> = {};
     if (agentId.trim()) {
       filter.agentId = agentId.trim();
@@ -74,6 +74,11 @@ export function RunsView(): JSX.Element {
     if (agentScoreMin.trim()) {
       filter.agentScoreMin = Number(agentScoreMin);
     }
+    return filter;
+  };
+
+  const reload = (): void => {
+    const filter = buildFilter();
     void window.ster.runs
       .list({
         ...(Object.keys(filter).length > 0 ? { filter } : {}),
@@ -84,6 +89,21 @@ export function RunsView(): JSX.Element {
         setRuns(payload.runs);
         setTotals(payload.totals);
       });
+  };
+
+  const activeFilter = buildFilter();
+  const hasActiveFilter = Object.keys(activeFilter).length > 0;
+
+  const deleteFiltered = (): void => {
+    if (!hasActiveFilter) {
+      return;
+    }
+    if (!window.confirm(t("runs.deleteFilteredConfirm", { count: totals.count }))) {
+      return;
+    }
+    void window.ster.runs.delete(activeFilter).then(() => {
+      reload();
+    });
   };
 
   useEffect(() => {
@@ -111,18 +131,31 @@ export function RunsView(): JSX.Element {
 
   return (
     <section className="conv col px-6 py-4" aria-label={t("runs.title")} data-testid="runs-view">
-      <div className="mb-4 flex items-baseline justify-between gap-4">
+      <div className="mb-4 flex flex-wrap items-baseline justify-between gap-4">
         <h1 className="title">{t("runs.title")}</h1>
-        <button
-          type="button"
-          className="btn"
-          data-testid="runs-export"
-          onClick={() => {
-            void window.ster.runs.export({});
-          }}
-        >
-          {t("runs.export")}
-        </button>
+        <div className="flex flex-wrap gap-2">
+          <button
+            type="button"
+            className="btn danger"
+            data-testid="runs-delete-filtered"
+            disabled={totals.count === 0 || !hasActiveFilter}
+            onClick={() => {
+              deleteFiltered();
+            }}
+          >
+            {t("runs.deleteFiltered")}
+          </button>
+          <button
+            type="button"
+            className="btn"
+            data-testid="runs-export"
+            onClick={() => {
+              void window.ster.runs.export({});
+            }}
+          >
+            {t("runs.export")}
+          </button>
+        </div>
       </div>
 
       <div className="mb-4 flex flex-wrap gap-3 text-sm">

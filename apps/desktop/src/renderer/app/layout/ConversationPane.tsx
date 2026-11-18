@@ -52,6 +52,9 @@ export function ConversationPane(): JSX.Element {
   const [rulesRefresh, setRulesRefresh] = useState(0);
   const [continuing, setContinuing] = useState(false);
   const [newInFolderOpen, setNewInFolderOpen] = useState(false);
+  const [renaming, setRenaming] = useState(false);
+  const [renameValue, setRenameValue] = useState("");
+  const [renameBusy, setRenameBusy] = useState(false);
 
   useEffect(
     () =>
@@ -238,10 +241,78 @@ export function ConversationPane(): JSX.Element {
   return (
     <section className="conv col" aria-label={t("conversation.title")}>
       <header className="chead flex flex-wrap items-start justify-between gap-2">
-        <div>
-          <h1 className="title" data-testid="session-title" data-session-id={sessionId}>
-            {session.title}
-          </h1>
+        <div className="min-w-0 grow">
+          {renaming ? (
+            <form
+              className="flex flex-wrap items-center gap-2"
+              data-testid="session-rename-form"
+              onSubmit={(event) => {
+                event.preventDefault();
+                const title = renameValue.trim();
+                if (!title || renameBusy) {
+                  return;
+                }
+                setRenameBusy(true);
+                void window.ster.sessions
+                  .rename({ sessionId, title })
+                  .then(() => window.ster.sessions.get({ sessionId }))
+                  .then((next) => {
+                    upsertSession(next as SessionCard);
+                    setRenaming(false);
+                  })
+                  .finally(() => {
+                    setRenameBusy(false);
+                  });
+              }}
+            >
+              <input
+                className="input"
+                value={renameValue}
+                data-testid="session-rename-input"
+                aria-label={t("session.rename")}
+                disabled={renameBusy}
+                onChange={(event) => {
+                  setRenameValue(event.target.value);
+                }}
+              />
+              <button
+                type="submit"
+                className="btn primary text-xs"
+                data-testid="session-rename-save"
+                disabled={renameBusy || !renameValue.trim()}
+              >
+                {t("session.renameSave")}
+              </button>
+              <button
+                type="button"
+                className="btn ghost text-xs"
+                data-testid="session-rename-cancel"
+                disabled={renameBusy}
+                onClick={() => {
+                  setRenaming(false);
+                }}
+              >
+                {t("session.renameCancel")}
+              </button>
+            </form>
+          ) : (
+            <div className="flex flex-wrap items-center gap-2">
+              <h1 className="title" data-testid="session-title" data-session-id={sessionId}>
+                {session.title}
+              </h1>
+              <button
+                type="button"
+                className="btn ghost text-xs"
+                data-testid="session-rename"
+                onClick={() => {
+                  setRenameValue(session.title);
+                  setRenaming(true);
+                }}
+              >
+                {t("session.rename")}
+              </button>
+            </div>
+          )}
           <p className="muted text-sm">{session.status}</p>
         </div>
         {!historyOnly ? (

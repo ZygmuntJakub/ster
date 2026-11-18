@@ -551,7 +551,7 @@ Each increment is tagged and can be released as installers once US9's release wo
 
 **Purpose**: Close remaining gaps found by `/speckit-converge` after Phase 16.
 
-- [ ] T193 Prompt on session delete for `runRecords: "delete"` vs `"keep-without-text"` in `apps/desktop/src/renderer/features/sessions/HistoryView.tsx` per FR-076 / US12 AC7 (partial)
-- [ ] T194 Widen `runs.delete` bridge filter to match `runs.list` and add UI delete-by-filter in RunsView per FR-076 (partial)
-- [ ] T195 Make date-only `to` inclusive (end-of-day) in run filter matching and the RunsView date inputs per FR-071 / US12/AC3 (contradicts)
-- [ ] T196 Add rename UI calling existing `sessions.rename` in the conversation/session chrome per FR-032 (partial)
+- [x] T193 Prompt on session delete for `runRecords: "delete"` vs `"keep-without-text"` in `apps/desktop/src/renderer/features/sessions/HistoryView.tsx` per FR-076 / US12 AC7 (partial)
+- [x] T194 Widen `runs.delete` bridge filter to match `runs.list` and add UI delete-by-filter in RunsView per FR-076 (partial)
+- [x] T195 Make date-only `to` inclusive (end-of-day) in run filter matching and the RunsView date inputs per FR-071 / US12/AC3 (contradicts)
+- [x] T196 Add rename UI calling existing `sessions.rename` in the conversation/session chrome per FR-032 (partial)

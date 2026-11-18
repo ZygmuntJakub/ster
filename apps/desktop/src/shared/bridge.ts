@@ -197,7 +197,16 @@ export const bridgePayloadSchemas: Record<string, z.ZodType> = {
       ids: z.array(idSchema).optional(),
       sessionId: idSchema.optional(),
       agentId: idSchema.optional(),
+      model: z.string().min(1).optional(),
+      cwd: z.string().min(1).optional(),
       outcome: z.string().min(1).optional(),
+      kind: z.string().min(1).optional(),
+      from: z.string().min(1).optional(),
+      to: z.string().min(1).optional(),
+      userRatingMin: z.number().optional(),
+      userRatingMax: z.number().optional(),
+      agentScoreMin: z.number().optional(),
+      agentScoreMax: z.number().optional(),
     })
     .strict(),
 };
