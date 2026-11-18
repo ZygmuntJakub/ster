@@ -3,6 +3,35 @@
  */
 export const CORE_VERSION = "0.0.0" as const;
 
+export {
+  createCore,
+  type Agent,
+  type AgentHints,
+  type AgentService,
+  type AppliedDefinition,
+  type AuthMethod,
+  type Core,
+  type CreateCoreOptions,
+  type CustomAgentInput,
+  type FactoryLookup,
+  type FactoryService,
+  type IconData,
+  type InstallPlan,
+  type Page,
+  type PermissionRule,
+  type PlatformAdapter,
+  type Progress,
+  type PromptContent,
+  type RunFilter,
+  type RunRecord,
+  type RunService,
+  type RunTotals,
+  type Session,
+  type SessionFilter,
+  type SessionService,
+  type WritableTarget,
+} from "./core.js";
+
 export { brandSchema, loadBrandFromJson, parseBrand, type Brand } from "./brand.js";
 
 export {
@@ -103,3 +132,19 @@ export {
   type SettingsService,
   type ThemePreference,
 } from "./settings/service.js";
+
+export {
+  filterAgentEnvironment,
+  spawnAgentProcess,
+  type AgentLaunch,
+  type AgentProcess,
+  type SpawnAgentProcessOptions,
+} from "./acp/process.js";
+
+export {
+  connectAgent,
+  type AcpConnection,
+  type CapabilitySnapshot,
+  type ConnectAgentOptions,
+  type SessionUpdateHandler,
+} from "./acp/connection.js";
