@@ -68,9 +68,13 @@ export interface RegistryCacheState {
   body: RegistryDocument;
 }
 
+export type RegistryClientMode = "public" | "custom" | "disabled";
+
 export interface RegistryClientOptions {
   dataDir: string;
   url?: string;
+  /** Organization policy registry mode (US10). Default `public`. */
+  mode?: RegistryClientMode;
   fetchImpl?: typeof fetch;
   now?: () => Date;
   /** Minimum interval between network refreshes (default 1 hour). */
@@ -108,7 +112,13 @@ export function parseRegistryDocument(input: unknown): RegistryDocument {
 }
 
 export function createRegistryClient(options: RegistryClientOptions) {
-  const url = options.url ?? DEFAULT_REGISTRY_URL;
+  const mode: RegistryClientMode = options.mode ?? "public";
+  const url =
+    mode === "disabled"
+      ? ""
+      : mode === "custom"
+        ? (options.url ?? "")
+        : (options.url ?? DEFAULT_REGISTRY_URL);
   const fetchImpl = options.fetchImpl ?? fetch;
   const now = options.now ?? (() => new Date());
   const throttleMs = options.throttleMs ?? HOUR_MS;
@@ -164,7 +174,13 @@ export function createRegistryClient(options: RegistryClientOptions) {
 
   return {
     url,
+    mode,
+    /** True when network contact with a registry index is allowed. */
+    networkEnabled: mode !== "disabled",
     getCached(): RegistryCacheState | null {
+      if (mode === "disabled") {
+        return null;
+      }
       if (memory) {
         return memory;
       }
@@ -181,6 +197,13 @@ export function createRegistryClient(options: RegistryClientOptions) {
     },
 
     async refresh(opts?: { force?: boolean }): Promise<RegistryStatus> {
+      if (mode === "disabled") {
+        return toStatus(false, null, "Registry disabled by organization policy");
+      }
+      if (mode === "custom" && !url) {
+        return toStatus(false, null, "Custom registry URL missing");
+      }
+
       const cached = this.getCached();
       if (cached && !opts?.force && now().getTime() - Date.parse(cached.fetchedAt) < throttleMs) {
         return toStatus(true, cached);

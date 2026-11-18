@@ -3,7 +3,7 @@ import { SterError } from "../errors.js";
 
 /**
  * User settings (data-model.md `Settings`).
- * Values controlled by policy are read-only; that gating arrives with US10.
+ * Values controlled by policy are read-only and overlaid on get().
  */
 
 export type ThemePreference = "system" | "light" | "dark";
@@ -24,9 +24,13 @@ export interface Settings {
   theme: ThemePreference;
 }
 
+export type ManagedSettingKey = keyof Settings;
+
 export interface SettingsService {
   get(): Settings;
   set(patch: Partial<Settings>): Settings;
+  /** Keys locked by organization policy (US10). */
+  managedKeys(): ReadonlyArray<ManagedSettingKey>;
 }
 
 const SETTINGS_KEY = "settings";
@@ -74,7 +78,9 @@ function parseSettings(raw: string | null): Settings {
 export interface CreateSettingsServiceOptions {
   store: Store;
   /** Keys that policy manages and that set() must refuse to change. */
-  managedKeys?: ReadonlyArray<keyof Settings>;
+  managedKeys?: ReadonlyArray<ManagedSettingKey>;
+  /** Values overlaid on get() for managed keys (from effective policy). */
+  managedValues?: Partial<Settings>;
   /**
    * Overrides applied only when no settings document exists yet
    * (first launch — e.g. system-derived language).
@@ -87,12 +93,33 @@ export interface CreateSettingsServiceOptions {
  */
 export function createSettingsService(options: CreateSettingsServiceOptions): SettingsService {
   const managed = new Set(options.managedKeys ?? []);
+  const managedValues = options.managedValues ?? {};
 
   const read = (): Settings => parseSettings(options.store.getSetting(SETTINGS_KEY));
 
   const write = (settings: Settings): Settings => {
     options.store.setSetting(SETTINGS_KEY, JSON.stringify(settings));
     return settings;
+  };
+
+  const applyManaged = (settings: Settings): Settings => {
+    const next: Settings = { ...settings, customAgents: [...settings.customAgents] };
+    if (managed.has("defaultPermissionMode") && managedValues.defaultPermissionMode !== undefined) {
+      next.defaultPermissionMode = managedValues.defaultPermissionMode;
+    }
+    if (managed.has("language") && managedValues.language !== undefined) {
+      next.language = managedValues.language;
+    }
+    if (managed.has("theme") && managedValues.theme !== undefined) {
+      next.theme = managedValues.theme;
+    }
+    if (managed.has("defaultAgentId") && managedValues.defaultAgentId !== undefined) {
+      next.defaultAgentId = managedValues.defaultAgentId;
+    }
+    if (managed.has("customAgents") && managedValues.customAgents !== undefined) {
+      next.customAgents = managedValues.customAgents;
+    }
+    return next;
   };
 
   // Ensure defaults exist (first launch can seed language from the OS locale).
@@ -110,7 +137,10 @@ export function createSettingsService(options: CreateSettingsServiceOptions): Se
 
   return {
     get() {
-      return read();
+      return applyManaged(read());
+    },
+    managedKeys() {
+      return [...managed];
     },
     set(patch) {
       const current = read();
@@ -134,7 +164,7 @@ export function createSettingsService(options: CreateSettingsServiceOptions): Se
       if (patch.defaultAgentId === undefined && "defaultAgentId" in patch) {
         delete next.defaultAgentId;
       }
-      return write(next);
+      return applyManaged(write(next));
     },
   };
 }

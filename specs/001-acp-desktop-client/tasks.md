@@ -333,22 +333,22 @@ description: "Task list for Ster — ACP Desktop Client"
 
 ### Tests for User Story 10
 
-- [ ] T138 [P] [US10] Unit tests for policy validation and per-item merge of built-in and machine sources in `packages/core/tests/unit/policy.test.ts`
-- [ ] T139 [P] [US10] Integration tests for enforcement (blocked agent, custom agents off, custom and disabled registry with no request to the public registry, checksum requirement, mode limits, invalid policy blocks sessions) in `packages/core/tests/integration/policy-enforcement.test.ts` and that a policy change takes effect only at the next start (FR-052)
-- [ ] T140 [P] [US10] End-to-end flow for US10 in `apps/desktop/tests/e2e/us10-policy.spec.ts`
+- [x] T138 [P] [US10] Unit tests for policy validation and per-item merge of built-in and machine sources in `packages/core/tests/unit/policy.test.ts`
+- [x] T139 [P] [US10] Integration tests for enforcement (blocked agent, custom agents off, custom and disabled registry with no request to the public registry, checksum requirement, mode limits, invalid policy blocks sessions) in `packages/core/tests/integration/policy-enforcement.test.ts` and that a policy change takes effect only at the next start (FR-052)
+- [x] T140 [P] [US10] End-to-end flow for US10 in `apps/desktop/tests/e2e/us10-policy.spec.ts`
 
 ### Implementation for User Story 10
 
-- [ ] T141 [US10] Implement the `PolicySource` readers in `packages/core/src/policy/sources.ts` (a file source and an in-memory source) and build the two sources in `apps/desktop/src/main/core-host.ts`: built-in `apps/desktop/resources/policy.default.json` and the per-platform machine location derived from `Brand.policyDirName` (research.md R11); the core itself reads no application resources
-- [ ] T142 [US10] Implement validation mirroring contracts/policy.schema.json and per-item merge with source tracking in `packages/core/src/policy/validate.ts` and `packages/core/src/policy/merge.ts` per data-model.md `OrganizationPolicy.permissions.default`, `OrganizationPolicy.registry.url`, `OrganizationPolicy.agents.allow`, `OrganizationPolicy.registry.mode`
-- [ ] T143 [US10] Enforce agent items in `packages/core/src/agents/service.ts`: `OrganizationPolicy.agents.allow` and `OrganizationPolicy.agents.customAllowed` produce readiness `blocked-by-policy` and refuse start
-- [ ] T144 [US10] Enforce registry and install items in `packages/core/src/agents/registry.ts` and `packages/core/src/agents/plan.ts`: `OrganizationPolicy.registry.mode`, `OrganizationPolicy.install.requireChecksum`, `OrganizationPolicy.install.allowInstallScripts` (FR-046, FR-078); with `custom` or `disabled`, no request of any kind (index or icons) reaches the public registry
-- [ ] T145 [US10] Enforce permission items in `packages/core/src/permissions/modes.ts` and `packages/core/src/sessions/service.ts`: `OrganizationPolicy.permissions.modes`, `OrganizationPolicy.permissions.default`
-- [ ] T146 [US10] Refuse session creation with `policy-invalid` when the policy state is invalid, keeping history readable, in `packages/core/src/sessions/service.ts`; expose managed markers through `SettingsService` and `app.info`
-- [ ] T147 [US10] Wire `PolicyItemDefinition` extensions into validation and enforcement in `packages/core/src/policy/extensions.ts`, rejecting any item that would loosen a restriction, with tests in `packages/core/tests/unit/policy-extensions.test.ts` (FR-059)
-- [ ] T148 [P] [US10] Build managed-setting markers and locked controls in `apps/desktop/src/renderer/components/ManagedBadge.tsx` and apply them in settings, the agent list, and the permission mode selector
-- [ ] T149 [P] [US10] Build the invalid-policy screen and blocked-agent states in `apps/desktop/src/renderer/features/policy/PolicyStatus.tsx`, and add EN/PL strings
-- [ ] T150 [P] [US10] Write `docs/organization-policy.md`: every item, both delivery routes, file locations per platform, and a complete example for a company with a fixed agent set (FR-053)
+- [x] T141 [US10] Implement the `PolicySource` readers in `packages/core/src/policy/sources.ts` (a file source and an in-memory source) and build the two sources in `apps/desktop/src/main/core-host.ts`: built-in `apps/desktop/resources/policy.default.json` and the per-platform machine location derived from `Brand.policyDirName` (research.md R11); the core itself reads no application resources
+- [x] T142 [US10] Implement validation mirroring contracts/policy.schema.json and per-item merge with source tracking in `packages/core/src/policy/validate.ts` and `packages/core/src/policy/merge.ts` per data-model.md `OrganizationPolicy.permissions.default`, `OrganizationPolicy.registry.url`, `OrganizationPolicy.agents.allow`, `OrganizationPolicy.registry.mode`
+- [x] T143 [US10] Enforce agent items in `packages/core/src/agents/service.ts`: `OrganizationPolicy.agents.allow` and `OrganizationPolicy.agents.customAllowed` produce readiness `blocked-by-policy` and refuse start
+- [x] T144 [US10] Enforce registry and install items in `packages/core/src/agents/registry.ts` and `packages/core/src/agents/plan.ts`: `OrganizationPolicy.registry.mode`, `OrganizationPolicy.install.requireChecksum`, `OrganizationPolicy.install.allowInstallScripts` (FR-046, FR-078); with `custom` or `disabled`, no request of any kind (index or icons) reaches the public registry
+- [x] T145 [US10] Enforce permission items in `packages/core/src/permissions/modes.ts` and `packages/core/src/sessions/service.ts`: `OrganizationPolicy.permissions.modes`, `OrganizationPolicy.permissions.default`
+- [x] T146 [US10] Refuse session creation with `policy-invalid` when the policy state is invalid, keeping history readable, in `packages/core/src/sessions/service.ts`; expose managed markers through `SettingsService` and `app.info`
+- [x] T147 [US10] Wire `PolicyItemDefinition` extensions into validation and enforcement in `packages/core/src/policy/extensions.ts`, rejecting any item that would loosen a restriction, with tests in `packages/core/tests/unit/policy-extensions.test.ts` (FR-059)
+- [x] T148 [P] [US10] Build managed-setting markers and locked controls in `apps/desktop/src/renderer/components/ManagedBadge.tsx` and apply them in settings, the agent list, and the permission mode selector
+- [x] T149 [P] [US10] Build the invalid-policy screen and blocked-agent states in `apps/desktop/src/renderer/features/policy/PolicyStatus.tsx`, and add EN/PL strings
+- [x] T150 [P] [US10] Write `docs/organization-policy.md`: every item, both delivery routes, file locations per platform, and a complete example for a company with a fixed agent set (FR-053)
 
 **Checkpoint**: Increment 4 complete: the application can be rolled out inside an organization
 

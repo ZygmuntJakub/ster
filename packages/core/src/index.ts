@@ -136,9 +136,34 @@ export {
 } from "./policy/service.js";
 
 export {
+  filePolicySource,
+  machinePolicyDir,
+  machinePolicyPath,
+  memoryPolicySource,
+} from "./policy/sources.js";
+
+export { validatePolicyDocument } from "./policy/validate.js";
+export { mergePolicyDocuments } from "./policy/merge.js";
+export {
+  applyPolicyExtensions,
+  createRestrictiveHooks,
+  seedRestrictionsFromDocument,
+} from "./policy/extensions.js";
+export type {
+  OrganizationPolicy,
+  OrganizationPolicyAgents,
+  OrganizationPolicyInstall,
+  OrganizationPolicyPermissions,
+  OrganizationPolicyRegistry,
+  PolicyTopLevelKey,
+  RegistryMode,
+} from "./policy/types.js";
+
+export {
   createSettingsService,
   type CreateSettingsServiceOptions,
   type CustomAgentSetting,
+  type ManagedSettingKey,
   type Settings,
   type SettingsService,
   type ThemePreference,
@@ -181,6 +206,7 @@ export {
   AUTO_APPROVE_READS_MODE,
   AUTO_APPROVE_READS_MODE_ID,
   BUILTIN_PERMISSION_MODES,
+  filterPermissionModes,
   isBuiltinPermissionMode,
 } from "./permissions/modes.js";
 

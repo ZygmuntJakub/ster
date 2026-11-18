@@ -14,6 +14,7 @@ import { indexById, indexPolicyItems, type CoreExtensions } from "./extensions/i
 import { createLogger, type Logger } from "./log.js";
 import type { Brand } from "./brand.js";
 import type { RegistryStatus, RunSummary, Score } from "./model/events.js";
+import { BUILTIN_PERMISSION_MODES, filterPermissionModes } from "./permissions/modes.js";
 import { createPolicyService, type PolicyService, type PolicySource } from "./policy/service.js";
 import { resolveShellEnv, type ResolvedEnv } from "./platform/shell-env.js";
 import type { RunRecord } from "./runs/lifecycle.js";
@@ -188,12 +189,25 @@ export async function createCore(options: CreateCoreOptions): Promise<Core> {
       })
     ).env;
 
-  const policy = createPolicyService({ sources: options.policySources });
+  const policy = createPolicyService({
+    sources: options.policySources,
+    ...(extensions.policyItems !== undefined ? { policyItems: extensions.policyItems } : {}),
+  });
   await policy.reload();
 
+  const managedKeys = policy.managedSettingKeys();
+  const policyDefaultMode = policy.defaultPermissionMode();
+  const managedValues =
+    policyDefaultMode !== null ? { defaultPermissionMode: policyDefaultMode } : undefined;
+  const settingsDefaults = {
+    ...(options.settingsDefaults ?? {}),
+    ...(managedValues ?? {}),
+  };
   const settings = createSettingsService({
     store,
-    ...(options.settingsDefaults !== undefined ? { defaults: options.settingsDefaults } : {}),
+    ...(managedKeys.length > 0 ? { managedKeys } : {}),
+    ...(managedValues !== undefined ? { managedValues } : {}),
+    ...(Object.keys(settingsDefaults).length > 0 ? { defaults: settingsDefaults } : {}),
   });
   const events = createEventStream();
   const detachConsumers = attachEventConsumers(events, extensions.eventConsumers ?? [], log);
@@ -204,6 +218,7 @@ export async function createCore(options: CreateCoreOptions): Promise<Core> {
     log,
     environment,
     events,
+    policy,
   };
   if (options.includeMockAgent !== undefined) {
     agentOptions.includeMockAgent = options.includeMockAgent;
@@ -231,14 +246,22 @@ export async function createCore(options: CreateCoreOptions): Promise<Core> {
   }
   const agents = createAgentService(agentOptions);
 
+  const allModes = [...BUILTIN_PERMISSION_MODES, ...(extensions.permissionModes ?? [])];
+  const allowedModeIds = policy.allowedPermissionModes();
+  const permissionModes = filterPermissionModes(allModes, allowedModeIds);
+  let defaultPermissionMode = settings.get().defaultPermissionMode;
+  if (allowedModeIds !== null && !allowedModeIds.includes(defaultPermissionMode)) {
+    defaultPermissionMode = permissionModes[0]?.id ?? defaultPermissionMode;
+  }
   const sessionsHandle = createSessionService({
     store,
     agents,
     events,
     environment,
     log,
-    defaultPermissionMode: settings.get().defaultPermissionMode,
-    permissionModes: [...(extensions.permissionModes ?? [])],
+    policy,
+    defaultPermissionMode,
+    permissionModes,
   });
 
   const factory = createFactoryServiceStub();

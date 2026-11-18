@@ -13,6 +13,7 @@ import {
 import { spawnAgentProcess, type AgentProcess } from "../acp/process.js";
 import { createTerminalHandlers } from "../acp/terminal-handlers.js";
 import type { AgentService } from "../agents/service.js";
+import type { PolicyService } from "../policy/service.js";
 import { SterError } from "../errors.js";
 import type { EventStream, CoreEvent } from "../events/stream.js";
 import type { Logger } from "../log.js";
@@ -117,6 +118,7 @@ export interface CreateSessionServiceOptions {
   log: Logger;
   defaultPermissionMode?: string;
   permissionModes?: ReadonlyArray<PermissionModeDefinition>;
+  policy?: PolicyService;
 }
 
 interface LiveSession {
@@ -623,9 +625,20 @@ export function createSessionService(options: CreateSessionServiceOptions): Sess
     permissionMode: string;
     existingId?: string;
   }): Promise<LiveSession> => {
+    if (options.policy?.state === "invalid") {
+      throw new SterError(
+        "policy-invalid",
+        "Organization policy is invalid; new sessions are blocked",
+      );
+    }
     const agent = options.agents.get(input.agentId);
     if (!agent) {
       throw new SterError("not-found", `Unknown agent ${input.agentId}`);
+    }
+    if (agent.readiness === "blocked-by-policy") {
+      throw new SterError("blocked-by-policy", "Agent is blocked by organization policy", {
+        agentId: agent.id,
+      });
     }
     if (agent.readiness === "integrity-failed") {
       throw new SterError("integrity-failed", "Agent launch files failed integrity check", {
@@ -855,7 +868,20 @@ export function createSessionService(options: CreateSessionServiceOptions): Sess
 
   const service: SessionService = {
     async create(input) {
+      if (options.policy?.state === "invalid") {
+        throw new SterError(
+          "policy-invalid",
+          "Organization policy is invalid; new sessions are blocked",
+        );
+      }
       const mode = input.permissionMode ?? defaultMode;
+      const allowedModes = options.policy?.allowedPermissionModes();
+      if (allowedModes !== null && allowedModes !== undefined && !allowedModes.includes(mode)) {
+        throw new SterError(
+          "blocked-by-policy",
+          `Permission mode ${mode} is not allowed by policy`,
+        );
+      }
       const entry = await startAgent({
         agentId: input.agentId,
         cwd: input.cwd,
@@ -1071,6 +1097,12 @@ export function createSessionService(options: CreateSessionServiceOptions): Sess
       return Promise.resolve();
     },
     setPermissionMode: (sessionId, mode) => {
+      const allowedModes = options.policy?.allowedPermissionModes();
+      if (allowedModes !== null && allowedModes !== undefined && !allowedModes.includes(mode)) {
+        return Promise.reject(
+          new SterError("blocked-by-policy", `Permission mode ${mode} is not allowed by policy`),
+        );
+      }
       const known =
         isBuiltinPermissionMode(mode) ||
         (options.permissionModes ?? []).some((definition) => definition.id === mode);

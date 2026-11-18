@@ -1,5 +1,7 @@
 import { useEffect, useState, type JSX } from "react";
 import { useTranslation } from "react-i18next";
+import { ManagedBadge } from "../../components/ManagedBadge.js";
+import { BlockedAgentNotice } from "../policy/PolicyStatus.js";
 
 export interface AgentRow {
   id: string;
@@ -70,11 +72,15 @@ export function AgentList({ onInstall, onRemove, refreshKey = 0 }: AgentListProp
             data-readiness={agent.readiness}
           >
             <div className="min-w-0">
-              <p className="font-medium text-[var(--ink)]">{agent.name}</p>
+              <p className="font-medium text-[var(--ink)]">
+                {agent.name}
+                {agent.readiness === "blocked-by-policy" ? <ManagedBadge /> : null}
+              </p>
               <p className="faint mono text-xs">
                 {agent.id} · {t(`agents.readiness.${agent.readiness}`, agent.readiness)} ·{" "}
                 {agent.origin}
               </p>
+              {agent.readiness === "blocked-by-policy" ? <BlockedAgentNotice /> : null}
             </div>
             <div className="flex shrink-0 gap-2">
               {agent.readiness === "not-installed" || agent.readiness === "update-available" ? (

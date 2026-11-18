@@ -6,6 +6,7 @@ type SterSettings = {
   defaultAgentId?: string;
   customAgents: unknown[];
   theme: "system" | "light" | "dark";
+  managedKeys?: string[];
 };
 
 type SterApi = {
@@ -16,6 +17,11 @@ type SterApi = {
       platform: string;
       language: string;
       policyState: string;
+      policyProblems?: Array<{ path: string; message: string }>;
+      managedSettings?: string[];
+      effectivePolicy?: {
+        items: Array<{ key: string; value: unknown; source: string; managed: boolean }>;
+      };
     }>;
   };
   settings: {

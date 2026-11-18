@@ -8,6 +8,7 @@ import { SterError } from "../errors.js";
 import type { Logger } from "../log.js";
 import type { RegistryStatus } from "../model/events.js";
 import type { ResolvedEnv } from "../platform/shell-env.js";
+import type { PolicyService } from "../policy/service.js";
 import type { SettingsService } from "../settings/service.js";
 import type { Store } from "../store/store.js";
 import {
@@ -27,7 +28,12 @@ import { installUvxAgent } from "./install-uvx.js";
 import { assertLaunchIntegrity } from "./integrity.js";
 import { planInstall, readinessForRegistryEntry, type InstallPlan } from "./plan.js";
 import { resolvePlatformKey } from "./platform.js";
-import { createRegistryClient, type RegistryClient } from "./registry.js";
+import {
+  createRegistryClient,
+  DEFAULT_REGISTRY_URL,
+  type RegistryClient,
+  type RegistryClientMode,
+} from "./registry.js";
 import { listExtensionAgents } from "./sources.js";
 
 export type { IconData, InstallPlan, Progress };
@@ -57,6 +63,8 @@ export interface CreateAgentServiceOptions {
   agentHints?: AgentHints;
   agentSources?: ReadonlyArray<AgentSource>;
   registryUrl?: string;
+  /** Organization policy for allow-lists, registry, and install rules (US10). */
+  policy?: PolicyService;
   fetchImpl?: typeof fetch;
   seedNodeBinary?: string;
   /** When true (default outside production), expose the mock ACP agent. */
@@ -65,6 +73,24 @@ export interface CreateAgentServiceOptions {
   mockAgentEntry?: string;
   nodeExecutable?: string;
   now?: () => Date;
+}
+
+function resolveRegistryOptions(options: CreateAgentServiceOptions): {
+  mode: RegistryClientMode;
+  url?: string;
+} {
+  const mode = options.policy?.registryMode() ?? "public";
+  if (mode === "disabled") {
+    return { mode };
+  }
+  if (mode === "custom") {
+    const url = options.policy?.registryUrl();
+    return url !== undefined ? { mode, url } : { mode };
+  }
+  if (options.registryUrl !== undefined) {
+    return { mode: "public", url: options.registryUrl };
+  }
+  return { mode: "public", url: DEFAULT_REGISTRY_URL };
 }
 
 function confirmedKey(agentId: string): string {
@@ -138,13 +164,25 @@ export function createAgentService(options: CreateAgentServiceOptions): AgentSer
   const dataDir = options.store.dataDir;
   const hints = options.agentHints ?? {};
   const platformKey = resolvePlatformKey();
+  const registryOpts = resolveRegistryOptions(options);
   const registry: RegistryClient = createRegistryClient({
     dataDir,
-    ...(options.registryUrl !== undefined ? { url: options.registryUrl } : {}),
+    mode: registryOpts.mode,
+    ...(registryOpts.url !== undefined ? { url: registryOpts.url } : {}),
     ...(options.fetchImpl !== undefined ? { fetchImpl: options.fetchImpl } : {}),
     now,
   });
   const plans = new Map<string, InstallPlan>();
+
+  const applyPolicyReadiness = (agent: Agent): Agent => {
+    if (!options.policy || options.policy.state === "absent") {
+      return agent;
+    }
+    if (options.policy.state === "invalid" || !options.policy.agentAllowed(agent.id)) {
+      return { ...agent, readiness: "blocked-by-policy" };
+    }
+    return agent;
+  };
 
   const confirmedAt = (agentId: string): string | undefined => {
     const value = options.store.getSetting(confirmedKey(agentId));
@@ -287,7 +325,7 @@ export function createAgentService(options: CreateAgentServiceOptions): AgentSer
       }
     }
 
-    return [...byId.values()];
+    return [...byId.values()].map(applyPolicyReadiness);
   };
 
   const service: AgentService = {
@@ -303,6 +341,9 @@ export function createAgentService(options: CreateAgentServiceOptions): AgentSer
     list: () => mergeList(),
 
     async icon(agentId) {
+      if (!registry.networkEnabled || !registry.url) {
+        return null;
+      }
       const entry = registry.getEntry(agentId);
       return fetchAgentIcon({
         dataDir,
@@ -320,6 +361,11 @@ export function createAgentService(options: CreateAgentServiceOptions): AgentSer
     },
 
     planInstall: (agentId) => {
+      if (options.policy && !options.policy.agentAllowed(agentId)) {
+        return Promise.reject(
+          new SterError("blocked-by-policy", `Agent ${agentId} is blocked by organization policy`),
+        );
+      }
       const entry = registry.getEntry(agentId);
       if (!entry) {
         return Promise.reject(new SterError("not-found", `Unknown registry agent ${agentId}`));
@@ -328,6 +374,8 @@ export function createAgentService(options: CreateAgentServiceOptions): AgentSer
         entry,
         platformKey,
         uvAvailable: uvAvailable(),
+        requireChecksum: options.policy?.requireChecksum() === true,
+        allowInstallScripts: options.policy?.allowInstallScripts() !== false,
       });
       plans.set(plan.id, plan);
       return Promise.resolve(plan);
@@ -403,6 +451,11 @@ export function createAgentService(options: CreateAgentServiceOptions): AgentSer
     },
 
     saveCustom: (def) => {
+      if (options.policy && !options.policy.customAgentsAllowed()) {
+        return Promise.reject(
+          new SterError("blocked-by-policy", "Custom agents are disabled by organization policy"),
+        );
+      }
       const id = def.id ?? `custom:${randomUUID()}`;
       const settings = options.settings.get();
       const next = settings.customAgents.filter((c) => c.id !== id);
@@ -445,6 +498,9 @@ export function createAgentService(options: CreateAgentServiceOptions): AgentSer
         if (!agent) {
           throw new SterError("not-found", `Unknown agent ${agentId}`);
         }
+        if (agent.readiness === "blocked-by-policy") {
+          throw new SterError("blocked-by-policy", `Agent ${agentId} is blocked by policy`);
+        }
         if (!agent.launch) {
           throw new SterError("agent-not-ready", `Agent ${agentId} has no launch command`);
         }
@@ -468,17 +524,19 @@ export function createAgentService(options: CreateAgentServiceOptions): AgentSer
   // Eager sync get that includes mock/custom for session starts.
   const originalGet = service.get.bind(service);
   service.get = (agentId: string): Agent | null => {
+    const wrap = (agent: Agent | null): Agent | null =>
+      agent ? applyPolicyReadiness(agent) : null;
     const installed = originalGet(agentId);
     if (installed) {
       const at = confirmedAt(agentId);
-      return at !== undefined ? { ...installed, confirmedAt: at } : installed;
+      return wrap(at !== undefined ? { ...installed, confirmedAt: at } : installed);
     }
     if (agentId === MOCK_AGENT_ID) {
-      return mockAgent();
+      return wrap(mockAgent());
     }
     const custom = loadCustoms().find((a) => a.id === agentId);
     if (custom) {
-      return custom;
+      return wrap(custom);
     }
     const detected = detectInstalledAgents({
       entries: registry.listEntries(),
@@ -488,7 +546,7 @@ export function createAgentService(options: CreateAgentServiceOptions): AgentSer
     }).find((a) => a.id === agentId);
     if (detected) {
       const at = confirmedAt(agentId);
-      return at !== undefined ? { ...detected, confirmedAt: at } : detected;
+      return wrap(at !== undefined ? { ...detected, confirmedAt: at } : detected);
     }
     return null;
   };

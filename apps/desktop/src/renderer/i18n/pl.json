@@ -133,6 +133,12 @@
     "themeLight": "Jasny",
     "themeDark": "Ciemny"
   },
+  "policy": {
+    "managed": "Zarządzane przez organizację",
+    "invalidTitle": "Polityka organizacji jest nieprawidłowa",
+    "invalidBody": "Nowe sesje są zablokowane, dopóki plik polityki nie zostanie poprawiony i Ster nie zostanie uruchomiony ponownie. Historia rozmów pozostaje czytelna.",
+    "agentBlocked": "Ten agent nie jest dozwolony przez politykę organizacji."
+  },
   "dialogs": {
     "cancel": "Anuluj",
     "open": "Otwórz",

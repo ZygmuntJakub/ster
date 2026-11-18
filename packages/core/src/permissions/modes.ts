@@ -46,3 +46,18 @@ export const BUILTIN_PERMISSION_MODES: PermissionModeDefinition[] = [
 export function isBuiltinPermissionMode(modeId: string): boolean {
   return BUILTIN_PERMISSION_MODES.some((mode) => mode.id === modeId);
 }
+
+/**
+ * Restrict available permission modes to an organization allow-list (US10).
+ * Absent allow-list → all modes. Unknown ids in the allow-list are ignored.
+ */
+export function filterPermissionModes(
+  modes: ReadonlyArray<PermissionModeDefinition>,
+  allowedIds: readonly string[] | null | undefined,
+): PermissionModeDefinition[] {
+  if (allowedIds === null || allowedIds === undefined) {
+    return [...modes];
+  }
+  const allowed = new Set(allowedIds);
+  return modes.filter((mode) => allowed.has(mode.id));
+}

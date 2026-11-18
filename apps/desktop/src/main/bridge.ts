@@ -90,9 +90,15 @@ async function handleMethod(
         platform: process.platform,
         language: core.settings.get().language,
         policyState: core.policy.state,
+        policyProblems: core.policy.problems(),
+        managedSettings: core.settings.managedKeys(),
+        effectivePolicy: core.policy.effective(),
       });
     case "settings.get":
-      return ok(core.settings.get());
+      return ok({
+        ...core.settings.get(),
+        managedKeys: core.settings.managedKeys(),
+      });
     case "settings.set": {
       const patch = payload as {
         language?: string;

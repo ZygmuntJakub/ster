@@ -69,7 +69,10 @@ describe("SettingsService", () => {
       const settings = createSettingsService({
         store,
         managedKeys: ["defaultPermissionMode"],
+        managedValues: { defaultPermissionMode: "ask-with-rules" },
       });
+      expect(settings.managedKeys()).toEqual(["defaultPermissionMode"]);
+      expect(settings.get().defaultPermissionMode).toBe("ask-with-rules");
       expect(() => settings.set({ defaultPermissionMode: "always-ask" })).toThrow(SterError);
     } finally {
       store.close();

@@ -2,7 +2,9 @@ import {
   CORE_VERSION,
   createCore,
   createLogger,
+  filePolicySource,
   loadBrandFromJson,
+  machinePolicyPath,
   type Brand,
   type Core,
 } from "@ster/core";
@@ -79,10 +81,23 @@ export async function startCoreHost(): Promise<CoreHost> {
 
   const systemLanguage = resolveAppLanguage(app.getLocale());
 
+  const builtinPolicyCandidates = [
+    join(app.getAppPath(), "resources", "policy.default.json"),
+    join(__dirname, "../../resources/policy.default.json"),
+    join(process.cwd(), "resources", "policy.default.json"),
+  ];
+  const builtinPolicyPath =
+    builtinPolicyCandidates.find((candidate) => existsSync(candidate)) ??
+    join(process.cwd(), "resources", "policy.default.json");
+  const machinePath = machinePolicyPath(brand.policyDirName);
+
   const core = await createCore({
     dataDir,
     brand,
-    policySources: [],
+    policySources: [
+      filePolicySource("builtin", builtinPolicyPath, builtinPolicyPath),
+      filePolicySource("machine", machinePath, machinePath),
+    ],
     environment,
     log,
     nodeExecutable,

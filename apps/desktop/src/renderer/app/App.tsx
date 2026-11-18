@@ -2,6 +2,7 @@ import { useEffect, useState, type JSX } from "react";
 import { useTranslation } from "react-i18next";
 import { panelExtensions, settingsPanels } from "../../extensions/index.js";
 import { AgentsPane } from "../features/agents/AgentsPane.js";
+import { PolicyStatus } from "../features/policy/PolicyStatus.js";
 import { ConversationPane } from "./layout/ConversationPane.js";
 import { IconRail, type ShellSection } from "./layout/IconRail.js";
 import { SessionBoard } from "./layout/SessionBoard.js";
@@ -58,32 +59,35 @@ export function App(): JSX.Element {
 
   return (
     <div id="app" className="flex h-full min-h-screen">
-      <div className="frame">
-        <IconRail current={section} onSelect={setSection} />
-        {section === "settings" ? (
-          <SettingsPane
-            onLanguageChange={(language) => {
-              if (language === "en" || language === "pl") {
-                void i18n.changeLanguage(language);
-              }
-            }}
-            extraPanels={settingsPanels()}
-          />
-        ) : section === "agents" ? (
-          <AgentsPane />
-        ) : section === "conversation" ? (
-          <div className="mainc flex min-w-0 flex-1">
-            <SessionBoard />
-            <ConversationPane />
-          </div>
-        ) : ExtensionComponent ? (
-          <ExtensionComponent />
-        ) : (
-          <section className="conv col px-6 py-4">
-            <h1 className="title">{i18n.t(`nav.${section}`)}</h1>
-            <p className="muted mt-2 text-sm">{i18n.t("board.emptyHint")}</p>
-          </section>
-        )}
+      <div className="frame flex min-h-0 flex-1 flex-col">
+        <PolicyStatus />
+        <div className="flex min-h-0 flex-1">
+          <IconRail current={section} onSelect={setSection} />
+          {section === "settings" ? (
+            <SettingsPane
+              onLanguageChange={(language) => {
+                if (language === "en" || language === "pl") {
+                  void i18n.changeLanguage(language);
+                }
+              }}
+              extraPanels={settingsPanels()}
+            />
+          ) : section === "agents" ? (
+            <AgentsPane />
+          ) : section === "conversation" ? (
+            <div className="mainc flex min-w-0 flex-1">
+              <SessionBoard />
+              <ConversationPane />
+            </div>
+          ) : ExtensionComponent ? (
+            <ExtensionComponent />
+          ) : (
+            <section className="conv col px-6 py-4">
+              <h1 className="title">{i18n.t(`nav.${section}`)}</h1>
+              <p className="muted mt-2 text-sm">{i18n.t("board.emptyHint")}</p>
+            </section>
+          )}
+        </div>
       </div>
     </div>
   );
