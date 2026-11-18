@@ -1,0 +1,50 @@
+{
+  "app": {
+    "name": "Ster",
+    "tagline": "Rozmowy z agentami w Twoich projektach"
+  },
+  "nav": {
+    "conversation": "Rozmowa",
+    "agents": "Agenci",
+    "runs": "Przebiegi",
+    "settings": "Ustawienia"
+  },
+  "board": {
+    "title": "Sesje",
+    "empty": "Brak sesji",
+    "emptyHint": "Rozpocznij rozmowę w folderze projektu, gdy agent będzie gotowy.",
+    "working": "Praca",
+    "waiting": "Oczekuje",
+    "finished": "Zakończone",
+    "failed": "Błąd"
+  },
+  "conversation": {
+    "title": "Rozmowa",
+    "empty": "Wybierz sesję, aby zobaczyć rozmowę",
+    "placeholder": "Elementy rozmowy pojawią się tutaj"
+  },
+  "settings": {
+    "title": "Ustawienia",
+    "language": "Język",
+    "theme": "Motyw",
+    "themeSystem": "Systemowy",
+    "themeLight": "Jasny",
+    "themeDark": "Ciemny"
+  },
+  "errors": {
+    "policy-invalid": "Polityka organizacji jest nieprawidłowa",
+    "blocked-by-policy": "Zablokowane przez politykę organizacji",
+    "agent-not-ready": "Ten agent nie jest gotowy",
+    "agent-not-confirmed": "Potwierdź agenta przed pierwszym uruchomieniem",
+    "integrity-failed": "Pliki agenta nie przeszły kontroli integralności",
+    "login-required": "Zaloguj się do agenta, aby kontynuować",
+    "protocol-unsupported": "Agent używa nieobsługiwanej wersji protokołu",
+    "agent-exited": "Proces agenta zakończył się nieoczekiwanie",
+    "outside-workspace": "Ta ścieżka jest poza folderem projektu",
+    "not-resumable": "Tej sesji nie można wznowić",
+    "definition-invalid": "Definicja fabryki jest nieprawidłowa",
+    "definition-untrusted": "Definicja fabryki nie jest zaufana",
+    "not-found": "Nie znaleziono",
+    "invalid-argument": "Nieprawidłowe żądanie"
+  }
+}

@@ -1,15 +1,80 @@
-import type { JSX } from "react";
+import { useEffect, useState, type JSX } from "react";
+import { useTranslation } from "react-i18next";
+import { ConversationPane } from "./layout/ConversationPane.js";
+import { IconRail, type ShellSection } from "./layout/IconRail.js";
+import { SessionBoard } from "./layout/SessionBoard.js";
+import { SettingsPane } from "./layout/SettingsPane.js";
+import { applyTheme, getSettings, setSettings, subscribeSettings } from "./stores/settings.js";
 
 /**
- * Application shell. Layout and stores land in T034.
+ * Application shell: icon rail, session board, conversation, settings (R20).
  */
 export function App(): JSX.Element {
+  const { i18n } = useTranslation();
+  const [section, setSection] = useState<ShellSection>("conversation");
+  const [, setTick] = useState(0);
+
+  useEffect(
+    () =>
+      subscribeSettings(() => {
+        setTick((n) => n + 1);
+      }),
+    [],
+  );
+
+  useEffect(() => {
+    const state = { active: true };
+    void (async () => {
+      try {
+        const remote = await window.ster.settings.get();
+        if (!state.active) {
+          return;
+        }
+        setSettings({
+          language: remote.language,
+          theme: remote.theme,
+          defaultPermissionMode: remote.defaultPermissionMode,
+          ...(remote.defaultAgentId !== undefined ? { defaultAgentId: remote.defaultAgentId } : {}),
+        });
+        applyTheme(remote.theme);
+        if (remote.language === "en" || remote.language === "pl") {
+          await i18n.changeLanguage(remote.language);
+        }
+      } catch {
+        if (state.active) {
+          applyTheme(getSettings().theme);
+        }
+      }
+    })();
+    return () => {
+      state.active = false;
+    };
+  }, [i18n]);
+
   return (
-    <div className="flex h-full min-h-screen items-center justify-center bg-[var(--bg)] text-[var(--ink)]">
-      <main className="rounded-[var(--r-lg)] border border-[var(--line)] bg-[var(--surface)] px-8 py-6 shadow-[var(--shadow)]">
-        <h1 className="text-xl font-semibold tracking-tight">Ster</h1>
-        <p className="mt-2 text-sm text-[var(--ink2)]">ACP desktop client scaffold</p>
-      </main>
+    <div id="app" className="flex h-full min-h-screen">
+      <div className="frame">
+        <IconRail current={section} onSelect={setSection} />
+        {section === "settings" ? (
+          <SettingsPane
+            onLanguageChange={(language) => {
+              if (language === "en" || language === "pl") {
+                void i18n.changeLanguage(language);
+              }
+            }}
+          />
+        ) : section === "conversation" ? (
+          <div className="mainc flex min-w-0 flex-1">
+            <SessionBoard />
+            <ConversationPane />
+          </div>
+        ) : (
+          <section className="conv col px-6 py-4">
+            <h1 className="title">{i18n.t(`nav.${section}`)}</h1>
+            <p className="muted mt-2 text-sm">{i18n.t("board.emptyHint")}</p>
+          </section>
+        )}
+      </div>
     </div>
   );
 }

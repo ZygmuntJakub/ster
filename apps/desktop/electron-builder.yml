@@ -1,0 +1,28 @@
+appId: ster-desktop
+productName: Ster
+directories:
+  output: dist
+  buildResources: resources
+files:
+  - out/**/*
+  - resources/**/*
+asar: true
+asarUnpack: []
+afterPack: ./scripts/fuses.mjs
+mac:
+  category: public.app-category.developer-tools
+  target:
+    - target: dir
+      arch:
+        - arm64
+        - x64
+win:
+  target:
+    - target: dir
+      arch:
+        - x64
+linux:
+  target:
+    - target: dir
+      arch:
+        - x64

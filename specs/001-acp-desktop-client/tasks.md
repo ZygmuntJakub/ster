@@ -67,13 +67,13 @@ description: "Task list for Ster — ACP Desktop Client"
 - [x] T026 [P] Implement `PolicyService` with source loading hooks and the `absent` state, plus enforcement call sites as no-ops, in `packages/core/src/policy/service.ts` (full behavior arrives in US10)
 - [x] T027 [P] Implement `SettingsService` in `packages/core/src/settings/service.ts` per data-model.md `Settings`: `Settings.language`, `Settings.defaultPermissionMode`, `Settings.defaultAgentId`, `Settings.customAgents`, `Settings.theme`
 - [x] T028 Implement `createCore` and `Core.dispose` in `packages/core/src/index.ts` per contracts/core-api.md
-- [ ] T029 Implement the hardened window and application lifecycle in `apps/desktop/src/main/window.ts` and `apps/desktop/src/main/index.ts`: sandbox, context isolation, content security policy, navigation and `window.open` denial, permission-request denial (research.md R9)
-- [ ] T030 [P] Configure Electron fuses and ASAR integrity in `apps/desktop/electron-builder.yml` and `apps/desktop/scripts/fuses.mjs` (research.md R9)
-- [ ] T031 Implement the bridge infrastructure per contracts/ipc.md: schema registry in `apps/desktop/src/shared/bridge.ts`, validating handler registry with sender-frame check in `apps/desktop/src/main/bridge.ts`, fixed surface in `apps/desktop/src/preload/index.ts`; include `app.info`, `settings.get`, `settings.set`, `events.subscribe`
-- [ ] T032 Write bridge tests in `apps/desktop/tests/bridge.test.ts`: preload surface equals the contract list, invalid payloads rejected, non-top-level sender rejected
-- [ ] T033 [P] Set up i18next with typed keys in `apps/desktop/src/renderer/i18n/` (`index.ts`, `en.json`, `pl.json`) and a key-parity check in `scripts/check-i18n.mjs` wired into `pnpm check`
-- [ ] T034 Build the renderer shell in `apps/desktop/src/renderer/app/` (`App.tsx`, `layout/`, `stores/`): sidebar, main area, settings entry, theme from `Settings.theme`, translation of `SterError` codes to messages, laid out as in the mockup: icon rail, session board area, conversation area (research.md R20)
-- [ ] T035 [P] Write shell hardening tests in `apps/desktop/tests/e2e/hardening.spec.ts`: no Node globals in the page, navigation blocked, remote resource load blocked
+- [x] T029 Implement the hardened window and application lifecycle in `apps/desktop/src/main/window.ts` and `apps/desktop/src/main/index.ts`: sandbox, context isolation, content security policy, navigation and `window.open` denial, permission-request denial (research.md R9)
+- [x] T030 [P] Configure Electron fuses and ASAR integrity in `apps/desktop/electron-builder.yml` and `apps/desktop/scripts/fuses.mjs` (research.md R9)
+- [x] T031 Implement the bridge infrastructure per contracts/ipc.md: schema registry in `apps/desktop/src/shared/bridge.ts`, validating handler registry with sender-frame check in `apps/desktop/src/main/bridge.ts`, fixed surface in `apps/desktop/src/preload/index.ts`; include `app.info`, `settings.get`, `settings.set`, `events.subscribe`
+- [x] T032 Write bridge tests in `apps/desktop/tests/bridge.test.ts`: preload surface equals the contract list, invalid payloads rejected, non-top-level sender rejected
+- [x] T033 [P] Set up i18next with typed keys in `apps/desktop/src/renderer/i18n/` (`index.ts`, `en.json`, `pl.json`) and a key-parity check in `scripts/check-i18n.mjs` wired into `pnpm check`
+- [x] T034 Build the renderer shell in `apps/desktop/src/renderer/app/` (`App.tsx`, `layout/`, `stores/`): sidebar, main area, settings entry, theme from `Settings.theme`, translation of `SterError` codes to messages, laid out as in the mockup: icon rail, session board area, conversation area (research.md R20)
+- [x] T035 [P] Write shell hardening tests in `apps/desktop/tests/e2e/hardening.spec.ts`: no Node globals in the page, navigation blocked, remote resource load blocked
 
 **Checkpoint**: The application starts as an empty hardened shell in both languages, the core runs headless against the mock agent, and CI is green on three platforms
 

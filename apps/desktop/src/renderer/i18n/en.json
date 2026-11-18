@@ -1,0 +1,50 @@
+{
+  "app": {
+    "name": "Ster",
+    "tagline": "Agent conversations for your projects"
+  },
+  "nav": {
+    "conversation": "Conversation",
+    "agents": "Agents",
+    "runs": "Runs",
+    "settings": "Settings"
+  },
+  "board": {
+    "title": "Sessions",
+    "empty": "No sessions yet",
+    "emptyHint": "Start a conversation from a project folder once an agent is ready.",
+    "working": "Working",
+    "waiting": "Waiting",
+    "finished": "Finished",
+    "failed": "Failed"
+  },
+  "conversation": {
+    "title": "Conversation",
+    "empty": "Select a session to read the conversation",
+    "placeholder": "Conversation items will appear here"
+  },
+  "settings": {
+    "title": "Settings",
+    "language": "Language",
+    "theme": "Theme",
+    "themeSystem": "System",
+    "themeLight": "Light",
+    "themeDark": "Dark"
+  },
+  "errors": {
+    "policy-invalid": "Organization policy is invalid",
+    "blocked-by-policy": "Blocked by organization policy",
+    "agent-not-ready": "This agent is not ready",
+    "agent-not-confirmed": "Confirm the agent before the first start",
+    "integrity-failed": "Agent files failed an integrity check",
+    "login-required": "Sign in to the agent to continue",
+    "protocol-unsupported": "This agent uses an unsupported protocol version",
+    "agent-exited": "The agent process stopped unexpectedly",
+    "outside-workspace": "That path is outside the project folder",
+    "not-resumable": "This session cannot be resumed",
+    "definition-invalid": "The factory definition is invalid",
+    "definition-untrusted": "The factory definition is not trusted",
+    "not-found": "Not found",
+    "invalid-argument": "Invalid request"
+  }
+}
