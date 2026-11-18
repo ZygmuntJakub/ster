@@ -60,3 +60,24 @@ export type {
   Score,
   SessionSummary,
 } from "./model/events.js";
+
+export type {
+  ConversationItemRow,
+  ItemPage,
+  NewConversationItem,
+  SessionRow,
+  Store,
+} from "./store/store.js";
+
+export { openSqliteStore, type OpenSqliteStoreOptions, type SqliteStore } from "./store/sqlite.js";
+
+export {
+  fallbackPathDirs,
+  mergeFallbackPath,
+  parseEnvDump,
+  resolveShellEnv,
+  type ResolvedEnv,
+  type ResolveShellEnvOptions,
+  type ShellEnvResult,
+  type ShellEnvSource,
+} from "./platform/shell-env.js";
