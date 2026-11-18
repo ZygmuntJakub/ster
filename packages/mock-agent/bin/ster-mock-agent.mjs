@@ -1,0 +1,17 @@
+#!/usr/bin/env node
+import { spawn } from "node:child_process";
+import { fileURLToPath } from "node:url";
+import { dirname, join } from "node:path";
+
+const root = dirname(fileURLToPath(import.meta.url));
+const entry = join(root, "../src/index.ts");
+const child = spawn(process.execPath, ["--import", "tsx", entry], {
+  stdio: "inherit",
+  env: process.env,
+});
+child.on("exit", (code, signal) => {
+  if (signal) {
+    process.kill(process.pid, signal);
+  }
+  process.exit(code ?? 1);
+});

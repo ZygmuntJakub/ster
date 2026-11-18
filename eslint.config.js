@@ -54,7 +54,7 @@ export default tseslint.config(
     files: [
       "apps/desktop/src/main/**/*.ts",
       "apps/desktop/src/preload/**/*.ts",
-      "packages/**/*.ts",
+      "packages/**/*.{ts,mjs,js}",
       "scripts/**/*.{js,mjs}",
       "examples/**/*.ts",
     ],

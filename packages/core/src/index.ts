@@ -81,3 +81,25 @@ export {
   type ShellEnvResult,
   type ShellEnvSource,
 } from "./platform/shell-env.js";
+
+export {
+  createPolicyService,
+  enforcePolicyNoop,
+  type CreatePolicyServiceOptions,
+  type EffectivePolicy,
+  type EffectivePolicyItem,
+  type PolicyProblem,
+  type PolicyService,
+  type PolicySource,
+  type PolicySourceKind,
+  type PolicyState,
+} from "./policy/service.js";
+
+export {
+  createSettingsService,
+  type CreateSettingsServiceOptions,
+  type CustomAgentSetting,
+  type Settings,
+  type SettingsService,
+  type ThemePreference,
+} from "./settings/service.js";
