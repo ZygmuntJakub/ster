@@ -204,6 +204,13 @@ export function openSqliteStore(options: OpenSqliteStoreOptions): SqliteStore {
       return row ? mapSession(row) : null;
     },
 
+    listSessions() {
+      return db
+        .prepare("SELECT * FROM sessions ORDER BY last_activity_at DESC")
+        .all()
+        .map((row) => mapSession(row as SqlRow));
+    },
+
     deleteSession(id) {
       db.prepare("DELETE FROM sessions WHERE id = ?").run(id);
     },

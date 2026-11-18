@@ -50,6 +50,7 @@ export interface Store {
 
   putSession(row: SessionRow): void;
   getSession(id: string): SessionRow | null;
+  listSessions(): SessionRow[];
   deleteSession(id: string): void;
 
   appendItem(item: NewConversationItem): ConversationItemRow;

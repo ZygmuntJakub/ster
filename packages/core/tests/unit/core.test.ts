@@ -35,6 +35,7 @@ describe("createCore", () => {
       brand,
       policySources: [],
       environment: { PATH: "/usr/bin", HOME: dataDir },
+      includeMockAgent: false,
     });
 
     expect(core.brand.productName).toBe("Ster");
@@ -64,6 +65,7 @@ describe("createCore", () => {
         },
       ],
       environment: { PATH: "/usr/bin" },
+      includeMockAgent: false,
     });
 
     expect(core.policy.state).toBe("valid");

@@ -87,19 +87,19 @@ description: "Task list for Ster — ACP Desktop Client"
 
 ### Tests for User Story 1
 
-- [ ] T036 [P] [US1] Integration tests for prompt, streaming, cancel, and agent crash in `packages/core/tests/integration/session-turn.test.ts`
+- [x] T036 [P] [US1] Integration tests for prompt, streaming, cancel, and agent crash in `packages/core/tests/integration/session-turn.test.ts`
 - [ ] T037 [P] [US1] Integration tests for login-required and both auth method types in `packages/core/tests/integration/auth.test.ts`
 - [ ] T038 [P] [US1] Security tests for file access confinement, including symlinks and `..`, in `packages/core/tests/security/workspace-paths.test.ts`
 - [ ] T039 [P] [US1] End-to-end flow for US1 in `apps/desktop/tests/e2e/us1-conversation.spec.ts`
 
 ### Implementation for User Story 1
 
-- [ ] T040 [P] [US1] Implement the `Agent` model and a minimal `AgentService` (`list`, `saveCustom`, `confirmFirstStart`) in `packages/core/src/agents/agent.ts` and `packages/core/src/agents/service.ts`; cite data-model.md `Agent.id`, `Agent.launch`, `Agent.confirmedAt`, `Agent.origin`; in development builds list the mock agent
-- [ ] T041 [P] [US1] Implement the `Session` model and state machine in `packages/core/src/sessions/session.ts` per data-model.md `Session.status`, `Session.cwd`, `Session.title`
-- [ ] T042 [P] [US1] Implement conversation item storage (append, in-place streaming update, paging) in `packages/core/src/sessions/items.ts` per data-model.md `ConversationItem.kind`
-- [ ] T043 [US1] Implement the mapping from `session/update` variants to conversation items for message chunks, thought chunks, session info, and unknown variants in `packages/core/src/sessions/updates.ts`
-- [ ] T044 [US1] Implement the run lifecycle skeleton (create on prompt, finalise on stop, `outcome` and `stopReason`) in `packages/core/src/runs/lifecycle.ts` per data-model.md `RunRecord.outcome`, `RunRecord.kind`
-- [ ] T045 [US1] Implement `SessionService` `create`, `get`, `items`, `prompt`, `cancel`, `end`, `restart` in `packages/core/src/sessions/service.ts`, refusing agents without first-start confirmation (`agent-not-confirmed`)
+- [x] T040 [P] [US1] Implement the `Agent` model and a minimal `AgentService` (`list`, `saveCustom`, `confirmFirstStart`) in `packages/core/src/agents/agent.ts` and `packages/core/src/agents/service.ts`; cite data-model.md `Agent.id`, `Agent.launch`, `Agent.confirmedAt`, `Agent.origin`; in development builds list the mock agent
+- [x] T041 [P] [US1] Implement the `Session` model and state machine in `packages/core/src/sessions/session.ts` per data-model.md `Session.status`, `Session.cwd`, `Session.title`
+- [x] T042 [P] [US1] Implement conversation item storage (append, in-place streaming update, paging) in `packages/core/src/sessions/items.ts` per data-model.md `ConversationItem.kind`
+- [x] T043 [US1] Implement the mapping from `session/update` variants to conversation items for message chunks, thought chunks, session info, and unknown variants in `packages/core/src/sessions/updates.ts`
+- [x] T044 [US1] Implement the run lifecycle skeleton (create on prompt, finalise on stop, `outcome` and `stopReason`) in `packages/core/src/runs/lifecycle.ts` per data-model.md `RunRecord.outcome`, `RunRecord.kind`
+- [x] T045 [US1] Implement `SessionService` `create`, `get`, `items`, `prompt`, `cancel`, `end`, `restart` in `packages/core/src/sessions/service.ts`, refusing agents without first-start confirmation (`agent-not-confirmed`)
 - [ ] T046 [US1] Implement approval handling with prompt-always behavior in `packages/core/src/permissions/approvals.ts`: pending requests, `resolveApproval`, cancellation on turn cancel and session end, per data-model.md `ApprovalRequest.outcome`
 - [ ] T047 [US1] Implement confined `fs/read_text_file` and `fs/write_text_file` handlers in `packages/core/src/workspace/files.ts`, resolving symlinks and rejecting paths outside `Session.cwd` with `outside-workspace`
 - [ ] T048 [US1] Add file snapshots and stale-write detection to `packages/core/src/workspace/snapshots.ts` per data-model.md `FileSnapshot.contentHash`, raising a guard approval before overwriting (FR-079), with tests in `packages/core/tests/integration/stale-write.test.ts`

@@ -1,15 +1,38 @@
+import {
+  createAgentService,
+  type AgentService,
+  type CreateAgentServiceOptions,
+  type IconData,
+  type InstallPlan,
+  type Progress,
+} from "./agents/service.js";
+import type { Agent, CustomAgentInput } from "./agents/agent.js";
 import { attachEventConsumers } from "./events/consumers.js";
 import { createEventStream, type CoreEvent, type EventStream } from "./events/stream.js";
 import { SterError } from "./errors.js";
 import { indexById, indexPolicyItems, type CoreExtensions } from "./extensions/index.js";
 import { createLogger, type Logger } from "./log.js";
 import type { Brand } from "./brand.js";
-import type { RegistryStatus } from "./model/events.js";
+import type { RegistryStatus, RunSummary, Score } from "./model/events.js";
 import { createPolicyService, type PolicyService, type PolicySource } from "./policy/service.js";
 import { resolveShellEnv, type ResolvedEnv } from "./platform/shell-env.js";
+import type { RunRecord } from "./runs/lifecycle.js";
 import { createSettingsService, type SettingsService } from "./settings/service.js";
+import {
+  createSessionService,
+  type AuthMethod,
+  type PermissionRule,
+  type PromptContent,
+  type SessionService,
+} from "./sessions/service.js";
+import type { Session, SessionFilter } from "./sessions/session.js";
 import { openSqliteStore } from "./store/sqlite.js";
 import type { Store } from "./store/store.js";
+
+export type { Agent, CustomAgentInput, IconData, InstallPlan, Progress };
+export type { AuthMethod, PermissionRule, PromptContent, Session, SessionFilter, SessionService };
+export type { RunRecord };
+export type { AgentService };
 
 /**
  * Executable-name hints for detecting installed agents (research.md R8).
@@ -23,122 +46,6 @@ export type AgentHints = Readonly<Record<string, readonly string[]>>;
 export interface PlatformAdapter {
   openExternal(url: string): Promise<void>;
   openTerminal?(cwd: string): Promise<void>;
-}
-
-/** Minimal Agent shape until T040 fills the model. */
-export interface Agent {
-  id: string;
-  name: string;
-  origin: "registry" | "detected" | "custom";
-  readiness: string;
-  version?: string;
-  launch?: { command: string; args: string[]; env: Record<string, string> };
-  confirmedAt?: string;
-}
-
-export interface IconData {
-  mimeType: string;
-  data: Uint8Array;
-}
-
-export interface InstallPlan {
-  agentId: string;
-  version: string;
-  source: string;
-  verified: boolean;
-}
-
-export interface Progress {
-  phase: string;
-  fraction?: number;
-  message?: string;
-}
-
-export interface CustomAgentInput {
-  name: string;
-  command: string;
-  args: string[];
-  env: Record<string, string>;
-  id?: string;
-}
-
-export interface AgentService {
-  list(): Promise<Agent[]>;
-  icon(agentId: string): Promise<IconData | null>;
-  refreshRegistry(opts?: { force?: boolean }): Promise<RegistryStatus>;
-  planInstall(agentId: string): Promise<InstallPlan>;
-  install(plan: InstallPlan, onProgress?: (p: Progress) => void): Promise<Agent>;
-  remove(agentId: string): Promise<void>;
-  saveCustom(def: CustomAgentInput): Promise<Agent>;
-  deleteCustom(agentId: string): Promise<void>;
-  confirmFirstStart(agentId: string): Promise<void>;
-}
-
-/** Minimal Session shape until T045 fills the model. */
-export interface Session {
-  id: string;
-  agentId: string;
-  cwd: string;
-  title: string;
-  status: string;
-  permissionMode: string;
-}
-
-export interface SessionFilter {
-  agentId?: string;
-  cwd?: string;
-  status?: string;
-}
-
-export type PromptContent =
-  { type: "text"; text: string } | { type: string; [key: string]: unknown };
-
-export interface RunRecord {
-  id: string;
-  sessionId: string;
-  kind: string;
-  startedAt: string;
-  endedAt?: string;
-  outcome?: string;
-}
-
-export interface PermissionRule {
-  id: string;
-  sessionId: string;
-  pattern: string;
-}
-
-export interface AuthMethod {
-  id: string;
-  name: string;
-}
-
-export interface SessionService {
-  create(input: { agentId: string; cwd: string; permissionMode?: string }): Promise<Session>;
-  list(filter?: SessionFilter): Promise<import("./model/events.js").SessionSummary[]>;
-  get(sessionId: string): Promise<Session>;
-  items(
-    sessionId: string,
-    page: { before?: number; limit: number },
-  ): Promise<import("./model/events.js").ConversationItem[]>;
-  prompt(sessionId: string, content: PromptContent[]): Promise<RunRecord>;
-  cancel(sessionId: string): Promise<void>;
-  resolveApproval(
-    approvalId: string,
-    outcome: { optionId: string } | { cancelled: true },
-  ): Promise<void>;
-  setPermissionMode(sessionId: string, mode: string): Promise<void>;
-  setConfigOption(sessionId: string, configId: string, value: string): Promise<void>;
-  rules(sessionId: string): Promise<PermissionRule[]>;
-  revokeRule(ruleId: string): Promise<void>;
-  killCommand(commandRunId: string): Promise<void>;
-  authMethods(sessionId: string): Promise<AuthMethod[]>;
-  authenticate(sessionId: string, methodId: string): Promise<void>;
-  resume(sessionId: string): Promise<Session>;
-  restart(sessionId: string): Promise<Session>;
-  rename(sessionId: string, title: string): Promise<void>;
-  end(sessionId: string): Promise<void>;
-  delete(sessionId: string, opts: { runRecords: "delete" | "keep-without-text" }): Promise<void>;
 }
 
 export interface FactoryLookup {
@@ -182,16 +89,10 @@ export interface RunTotals {
 export type WritableTarget = { kind: "path"; path: string };
 
 export interface RunService {
-  list(
-    filter: RunFilter,
-    page: Page,
-  ): Promise<{ runs: import("./model/events.js").RunSummary[]; totals: RunTotals }>;
+  list(filter: RunFilter, page: Page): Promise<{ runs: RunSummary[]; totals: RunTotals }>;
   get(runId: string): Promise<RunRecord>;
-  rate(
-    runId: string,
-    rating: { value: number; note?: string },
-  ): Promise<import("./model/events.js").Score>;
-  judge(runId: string, opts: { agentId: string }): Promise<import("./model/events.js").Score>;
+  rate(runId: string, rating: { value: number; note?: string }): Promise<Score>;
+  judge(runId: string, opts: { agentId: string }): Promise<Score>;
   export(filter: RunFilter, destination: WritableTarget): Promise<{ count: number }>;
   delete(filter: RunFilter | { ids: string[] }): Promise<{ count: number }>;
 }
@@ -206,6 +107,10 @@ export interface CreateCoreOptions {
   platform?: PlatformAdapter;
   /** Optional host logger; defaults to a redacting stderr logger. */
   log?: Logger;
+  /** Expose the mock ACP agent (default: non-production). */
+  includeMockAgent?: boolean;
+  mockAgentEntry?: string;
+  nodeExecutable?: string;
 }
 
 export interface Core {
@@ -226,44 +131,6 @@ function notReadyError(service: string, method: string): SterError {
     service,
     method,
   });
-}
-
-function createAgentServiceStub(): AgentService {
-  return {
-    list: () => Promise.resolve([]),
-    icon: () => Promise.resolve(null),
-    refreshRegistry: () => Promise.resolve({ reachable: false }),
-    planInstall: () => Promise.reject(notReadyError("agents", "planInstall")),
-    install: () => Promise.reject(notReadyError("agents", "install")),
-    remove: () => Promise.reject(notReadyError("agents", "remove")),
-    saveCustom: () => Promise.reject(notReadyError("agents", "saveCustom")),
-    deleteCustom: () => Promise.reject(notReadyError("agents", "deleteCustom")),
-    confirmFirstStart: () => Promise.reject(notReadyError("agents", "confirmFirstStart")),
-  };
-}
-
-function createSessionServiceStub(): SessionService {
-  return {
-    create: () => Promise.reject(notReadyError("sessions", "create")),
-    list: () => Promise.resolve([]),
-    get: () => Promise.reject(notReadyError("sessions", "get")),
-    items: () => Promise.resolve([]),
-    prompt: () => Promise.reject(notReadyError("sessions", "prompt")),
-    cancel: () => Promise.reject(notReadyError("sessions", "cancel")),
-    resolveApproval: () => Promise.reject(notReadyError("sessions", "resolveApproval")),
-    setPermissionMode: () => Promise.reject(notReadyError("sessions", "setPermissionMode")),
-    setConfigOption: () => Promise.reject(notReadyError("sessions", "setConfigOption")),
-    rules: () => Promise.resolve([]),
-    revokeRule: () => Promise.reject(notReadyError("sessions", "revokeRule")),
-    killCommand: () => Promise.reject(notReadyError("sessions", "killCommand")),
-    authMethods: () => Promise.resolve([]),
-    authenticate: () => Promise.reject(notReadyError("sessions", "authenticate")),
-    resume: () => Promise.reject(notReadyError("sessions", "resume")),
-    restart: () => Promise.reject(notReadyError("sessions", "restart")),
-    rename: () => Promise.reject(notReadyError("sessions", "rename")),
-    end: () => Promise.reject(notReadyError("sessions", "end")),
-    delete: () => Promise.reject(notReadyError("sessions", "delete")),
-  };
 }
 
 function createFactoryServiceStub(): FactoryService {
@@ -295,7 +162,6 @@ export async function createCore(options: CreateCoreOptions): Promise<Core> {
   const log = options.log ?? createLogger({ fields: { component: "core" } });
   const extensions = options.extensions ?? {};
 
-  // Validate extension registries early (duplicate ids throw).
   indexById(extensions.agentSources);
   indexById(extensions.permissionModes);
   indexById(extensions.eventConsumers);
@@ -329,8 +195,31 @@ export async function createCore(options: CreateCoreOptions): Promise<Core> {
   const events = createEventStream();
   const detachConsumers = attachEventConsumers(events, extensions.eventConsumers ?? [], log);
 
-  const agents = createAgentServiceStub();
-  const sessions = createSessionServiceStub();
+  const agentOptions: CreateAgentServiceOptions = {
+    store,
+    settings,
+    log,
+  };
+  if (options.includeMockAgent !== undefined) {
+    agentOptions.includeMockAgent = options.includeMockAgent;
+  }
+  if (options.mockAgentEntry !== undefined) {
+    agentOptions.mockAgentEntry = options.mockAgentEntry;
+  }
+  if (options.nodeExecutable !== undefined) {
+    agentOptions.nodeExecutable = options.nodeExecutable;
+  }
+  const agents = createAgentService(agentOptions);
+
+  const sessionsHandle = createSessionService({
+    store,
+    agents,
+    events,
+    environment,
+    log,
+    defaultPermissionMode: settings.get().defaultPermissionMode,
+  });
+
   const factory = createFactoryServiceStub();
   const runs = createRunServiceStub();
 
@@ -340,21 +229,21 @@ export async function createCore(options: CreateCoreOptions): Promise<Core> {
     brand: options.brand,
     environment,
     agents,
-    sessions,
+    sessions: sessionsHandle.service,
     policy,
     factory,
     runs,
     settings,
     events,
-    dispose() {
+    async dispose() {
       if (disposed) {
-        return Promise.resolve();
+        return;
       }
       disposed = true;
+      await sessionsHandle.dispose();
       detachConsumers();
       store.close();
       log.info("core disposed", { dataDir: options.dataDir });
-      return Promise.resolve();
     },
   };
 
@@ -366,3 +255,6 @@ export async function createCore(options: CreateCoreOptions): Promise<Core> {
 
   return core;
 }
+
+// Re-export RegistryStatus for callers that imported it via AgentService refresh.
+export type { RegistryStatus };

@@ -33,6 +33,8 @@ export interface AcpConnection {
    * arrival order through a serial queue (R1).
    */
   onSessionUpdate(sessionId: string, handler: SessionUpdateHandler): () => void;
+  /** Wait until queued update handlers for the session have settled. */
+  flushSessionUpdates(sessionId: string): Promise<void>;
   close(): void;
 }
 
@@ -63,6 +65,10 @@ class SessionUpdateQueue {
         this.chains.delete(sessionId);
       }
     });
+  }
+
+  idle(sessionId: string): Promise<void> {
+    return this.chains.get(sessionId) ?? Promise.resolve();
   }
 }
 
@@ -164,6 +170,9 @@ export async function connectAgent(options: ConnectAgentOptions): Promise<AcpCon
           handlers.delete(sessionId);
         }
       };
+    },
+    flushSessionUpdates(sessionId) {
+      return queue.idle(sessionId);
     },
     close() {
       connection.close();
