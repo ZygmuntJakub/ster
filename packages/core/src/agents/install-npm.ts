@@ -15,7 +15,15 @@ async function run(
   env: NodeJS.ProcessEnv,
 ): Promise<void> {
   await new Promise<void>((resolve, reject) => {
-    const child = spawn(command, args, { cwd, env, stdio: ["ignore", "pipe", "pipe"] });
+    // Node on Windows rejects spawn() of .cmd/.bat without a shell (EINVAL).
+    const needsShell = process.platform === "win32" && /\.(cmd|bat)$/iu.test(command);
+    const child = spawn(command, args, {
+      cwd,
+      env,
+      stdio: ["ignore", "pipe", "pipe"],
+      shell: needsShell,
+      windowsHide: true,
+    });
     let stderr = "";
     child.stderr.on("data", (chunk: Buffer) => {
       stderr += chunk.toString("utf8");

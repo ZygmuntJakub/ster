@@ -1,6 +1,6 @@
 import { mkdirSync, mkdtempSync, realpathSync, rmSync, symlinkSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
-import { join } from "node:path";
+import { join, relative, sep } from "node:path";
 import { afterEach, describe, expect, it } from "vitest";
 import { isSterError } from "../../src/errors.js";
 import {
@@ -79,7 +79,9 @@ describe("workspace path confinement", () => {
     const cwd = tempDir("ster-ws-write-");
     const root = realpathSync(cwd);
     const { resolvedPath } = writeWorkspaceTextFile(cwd, "nested/a.txt", "ok\n");
-    expect(resolvedPath.startsWith(root + "/")).toBe(true);
+    const rel = relative(root, resolvedPath);
+    expect(rel === "" || (!rel.startsWith(`..${sep}`) && rel !== "..")).toBe(true);
+    expect(resolvedPath.startsWith(root + sep)).toBe(true);
     expect(readWorkspaceTextFile(cwd, "nested/a.txt").content).toBe("ok\n");
   });
 

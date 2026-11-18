@@ -1,6 +1,14 @@
 import { existsSync, readFileSync } from "node:fs";
-import { join } from "node:path";
+import path from "node:path";
 import type { PolicySource, PolicySourceKind } from "./service.js";
+
+/**
+ * Join path segments with separators for the *target* platform, not the host.
+ * Needed so darwin/linux machine paths stay POSIX even when computed on Windows CI.
+ */
+function joinForPlatform(platform: NodeJS.Platform, ...parts: string[]): string {
+  return (platform === "win32" ? path.win32 : path.posix).join(...parts);
+}
 
 /**
  * Machine-wide policy directory (research R11):
@@ -10,17 +18,17 @@ import type { PolicySource, PolicySourceKind } from "./service.js";
  */
 export function machinePolicyDir(policyDirName: string, platform = process.platform): string {
   if (platform === "darwin") {
-    return join("/Library", "Application Support", policyDirName);
+    return joinForPlatform(platform, "/Library", "Application Support", policyDirName);
   }
   if (platform === "win32") {
     const programData = process.env.ProgramData ?? "C:\\ProgramData";
-    return join(programData, policyDirName);
+    return joinForPlatform(platform, programData, policyDirName);
   }
-  return join("/etc", policyDirName);
+  return joinForPlatform(platform, "/etc", policyDirName);
 }
 
 export function machinePolicyPath(policyDirName: string, platform = process.platform): string {
-  return join(machinePolicyDir(policyDirName, platform), "policy.json");
+  return joinForPlatform(platform, machinePolicyDir(policyDirName, platform), "policy.json");
 }
 
 /**

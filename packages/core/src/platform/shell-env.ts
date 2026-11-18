@@ -1,8 +1,13 @@
 import { spawn, type ChildProcessByStdio } from "node:child_process";
 import type { Readable } from "node:stream";
 import { homedir } from "node:os";
-import { join } from "node:path";
+import path from "node:path";
 import type { Logger } from "../log.js";
+
+/** Path helpers for the *target* platform (host OS must not rewrite Unix env paths). */
+function pathApiFor(platform: NodeJS.Platform): path.PlatformPath {
+  return platform === "win32" ? path.win32 : path.posix;
+}
 
 export type ResolvedEnv = Readonly<Record<string, string>>;
 
@@ -49,18 +54,23 @@ function defaultUnixShell(env: NodeJS.ProcessEnv): string {
  * resolution fails (research.md R19).
  */
 export function fallbackPathDirs(home: string, platform: NodeJS.Platform): string[] {
+  const pathApi = pathApiFor(platform);
   const dirs = [
-    join(home, ".local", "bin"),
-    join(home, ".cargo", "bin"),
-    join(home, "go", "bin"),
-    join(home, ".nvm", "current", "bin"),
-    "/opt/homebrew/bin",
-    "/usr/local/bin",
-    "/usr/bin",
-    "/bin",
+    pathApi.join(home, ".local", "bin"),
+    pathApi.join(home, ".cargo", "bin"),
+    pathApi.join(home, "go", "bin"),
+    pathApi.join(home, ".nvm", "current", "bin"),
   ];
-  if (platform === "darwin") {
-    dirs.unshift(join(home, "Library", "pnpm"));
+  if (platform === "win32") {
+    dirs.push(
+      pathApi.join(home, "AppData", "Local", "pnpm"),
+      pathApi.join(home, "AppData", "Roaming", "npm"),
+    );
+  } else {
+    dirs.push("/opt/homebrew/bin", "/usr/local/bin", "/usr/bin", "/bin");
+    if (platform === "darwin") {
+      dirs.unshift(pathApi.join(home, "Library", "pnpm"));
+    }
   }
   return dirs;
 }
@@ -71,7 +81,8 @@ export function mergeFallbackPath(
   platform: NodeJS.Platform,
 ): Record<string, string> {
   const env = compactEnv(baseEnv);
-  const existing = (env["PATH"] ?? "").split(":").filter(Boolean);
+  const delimiter = pathApiFor(platform).delimiter;
+  const existing = (env["PATH"] ?? "").split(delimiter).filter(Boolean);
   const merged = [...fallbackPathDirs(home, platform), ...existing];
   const seen = new Set<string>();
   env["PATH"] = merged
@@ -82,7 +93,7 @@ export function mergeFallbackPath(
       seen.add(dir);
       return true;
     })
-    .join(":");
+    .join(delimiter);
   return env;
 }
 

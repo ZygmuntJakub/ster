@@ -9,7 +9,7 @@ import {
   rmSync,
   writeFileSync,
 } from "node:fs";
-import { join } from "node:path";
+import { dirname, join } from "node:path";
 import { promisify } from "node:util";
 import { SterError } from "../errors.js";
 import { assertAllowedHttpsUrl, createNetworkAllowlist } from "../net/allowlist.js";
@@ -152,6 +152,20 @@ export async function ensureManagedNode(input: {
 
   if (input.seedNodeBinary) {
     const home = managedNodeHome(input.dataDir);
+    mkdirSync(home, { recursive: true });
+    if (input.platformKey.startsWith("windows")) {
+      // Windows needs real PE/batch files — shebang shims cannot be spawned.
+      cpSync(input.seedNodeBinary, nodePath);
+      const seedDir = dirname(input.seedNodeBinary);
+      const npmCli = join(seedDir, "node_modules", "npm", "bin", "npm-cli.js");
+      if (existsSync(npmCli)) {
+        writeFileSync(npmPath, `@echo off\r\n"${nodePath}" "${npmCli}" %*\r\n`, "utf8");
+      } else {
+        // Fall back to npm on PATH (GitHub Actions / local Node installs).
+        writeFileSync(npmPath, "@echo off\r\nnpm %*\r\n", "utf8");
+      }
+      return { nodePath, npmPath };
+    }
     const binDir = join(home, "bin");
     mkdirSync(binDir, { recursive: true });
     // Shim: write a small launcher script that execs the seed binary.

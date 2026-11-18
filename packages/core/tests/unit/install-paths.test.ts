@@ -1,7 +1,7 @@
 import { createHash } from "node:crypto";
-import { chmodSync, mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { chmodSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
-import { join } from "node:path";
+import { basename, join } from "node:path";
 import { gzipSync } from "node:zlib";
 import { afterEach, describe, expect, it } from "vitest";
 import { extractTarGz } from "../../src/agents/extract.js";
@@ -107,7 +107,7 @@ describe("install path coverage", () => {
       platformKey: resolvePlatformKey(),
       seedNodeBinary: seed,
     });
-    expect(runtime.nodePath).toContain("runtimes/node");
+    expect(runtime.nodePath).toContain(join("runtimes", "node"));
 
     const plan: InstallPlan = {
       id: "uv1",
@@ -133,6 +133,39 @@ describe("install path coverage", () => {
     });
     expect(agent.distribution).toBe("uvx");
     expect(agent.launch.command).toBe("/usr/bin/uv");
+  });
+
+  it("seeds Windows managed node as node.exe plus an npm.cmd wrapper", async () => {
+    const dataDir = mkdtempSync(join(tmpdir(), "ster-rt-win-"));
+    tempDirs.push(dataDir);
+    const seed = join(dataDir, "seed-node.exe");
+    writeFileSync(seed, "MZ-fake-pe");
+    const npmCli = join(dataDir, "node_modules", "npm", "bin", "npm-cli.js");
+    mkdirSync(join(dataDir, "node_modules", "npm", "bin"), { recursive: true });
+    writeFileSync(npmCli, "console.log('npm')\n");
+
+    const runtime = await ensureManagedNode({
+      dataDir,
+      platformKey: "windows-x86_64",
+      seedNodeBinary: seed,
+    });
+    expect(basename(runtime.nodePath)).toBe("node.exe");
+    expect(basename(runtime.npmPath)).toBe("npm.cmd");
+    expect(readFileSync(runtime.npmPath, "utf8")).toContain("npm-cli.js");
+  });
+
+  it("seeds Windows npm.cmd that delegates to PATH when npm-cli.js is absent", async () => {
+    const dataDir = mkdtempSync(join(tmpdir(), "ster-rt-win-path-"));
+    tempDirs.push(dataDir);
+    const seed = join(dataDir, "seed-node.exe");
+    writeFileSync(seed, "MZ-fake-pe");
+
+    const runtime = await ensureManagedNode({
+      dataDir,
+      platformKey: "windows-x86_64",
+      seedNodeBinary: seed,
+    });
+    expect(readFileSync(runtime.npmPath, "utf8")).toMatch(/^@echo off\r\nnpm %\*\r\n$/u);
   });
 
   it("refuses managed node for unsupported platforms such as musl", async () => {

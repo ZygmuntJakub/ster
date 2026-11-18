@@ -122,5 +122,6 @@ describe("PolicyService", () => {
       "/Library/Application Support/Ster/policy.json",
     );
     expect(machinePolicyPath("Ster", "linux")).toBe("/etc/Ster/policy.json");
+    expect(machinePolicyPath("Ster", "win32")).toMatch(/[\\/]Ster[\\/]policy\.json$/u);
   });
 });

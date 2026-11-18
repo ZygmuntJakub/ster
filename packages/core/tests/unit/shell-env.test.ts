@@ -47,6 +47,17 @@ describe("mergeFallbackPath", () => {
     expect(env["PATH"]?.startsWith("/Users/me/Library/pnpm:")).toBe(true);
     expect(env["PATH"]?.endsWith("/custom/bin")).toBe(true);
   });
+
+  it("uses Windows separators and PATH delimiter for win32", () => {
+    const env = mergeFallbackPath(
+      { PATH: "C:\\custom\\bin", HOME: "C:\\Users\\me" },
+      "C:\\Users\\me",
+      "win32",
+    );
+    expect(env["PATH"]?.includes("C:\\Users\\me\\.local\\bin")).toBe(true);
+    expect(env["PATH"]?.includes(";")).toBe(true);
+    expect(env["PATH"]?.endsWith("C:\\custom\\bin")).toBe(true);
+  });
 });
 
 describe("resolveShellEnv", () => {
