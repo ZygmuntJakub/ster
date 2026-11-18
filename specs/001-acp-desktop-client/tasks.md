@@ -544,3 +544,14 @@ Each increment is tagged and can be released as installers once US9's release wo
 - [x] T190 Include filtered-set totals for duration and reported cost alongside count and score averages in `packages/core/src/runs/service.ts` and the runs UI per FR-071 / US12/AC3 (partial)
 - [x] T191 Signal attention when a non-viewed session finishes or fails, not only waiting-approval/needs-login, in `packages/core/src/sessions/service.ts` per FR-029 (partial)
 - [x] T192 Translate the export save-dialog title (and other main-process user-visible strings) via i18n in `apps/desktop/src/main/handlers/runs.ts` per FR-036 / Constitution IV (partial)
+
+---
+
+## Phase 17: Convergence
+
+**Purpose**: Close remaining gaps found by `/speckit-converge` after Phase 16.
+
+- [ ] T193 Prompt on session delete for `runRecords: "delete"` vs `"keep-without-text"` in `apps/desktop/src/renderer/features/sessions/HistoryView.tsx` per FR-076 / US12 AC7 (partial)
+- [ ] T194 Widen `runs.delete` bridge filter to match `runs.list` and add UI delete-by-filter in RunsView per FR-076 (partial)
+- [ ] T195 Make date-only `to` inclusive (end-of-day) in run filter matching and the RunsView date inputs per FR-071 / US12/AC3 (contradicts)
+- [ ] T196 Add rename UI calling existing `sessions.rename` in the conversation/session chrome per FR-032 (partial)
