@@ -11,11 +11,12 @@ own software factory.
 ## What is in this repository
 
 - `.specify/memory/constitution.md` — the project's principles and quality gates.
-- `specs/001-acp-desktop-client/` on the branch `001-acp-desktop-client` — the feature
-  specification, implementation plan, research decisions, data model, contracts, and the
-  task list for the first version.
-- `design/mockup/index.html` on the same branch — a clickable design reference. Open it in
-  a browser; it has no dependencies.
+- `specs/001-acp-desktop-client/` — the feature specification, implementation plan,
+  research decisions, data model, contracts, and the task list for the first version.
+- `design/mockup/index.html` — a clickable design reference. Open it in a browser; it has
+  no dependencies.
+
+Implementation continues on the branch `001-acp-desktop-client`.
 
 The project follows the [Spec Kit](https://github.com/github/spec-kit) workflow:
 specification, plan, tasks, implementation, each feature on its own branch.
