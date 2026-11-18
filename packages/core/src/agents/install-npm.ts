@@ -1,5 +1,5 @@
-import { spawn } from "node:child_process";
-import { mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { spawn, type ChildProcess } from "node:child_process";
+import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { SterError } from "../errors.js";
 import type { Agent, AgentInstall, Progress } from "./agent.js";
@@ -8,28 +8,85 @@ import { ensureManagedNode } from "./node-runtime.js";
 import type { InstallPlan } from "./plan.js";
 import type { PlatformKey } from "./platform.js";
 
-async function run(
-  command: string,
-  args: string[],
-  cwd: string,
-  env: NodeJS.ProcessEnv,
-): Promise<void> {
+const NPM_INSTALL_TIMEOUT_MS = 120_000;
+
+function killChild(child: ChildProcess): void {
+  if (child.killed) {
+    return;
+  }
+  try {
+    if (process.platform === "win32") {
+      child.kill();
+    } else {
+      child.kill("SIGTERM");
+    }
+  } catch {
+    // Best-effort: the process may already have exited.
+  }
+}
+
+async function runNpmInstall(input: {
+  nodePath: string;
+  npmPath: string;
+  npmCliPath?: string;
+  args: string[];
+  cwd: string;
+  env: NodeJS.ProcessEnv;
+  timeoutMs?: number;
+  spawnFn?: typeof spawn;
+}): Promise<void> {
+  const useCli = input.npmCliPath !== undefined && existsSync(input.npmCliPath);
+  const command = useCli ? input.nodePath : input.npmPath;
+  const args =
+    useCli && input.npmCliPath !== undefined ? [input.npmCliPath, ...input.args] : input.args;
+  // Node on Windows rejects spawn() of .cmd/.bat without a shell (EINVAL). Prefer node+cli above.
+  const needsShell = !useCli && process.platform === "win32" && /\.(cmd|bat)$/iu.test(command);
+  const timeoutMs = input.timeoutMs ?? NPM_INSTALL_TIMEOUT_MS;
+  const spawnFn = input.spawnFn ?? spawn;
+
   await new Promise<void>((resolve, reject) => {
-    // Node on Windows rejects spawn() of .cmd/.bat without a shell (EINVAL).
-    const needsShell = process.platform === "win32" && /\.(cmd|bat)$/iu.test(command);
-    const child = spawn(command, args, {
-      cwd,
-      env,
+    const child = spawnFn(command, args, {
+      cwd: input.cwd,
+      env: input.env,
       stdio: ["ignore", "pipe", "pipe"],
       shell: needsShell,
       windowsHide: true,
     });
+
     let stderr = "";
+    let settled = false;
+    const timer = setTimeout(() => {
+      if (settled) {
+        return;
+      }
+      settled = true;
+      killChild(child);
+      reject(
+        new SterError("invalid-argument", `npm install timed out after ${String(timeoutMs)}ms`, {
+          command,
+        }),
+      );
+    }, timeoutMs);
+
+    // Drain stdout: unread pipe buffers deadlock npm on Windows.
+    child.stdout.on("data", () => undefined);
     child.stderr.on("data", (chunk: Buffer) => {
       stderr += chunk.toString("utf8");
     });
-    child.on("error", reject);
-    child.on("close", (code) => {
+    child.on("error", (error: Error) => {
+      if (settled) {
+        return;
+      }
+      settled = true;
+      clearTimeout(timer);
+      reject(error);
+    });
+    child.on("close", (code: number | null) => {
+      if (settled) {
+        return;
+      }
+      settled = true;
+      clearTimeout(timer);
       if (code === 0) {
         resolve();
       } else {
@@ -62,6 +119,10 @@ export async function installNpmAgent(input: {
   onProgress?: (p: Progress) => void;
   seedNodeBinary?: string;
   allowScripts: boolean;
+  /** Injectable timeout for tests. */
+  npmTimeoutMs?: number;
+  /** Injectable spawn for tests. */
+  spawnFn?: typeof spawn;
 }): Promise<{
   agent: Agent & { install: AgentInstall; launch: NonNullable<Agent["launch"]> };
 }> {
@@ -92,9 +153,18 @@ export async function installNpmAgent(input: {
   }
 
   input.onProgress?.({ phase: "npm-install", message: `Installing ${detail.packageSpec}` });
-  await run(runtime.npmPath, npmArgs, versionDir, {
-    ...process.env,
-    npm_config_ignore_scripts: input.allowScripts ? "false" : "true",
+  await runNpmInstall({
+    nodePath: runtime.nodePath,
+    npmPath: runtime.npmPath,
+    ...(runtime.npmCliPath !== undefined ? { npmCliPath: runtime.npmCliPath } : {}),
+    args: npmArgs,
+    cwd: versionDir,
+    env: {
+      ...process.env,
+      npm_config_ignore_scripts: input.allowScripts ? "false" : "true",
+    },
+    ...(input.npmTimeoutMs !== undefined ? { timeoutMs: input.npmTimeoutMs } : {}),
+    ...(input.spawnFn !== undefined ? { spawnFn: input.spawnFn } : {}),
   });
 
   const binName = packageBinName(detail.packageSpec);

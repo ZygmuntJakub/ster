@@ -131,6 +131,23 @@ function promoteExtractedRuntime(extractDir: string, home: string): void {
   }
 }
 
+export interface ManagedNodeRuntime {
+  nodePath: string;
+  npmPath: string;
+  /** Prefer spawning `nodePath` with this script over shelling out to `npmPath`. */
+  npmCliPath?: string;
+}
+
+function findNpmCliPath(home: string, platformKey: PlatformKey): string | undefined {
+  const candidates = platformKey.startsWith("windows")
+    ? [join(home, "node_modules", "npm", "bin", "npm-cli.js")]
+    : [
+        join(home, "lib", "node_modules", "npm", "bin", "npm-cli.js"),
+        join(home, "node_modules", "npm", "bin", "npm-cli.js"),
+      ];
+  return candidates.find((candidate) => existsSync(candidate));
+}
+
 /**
  * Ensure a managed Node runtime exists. Tests may pass `seedRuntime` to skip the network.
  */
@@ -143,15 +160,20 @@ export async function ensureManagedNode(input: {
   seedNodeBinary?: string;
   /** Extra download hosts allowed beyond nodejs.org (tests). */
   downloadHosts?: readonly string[];
-}): Promise<{ nodePath: string; npmPath: string }> {
+}): Promise<ManagedNodeRuntime> {
+  const home = managedNodeHome(input.dataDir);
   const nodePath = managedNodeBinary(input.dataDir, input.platformKey);
   const npmPath = managedNpmBinary(input.dataDir, input.platformKey);
   if (existsSync(nodePath)) {
-    return { nodePath, npmPath };
+    const npmCliPath = findNpmCliPath(home, input.platformKey);
+    return {
+      nodePath,
+      npmPath,
+      ...(npmCliPath !== undefined ? { npmCliPath } : {}),
+    };
   }
 
   if (input.seedNodeBinary) {
-    const home = managedNodeHome(input.dataDir);
     mkdirSync(home, { recursive: true });
     if (input.platformKey.startsWith("windows")) {
       // Windows needs real PE/batch files — shebang shims cannot be spawned.
@@ -160,10 +182,10 @@ export async function ensureManagedNode(input: {
       const npmCli = join(seedDir, "node_modules", "npm", "bin", "npm-cli.js");
       if (existsSync(npmCli)) {
         writeFileSync(npmPath, `@echo off\r\n"${nodePath}" "${npmCli}" %*\r\n`, "utf8");
-      } else {
-        // Fall back to npm on PATH (GitHub Actions / local Node installs).
-        writeFileSync(npmPath, "@echo off\r\nnpm %*\r\n", "utf8");
+        return { nodePath, npmPath, npmCliPath: npmCli };
       }
+      // Fall back to npm on PATH (GitHub Actions / local Node installs).
+      writeFileSync(npmPath, "@echo off\r\nnpm %*\r\n", "utf8");
       return { nodePath, npmPath };
     }
     const binDir = join(home, "bin");
@@ -175,7 +197,27 @@ export async function ensureManagedNode(input: {
     // npm shim uses the same node to run npm from PATH when present.
     const npmLauncher = `#!/bin/sh\nexec "${input.seedNodeBinary}" "$(command -v npm)" "$@"\n`;
     writeFileSync(npmPath, npmLauncher, { mode: 0o755 });
-    return { nodePath, npmPath };
+    const seedNpmCli = join(
+      dirname(input.seedNodeBinary),
+      "lib",
+      "node_modules",
+      "npm",
+      "bin",
+      "npm-cli.js",
+    );
+    const seedNpmCliAlt = join(
+      dirname(input.seedNodeBinary),
+      "node_modules",
+      "npm",
+      "bin",
+      "npm-cli.js",
+    );
+    const npmCliPath = [seedNpmCli, seedNpmCliAlt].find((candidate) => existsSync(candidate));
+    return {
+      nodePath,
+      npmPath,
+      ...(npmCliPath !== undefined ? { npmCliPath } : {}),
+    };
   }
 
   const dist = distFor(input.platformKey);
@@ -208,7 +250,6 @@ export async function ensureManagedNode(input: {
     await extractZip(archivePath, extractDir);
   }
 
-  const home = managedNodeHome(input.dataDir);
   promoteExtractedRuntime(extractDir, home);
   if (!existsSync(nodePath)) {
     throw new SterError("agent-not-ready", "Managed Node binary missing after extract", {
@@ -217,5 +258,10 @@ export async function ensureManagedNode(input: {
   }
   chmodSync(nodePath, 0o755);
   rmSync(staging, { recursive: true, force: true });
-  return { nodePath, npmPath };
+  const npmCliPath = findNpmCliPath(home, input.platformKey);
+  return {
+    nodePath,
+    npmPath,
+    ...(npmCliPath !== undefined ? { npmCliPath } : {}),
+  };
 }

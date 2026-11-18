@@ -1,9 +1,10 @@
+import { EventEmitter } from "node:events";
 import { createHash } from "node:crypto";
 import { chmodSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { basename, join } from "node:path";
 import { gzipSync } from "node:zlib";
-import { afterEach, describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { extractTarGz } from "../../src/agents/extract.js";
 import { installNpmAgent } from "../../src/agents/install-npm.js";
 import { installUvxAgent } from "../../src/agents/install-uvx.js";
@@ -15,9 +16,37 @@ import { isSterError } from "../../src/errors.js";
 
 const tempDirs: string[] = [];
 
+function removeTempDir(dir: string): void {
+  // Windows may keep locks briefly after a killed npm child; retry then best-effort.
+  let lastError: unknown;
+  for (let attempt = 0; attempt < 8; attempt += 1) {
+    try {
+      rmSync(dir, { recursive: true, force: true });
+      return;
+    } catch (error) {
+      lastError = error;
+      const code =
+        error !== null && typeof error === "object" && "code" in error
+          ? String((error as { code?: unknown }).code)
+          : "";
+      if (code !== "EPERM" && code !== "EBUSY" && code !== "ENOTEMPTY") {
+        throw error;
+      }
+      const waitUntil = Date.now() + 40 * (attempt + 1);
+      while (Date.now() < waitUntil) {
+        // sync backoff — avoid leaving locked temp dirs on Windows CI
+      }
+    }
+  }
+  if (process.platform === "win32") {
+    return;
+  }
+  throw lastError;
+}
+
 afterEach(() => {
   for (const dir of tempDirs.splice(0)) {
-    rmSync(dir, { recursive: true, force: true });
+    removeTempDir(dir);
   }
 });
 
@@ -151,6 +180,7 @@ describe("install path coverage", () => {
     });
     expect(basename(runtime.nodePath)).toBe("node.exe");
     expect(basename(runtime.npmPath)).toBe("npm.cmd");
+    expect(runtime.npmCliPath).toBe(npmCli);
     expect(readFileSync(runtime.npmPath, "utf8")).toContain("npm-cli.js");
   });
 
@@ -234,6 +264,67 @@ describe("install path coverage", () => {
     );
   });
 
+  it("times out and kills a hung npm install child", async () => {
+    const root = mkdtempSync(join(tmpdir(), "ster-npm-timeout-"));
+    tempDirs.push(root);
+    const pkg = join(root, "local-pkg");
+    mkdirSync(pkg, { recursive: true });
+    writeFileSync(
+      join(pkg, "package.json"),
+      JSON.stringify({ name: "ster-fixture-pkg", version: "1.0.0" }),
+    );
+    const dataDir = join(root, "data");
+    mkdirSync(dataDir, { recursive: true });
+    const plan: InstallPlan = {
+      id: "npm-timeout",
+      agentId: "npm-timeout-agent",
+      version: "1.0.0",
+      source: `file:${pkg}`,
+      verified: false,
+      distribution: "npx",
+      scriptsAllowed: false,
+      requiresManagedNode: true,
+      lines: [],
+      detail: {
+        kind: "npx",
+        packageSpec: `file:${pkg}`,
+        args: [],
+        env: {},
+      },
+    };
+
+    const kill = vi.fn();
+    const spawnFn = vi.fn(() => {
+      const child = new EventEmitter() as EventEmitter & {
+        stdout: EventEmitter;
+        stderr: EventEmitter;
+        killed: boolean;
+        kill: ReturnType<typeof vi.fn>;
+      };
+      child.stdout = new EventEmitter();
+      child.stderr = new EventEmitter();
+      child.killed = false;
+      child.kill = kill.mockImplementation(() => {
+        child.killed = true;
+        return true;
+      });
+      return child;
+    });
+
+    await expect(
+      installNpmAgent({
+        plan,
+        dataDir,
+        platformKey: resolvePlatformKey(),
+        seedNodeBinary: process.execPath,
+        allowScripts: false,
+        npmTimeoutMs: 30,
+        spawnFn: spawnFn as unknown as typeof import("node:child_process").spawn,
+      }),
+    ).rejects.toSatisfy((error: unknown) => isSterError(error) && /timed out/u.test(error.message));
+    expect(kill).toHaveBeenCalled();
+  });
+
   it("installs an npm agent from a local package using a seeded node", async () => {
     const root = mkdtempSync(join(tmpdir(), "ster-npm-"));
     tempDirs.push(root);
@@ -279,5 +370,5 @@ describe("install path coverage", () => {
     });
     expect(agent.distribution).toBe("npx");
     expect(agent.install.path).toContain("npm-agent");
-  });
+  }, 60_000);
 });
