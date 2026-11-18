@@ -25,6 +25,7 @@ import {
   factoryTrust,
 } from "./handlers/factory.js";
 import { openLocation } from "./handlers/files.js";
+import { runsDelete, runsExport, runsGet, runsJudge, runsList, runsRate } from "./handlers/runs.js";
 import {
   deleteSession,
   killCommand,
@@ -447,6 +448,44 @@ async function handleMethod(
     case "factory.applied": {
       const { sessionId } = payload as { sessionId: string };
       return ok(await factoryApplied(core, sessionId));
+    }
+    case "runs.list": {
+      const input = (payload ?? {}) as {
+        filter?: import("@ster/core").RunFilter;
+        offset?: number;
+        limit?: number;
+      };
+      return ok(
+        await runsList(core, input.filter, {
+          ...(input.offset !== undefined ? { offset: input.offset } : {}),
+          limit: input.limit ?? 50,
+        }),
+      );
+    }
+    case "runs.get": {
+      const { runId } = payload as { runId: string };
+      return ok(await runsGet(core, runId));
+    }
+    case "runs.rate": {
+      const input = payload as { runId: string; value: number; note?: string };
+      return ok(
+        await runsRate(core, input.runId, {
+          value: input.value,
+          ...(input.note !== undefined ? { note: input.note } : {}),
+        }),
+      );
+    }
+    case "runs.judge": {
+      const { runId, agentId } = payload as { runId: string; agentId: string };
+      return ok(await runsJudge(core, runId, agentId));
+    }
+    case "runs.export": {
+      const input = (payload ?? {}) as { filter?: import("@ster/core").RunFilter };
+      return ok(await runsExport(core, input.filter));
+    }
+    case "runs.delete": {
+      const input = payload as { ids?: string[] } & import("@ster/core").RunFilter;
+      return ok(await runsDelete(core, input));
     }
     default:
       return fail("invalid-argument", { method, reason: "not-implemented" });

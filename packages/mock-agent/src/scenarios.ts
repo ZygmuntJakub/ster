@@ -28,6 +28,7 @@ export const SCENARIO_NAMES = [
   "unknown-update",
   "permission-always",
   "write-after-external-edit",
+  "judge",
 ] as const;
 
 export type ScenarioName = (typeof SCENARIO_NAMES)[number];
@@ -654,6 +655,20 @@ export async function runScenario(
           `Overwrite blocked: ${error instanceof Error ? error.message : String(error)}`,
         );
       }
+      return { stopReason: "end_turn" };
+    }
+    case "judge": {
+      // Read-only judging response used by US12 on-demand scoring.
+      await emitMessage(
+        client,
+        session.id,
+        JSON.stringify({
+          value: 8,
+          reasoning: "Mock judge: criteria met.",
+          criteria: [{ id: "correctness", value: 8 }],
+          model: "mock-judge",
+        }),
+      );
       return { stopReason: "end_turn" };
     }
     default: {

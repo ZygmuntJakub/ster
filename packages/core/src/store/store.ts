@@ -41,6 +41,34 @@ export interface ItemPage {
   limit: number;
 }
 
+export interface RunRow {
+  id: string;
+  sessionId: string;
+  kind: string;
+  agentId: string;
+  cwd: string;
+  startedAt: string;
+  endedAt: string | null;
+  outcome: string | null;
+  permissionMode: string;
+  model: string | null;
+  mode: string | null;
+  requestText: string | null;
+  payloadJson: string;
+}
+
+export interface ScoreRow {
+  id: string;
+  runId: string;
+  source: string;
+  value: number;
+  scaleMin: number;
+  scaleMax: number;
+  createdAt: string;
+  updatedAt: string;
+  payloadJson: string;
+}
+
 export interface Store {
   readonly dataDir: string;
   readonly dbPath: string;
@@ -56,6 +84,18 @@ export interface Store {
   appendItem(item: NewConversationItem): ConversationItemRow;
   updateItemPayload(sessionId: string, seq: number, payloadJson: string): ConversationItemRow;
   listItems(sessionId: string, page: ItemPage): ConversationItemRow[];
+
+  putRun(row: RunRow): void;
+  getRun(id: string): RunRow | null;
+  listRuns(): RunRow[];
+  deleteRun(id: string): void;
+  deleteRunsForSession(sessionId: string): number;
+  redactRunRequestsForSession(sessionId: string): number;
+
+  putScore(row: ScoreRow): void;
+  getScore(id: string): ScoreRow | null;
+  listScoresForRun(runId: string): ScoreRow[];
+  deleteScoresForRun(runId: string): void;
 
   getSetting(key: string): string | null;
   setSetting(key: string, value: string): void;

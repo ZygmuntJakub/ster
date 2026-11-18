@@ -60,6 +60,12 @@ export interface RunSummary {
   startedAt: string;
   endedAt?: string;
   outcome?: string;
+  agentId?: string;
+  agentName?: string;
+  cwd?: string;
+  model?: string;
+  userRating?: number;
+  agentScore?: number;
 }
 
 export interface Score {
@@ -68,6 +74,17 @@ export interface Score {
   source: "user" | "agent";
   value: number;
   createdAt: string;
+  scale?: { min: number; max: number };
+  note?: string;
+  reasoning?: string;
+  criteria?: Array<{ id: string; value: number }>;
+  judge?: {
+    agentId: string;
+    version?: string;
+    model?: string;
+    judgingRunId?: string;
+  };
+  updatedAt?: string;
 }
 
 export interface RegistryStatus {

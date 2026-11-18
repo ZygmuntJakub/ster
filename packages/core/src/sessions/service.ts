@@ -36,6 +36,9 @@ import {
   outcomeFromStopReason,
   startRun,
   toRunSummary,
+  type RunActionRecord,
+  type RunApprovalRecord,
+  type RunCommandRecord,
   type RunRecord,
 } from "../runs/lifecycle.js";
 import type { Store } from "../store/store.js";
@@ -111,6 +114,13 @@ export interface SessionService {
   delete(sessionId: string, opts: { runRecords: "delete" | "keep-without-text" }): Promise<void>;
 }
 
+export interface SessionRunsHooks {
+  save: (run: RunRecord) => void;
+  markInterrupted: (runIds: string[]) => void;
+  deleteForSession: (sessionId: string) => Promise<void>;
+  keepWithoutText: (sessionId: string) => Promise<void>;
+}
+
 export interface CreateSessionServiceOptions {
   store: Store;
   agents: AgentService;
@@ -122,6 +132,8 @@ export interface CreateSessionServiceOptions {
   policy?: PolicyService;
   /** Resolve a trusted factory for the session cwd (US11). */
   resolveFactory?: (cwd: string) => AppliedFactory | null;
+  /** Persist and recover run records (US12). */
+  runs?: SessionRunsHooks;
 }
 
 interface LiveSession {
@@ -132,6 +144,7 @@ interface LiveSession {
   promptInFlight: boolean;
   cancelRequested: boolean;
   currentRunId?: string;
+  activeRun?: RunRecord;
   commands?: CommandRunner | undefined;
 }
 
@@ -312,7 +325,13 @@ export function createSessionService(options: CreateSessionServiceOptions): Sess
   const live = new Map<string, LiveSession>();
   const snapshots = createSnapshotStore();
   const defaultMode = options.defaultPermissionMode ?? "always-ask";
-  recoverInterruptedSessions(options.store);
+  const recovered = recoverInterruptedSessions(options.store);
+  const interruptedIds = recovered.sessions
+    .map((entry) => entry.openRunId)
+    .filter((id): id is string => typeof id === "string");
+  if (interruptedIds.length > 0) {
+    options.runs?.markInterrupted(interruptedIds);
+  }
 
   const setStatus = (session: Session, next: SessionStatus): void => {
     session.status = transitionSessionStatus(session.status, next);
@@ -338,6 +357,19 @@ export function createSessionService(options: CreateSessionServiceOptions): Sess
       live.get(sessionId)?.session.cwd ?? options.store.getSession(sessionId)?.cwd,
     rules,
     permissionModes: options.permissionModes ?? BUILTIN_PERMISSION_MODES,
+    onDecision: (decision) => {
+      const entry = live.get(decision.sessionId);
+      if (!entry?.activeRun || entry.activeRun.id !== decision.runId) {
+        return;
+      }
+      const approval: RunApprovalRecord = {
+        subject: decision.subject,
+        decidedBy: decision.decidedBy,
+        ...(decision.optionKind !== undefined ? { optionKind: decision.optionKind } : {}),
+      };
+      entry.activeRun.approvals.push(approval);
+      options.runs?.save(entry.activeRun);
+    },
     onStatusChange: (sessionId, status) => {
       const entry = live.get(sessionId);
       if (!entry || entry.session.status === status) {
@@ -958,12 +990,38 @@ export function createSessionService(options: CreateSessionServiceOptions): Sess
       ensureWorkspaceOrFail(entry);
 
       const text = promptText(content);
-      const run = startRun({ sessionId, request: text });
+      const agent = options.agents.get(entry.session.agentId);
+      const modeOption = entry.session.configOptions?.find(
+        (option) => option.category === "mode" || option.id === "mode",
+      );
+      const modelOption = entry.session.configOptions?.find(
+        (option) => option.category === "model" || option.id === "model",
+      );
+      const run = startRun({
+        sessionId,
+        request: text,
+        agent: {
+          id: entry.session.agentId,
+          name: agent?.name ?? entry.session.agentId,
+          ...(entry.session.agentVersion ? { version: entry.session.agentVersion } : {}),
+        },
+        permissionMode: entry.session.permissionMode,
+        cwd: entry.session.cwd,
+        ...(entry.session.factoryDefinitionHash !== undefined
+          ? { factoryDefinitionHash: entry.session.factoryDefinitionHash }
+          : {}),
+        ...(typeof modelOption?.currentValue === "string"
+          ? { model: modelOption.currentValue }
+          : {}),
+        ...(typeof modeOption?.currentValue === "string" ? { mode: modeOption.currentValue } : {}),
+      });
       entry.promptInFlight = true;
       entry.cancelRequested = false;
       entry.currentRunId = run.id;
+      entry.activeRun = run;
       entry.session.openRunId = run.id;
       setStatus(entry.session, "working");
+      options.runs?.save(run);
       options.events.publish({
         type: "run.started",
         sessionId,
@@ -988,6 +1046,14 @@ export function createSessionService(options: CreateSessionServiceOptions): Sess
           sessionId,
           session: toSummary(enrichSession(entry.session, true)),
         });
+      };
+
+      const touchActiveRun = (mutator: (current: RunRecord) => void): void => {
+        if (!entry.activeRun) {
+          return;
+        }
+        mutator(entry.activeRun);
+        options.runs?.save(entry.activeRun);
       };
 
       let updateCtx: UpdateHandlerContext = {
@@ -1016,11 +1082,72 @@ export function createSessionService(options: CreateSessionServiceOptions): Sess
           persist(options.store, entry.session);
           publishSessionUpdated();
         },
+        onAction: (action) => {
+          touchActiveRun((current) => {
+            const next: RunActionRecord = {
+              toolCallId: action.toolCallId,
+              kind: action.kind,
+              status: action.status,
+              title: action.title,
+              locations: action.locations.map((location) => {
+                const mapped: { path: string; line?: number } = { path: location.path };
+                if (location.line !== undefined) {
+                  mapped.line = location.line;
+                }
+                return mapped;
+              }),
+            };
+            const index = current.actions.findIndex(
+              (item) => item.toolCallId === action.toolCallId,
+            );
+            if (index >= 0) {
+              current.actions[index] = next;
+            } else {
+              current.actions.push(next);
+            }
+          });
+        },
+        onUsage: (usage) => {
+          touchActiveRun((current) => {
+            current.usage = usage;
+          });
+        },
       };
 
       const unsubscribe = entry.connection.onSessionUpdate(entry.agentSessionId, (notification) => {
         updateCtx = applySessionUpdate(updateCtx, notification);
       });
+
+      const finishAndPublish = (finished: RunRecord): RunRecord => {
+        if (entry.commands) {
+          const commands: RunCommandRecord[] = entry.commands
+            .list()
+            .filter((command) => command.runId === finished.id)
+            .map((command) => {
+              const record: RunCommandRecord = {
+                command: [command.command, ...command.args].join(" "),
+              };
+              if (typeof command.exit?.code === "number") {
+                record.exitCode = command.exit.code;
+              }
+              if (command.startedAt && command.endedAt) {
+                const duration = Date.parse(command.endedAt) - Date.parse(command.startedAt);
+                if (Number.isFinite(duration)) {
+                  record.durationMs = Math.max(0, duration);
+                }
+              }
+              return record;
+            });
+          finished.commands = commands;
+        }
+        options.runs?.save(finished);
+        options.events.publish({
+          type: "run.finished",
+          sessionId,
+          run: toRunSummary(finished),
+        });
+        return finished;
+      };
 
       let response: PromptResponse;
       try {
@@ -1035,13 +1162,15 @@ export function createSessionService(options: CreateSessionServiceOptions): Sess
         });
       } catch (error) {
         unsubscribe();
+        const liveRun = entry.activeRun ?? run;
         entry.promptInFlight = false;
         delete entry.currentRunId;
+        delete entry.activeRun;
         delete entry.session.openRunId;
         persist(options.store, entry.session);
         approvals.cancelSession(sessionId);
         const message = error instanceof Error ? error.message : String(error);
-        const failed = finalizeRun(run, {
+        const failed = finalizeRun(liveRun, {
           outcome: "failed",
           error: message,
           stopReason: "error",
@@ -1049,39 +1178,31 @@ export function createSessionService(options: CreateSessionServiceOptions): Sess
         if (live.has(sessionId)) {
           await failSession(entry, message);
         }
-        options.events.publish({
-          type: "run.finished",
-          sessionId,
-          run: toRunSummary(failed),
-        });
-        return failed;
+        return finishAndPublish(failed);
       }
 
       await entry.connection.flushSessionUpdates(entry.agentSessionId);
       unsubscribe();
+      const liveRun = entry.activeRun ?? run;
       entry.promptInFlight = false;
       delete entry.currentRunId;
+      delete entry.activeRun;
       delete entry.session.openRunId;
       persist(options.store, entry.session);
 
       if (!live.has(sessionId)) {
-        const failed = finalizeRun(run, {
+        const failed = finalizeRun(liveRun, {
           outcome: "failed",
           stopReason: response.stopReason,
           error: entry.session.failureReason ?? "agent-exited",
         });
-        options.events.publish({
-          type: "run.finished",
-          sessionId,
-          run: toRunSummary(failed),
-        });
-        return failed;
+        return finishAndPublish(failed);
       }
 
       // cancelRequested is mutated by cancel() while prompt awaits; read via binding.
       const cancelRequested = entry.cancelRequested as boolean;
       const outcome = cancelRequested ? "cancelled" : outcomeFromStopReason(response.stopReason);
-      const finished = finalizeRun(run, {
+      const finished = finalizeRun(liveRun, {
         outcome,
         stopReason: response.stopReason,
       });
@@ -1089,12 +1210,7 @@ export function createSessionService(options: CreateSessionServiceOptions): Sess
       if (status === "working" || status === "waiting-approval") {
         setStatus(entry.session, "idle");
       }
-      options.events.publish({
-        type: "run.finished",
-        sessionId,
-        run: toRunSummary(finished),
-      });
-      return finished;
+      return finishAndPublish(finished);
     },
 
     async cancel(sessionId) {
@@ -1343,6 +1459,7 @@ export function createSessionService(options: CreateSessionServiceOptions): Sess
     async delete(sessionId, opts) {
       await teardownLive(sessionId, { markEnded: true });
       if (opts.runRecords === "keep-without-text") {
+        await options.runs?.keepWithoutText(sessionId);
         const items = options.store.listItems(sessionId, { limit: 10_000 });
         for (const item of items) {
           let payload: unknown = {};
@@ -1362,14 +1479,15 @@ export function createSessionService(options: CreateSessionServiceOptions): Sess
               : { redacted: true };
           options.store.updateItemPayload(sessionId, item.seq, JSON.stringify(redacted));
         }
-        const session = loadOrThrow(sessionId);
+        // Conversation is erased with the session; run records remain (FR-076).
+        options.store.deleteSession(sessionId);
         options.events.publish({
-          type: "session.updated",
+          type: "session.deleted",
           sessionId,
-          session: toSummary(enrichSession(session, false)),
         });
         return;
       }
+      await options.runs?.deleteForSession(sessionId);
       options.store.deleteSession(sessionId);
       options.events.publish({
         type: "session.deleted",

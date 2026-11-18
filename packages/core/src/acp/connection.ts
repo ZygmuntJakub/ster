@@ -63,6 +63,12 @@ export interface ConnectAgentClientHandlers {
   releaseTerminal: (params: ReleaseTerminalRequest) => Promise<ReleaseTerminalResponse>;
 }
 
+export interface ConnectAgentClientCapabilities {
+  fs: { readTextFile: boolean; writeTextFile: boolean };
+  terminal: boolean;
+  auth?: { terminal: boolean };
+}
+
 export interface ConnectAgentOptions {
   process: AgentProcess;
   log: Logger;
@@ -71,6 +77,8 @@ export interface ConnectAgentOptions {
   supportedProtocolVersions?: readonly number[];
   /** Client-side request handlers (permissions + fs). */
   handlers?: ConnectAgentClientHandlers;
+  /** Advertise reduced capabilities (e.g. judging sessions — R15). */
+  clientCapabilities?: ConnectAgentClientCapabilities;
 }
 
 /**
@@ -181,7 +189,7 @@ export async function connectAgent(options: ConnectAgentOptions): Promise<AcpCon
   try {
     initialize = await connection.agent.request(methods.agent.initialize, {
       protocolVersion: Math.max(...supported),
-      clientCapabilities: {
+      clientCapabilities: options.clientCapabilities ?? {
         fs: { readTextFile: true, writeTextFile: true },
         terminal: true,
         auth: { terminal: true },

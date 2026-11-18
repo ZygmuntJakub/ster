@@ -7,6 +7,8 @@ import type {
   ConversationItemRow,
   ItemPage,
   NewConversationItem,
+  RunRow,
+  ScoreRow,
   SessionRow,
   Store,
 } from "./store.js";
@@ -125,6 +127,38 @@ function mapItem(row: SqlRow): ConversationItemRow {
     kind: asString(row["kind"] ?? null, "kind"),
     runId: asString(row["run_id"] ?? null, "run_id"),
     createdAt: asString(row["created_at"] ?? null, "created_at"),
+    payloadJson: asString(row["payload_json"] ?? null, "payload_json"),
+  };
+}
+
+function mapRun(row: SqlRow): RunRow {
+  return {
+    id: asString(row["id"] ?? null, "id"),
+    sessionId: asString(row["session_id"] ?? null, "session_id"),
+    kind: asString(row["kind"] ?? null, "kind"),
+    agentId: asString(row["agent_id"] ?? null, "agent_id"),
+    cwd: asString(row["cwd"] ?? null, "cwd"),
+    startedAt: asString(row["started_at"] ?? null, "started_at"),
+    endedAt: typeof row["ended_at"] === "string" ? row["ended_at"] : null,
+    outcome: typeof row["outcome"] === "string" ? row["outcome"] : null,
+    permissionMode: asString(row["permission_mode"] ?? null, "permission_mode"),
+    model: typeof row["model"] === "string" ? row["model"] : null,
+    mode: typeof row["mode"] === "string" ? row["mode"] : null,
+    requestText: typeof row["request_text"] === "string" ? row["request_text"] : null,
+    payloadJson: asString(row["payload_json"] ?? null, "payload_json"),
+  };
+}
+
+function mapScore(row: SqlRow): ScoreRow {
+  return {
+    id: asString(row["id"] ?? null, "id"),
+    runId: asString(row["run_id"] ?? null, "run_id"),
+    source: asString(row["source"] ?? null, "source"),
+    value: asNumber(row["value"] ?? null, "value"),
+    scaleMin: asNumber(row["scale_min"] ?? null, "scale_min"),
+    scaleMax: asNumber(row["scale_max"] ?? null, "scale_max"),
+    createdAt: asString(row["created_at"] ?? null, "created_at"),
+    updatedAt: asString(row["updated_at"] ?? null, "updated_at"),
     payloadJson: asString(row["payload_json"] ?? null, "payload_json"),
   };
 }
@@ -281,6 +315,129 @@ export function openSqliteStore(options: OpenSqliteStoreOptions): SqliteStore {
               )
               .all(sessionId, page.before, page.limit);
       return rows.map((row) => mapItem(row as SqlRow));
+    },
+
+    putRun(row) {
+      db.prepare(
+        `INSERT INTO runs (
+          id, session_id, kind, agent_id, cwd, started_at, ended_at, outcome,
+          permission_mode, model, mode, request_text, payload_json
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        ON CONFLICT(id) DO UPDATE SET
+          session_id = excluded.session_id,
+          kind = excluded.kind,
+          agent_id = excluded.agent_id,
+          cwd = excluded.cwd,
+          started_at = excluded.started_at,
+          ended_at = excluded.ended_at,
+          outcome = excluded.outcome,
+          permission_mode = excluded.permission_mode,
+          model = excluded.model,
+          mode = excluded.mode,
+          request_text = excluded.request_text,
+          payload_json = excluded.payload_json`,
+      ).run(
+        row.id,
+        row.sessionId,
+        row.kind,
+        row.agentId,
+        row.cwd,
+        row.startedAt,
+        row.endedAt,
+        row.outcome,
+        row.permissionMode,
+        row.model,
+        row.mode,
+        row.requestText,
+        row.payloadJson,
+      );
+    },
+
+    getRun(id) {
+      const row = db.prepare("SELECT * FROM runs WHERE id = ?").get(id) as SqlRow | undefined;
+      return row ? mapRun(row) : null;
+    },
+
+    listRuns() {
+      return db
+        .prepare("SELECT * FROM runs ORDER BY started_at DESC")
+        .all()
+        .map((row) => mapRun(row as SqlRow));
+    },
+
+    deleteRun(id) {
+      db.prepare("DELETE FROM runs WHERE id = ?").run(id);
+    },
+
+    deleteRunsForSession(sessionId) {
+      const result = db.prepare("DELETE FROM runs WHERE session_id = ?").run(sessionId);
+      return Number(result.changes);
+    },
+
+    redactRunRequestsForSession(sessionId) {
+      const rows = db
+        .prepare("SELECT * FROM runs WHERE session_id = ?")
+        .all(sessionId)
+        .map((row) => mapRun(row as SqlRow));
+      let count = 0;
+      for (const row of rows) {
+        let payload: Record<string, unknown> = {};
+        try {
+          payload = JSON.parse(row.payloadJson) as Record<string, unknown>;
+        } catch {
+          payload = {};
+        }
+        payload["request"] = null;
+        db.prepare(`UPDATE runs SET request_text = NULL, payload_json = ? WHERE id = ?`).run(
+          JSON.stringify(payload),
+          row.id,
+        );
+        count += 1;
+      }
+      return count;
+    },
+
+    putScore(row) {
+      db.prepare(
+        `INSERT INTO scores (
+          id, run_id, source, value, scale_min, scale_max, created_at, updated_at, payload_json
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+        ON CONFLICT(id) DO UPDATE SET
+          run_id = excluded.run_id,
+          source = excluded.source,
+          value = excluded.value,
+          scale_min = excluded.scale_min,
+          scale_max = excluded.scale_max,
+          created_at = excluded.created_at,
+          updated_at = excluded.updated_at,
+          payload_json = excluded.payload_json`,
+      ).run(
+        row.id,
+        row.runId,
+        row.source,
+        row.value,
+        row.scaleMin,
+        row.scaleMax,
+        row.createdAt,
+        row.updatedAt,
+        row.payloadJson,
+      );
+    },
+
+    getScore(id) {
+      const row = db.prepare("SELECT * FROM scores WHERE id = ?").get(id) as SqlRow | undefined;
+      return row ? mapScore(row) : null;
+    },
+
+    listScoresForRun(runId) {
+      return db
+        .prepare("SELECT * FROM scores WHERE run_id = ? ORDER BY created_at ASC")
+        .all(runId)
+        .map((row) => mapScore(row as SqlRow));
+    },
+
+    deleteScoresForRun(runId) {
+      db.prepare("DELETE FROM scores WHERE run_id = ?").run(runId);
     },
 
     getSetting(key) {

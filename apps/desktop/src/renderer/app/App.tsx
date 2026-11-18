@@ -3,6 +3,7 @@ import { useTranslation } from "react-i18next";
 import { panelExtensions, settingsPanels } from "../../extensions/index.js";
 import { AgentsPane } from "../features/agents/AgentsPane.js";
 import { PolicyStatus } from "../features/policy/PolicyStatus.js";
+import { RunsView } from "../features/runs/RunsView.js";
 import { ConversationPane } from "./layout/ConversationPane.js";
 import { IconRail, type ShellSection } from "./layout/IconRail.js";
 import { SessionBoard } from "./layout/SessionBoard.js";
@@ -74,6 +75,8 @@ export function App(): JSX.Element {
             />
           ) : section === "agents" ? (
             <AgentsPane />
+          ) : section === "runs" ? (
+            <RunsView />
           ) : section === "conversation" ? (
             <div className="mainc flex min-w-0 flex-1">
               <SessionBoard />

@@ -113,7 +113,18 @@ type SterApi = {
     }) => Promise<unknown>;
     applied: (payload: { sessionId: string }) => Promise<unknown>;
   };
-  runs: Record<string, (payload?: unknown) => Promise<unknown>>;
+  runs: {
+    list: (payload?: {
+      filter?: Record<string, unknown>;
+      offset?: number;
+      limit?: number;
+    }) => Promise<unknown>;
+    get: (payload: { runId: string }) => Promise<unknown>;
+    rate: (payload: { runId: string; value: number; note?: string }) => Promise<unknown>;
+    judge: (payload: { runId: string; agentId: string }) => Promise<unknown>;
+    export: (payload?: { filter?: Record<string, unknown> }) => Promise<unknown>;
+    delete: (payload: { ids?: string[] } & Record<string, unknown>) => Promise<unknown>;
+  };
   login: {
     terminal: {
       start: (payload: { sessionId: string; methodId: string }) => Promise<unknown>;

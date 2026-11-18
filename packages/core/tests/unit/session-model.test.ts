@@ -20,7 +20,13 @@ describe("session state machine", () => {
 
 describe("run lifecycle", () => {
   it("starts and finalises runs with stop-reason mapping", () => {
-    const run = startRun({ sessionId: "s1", request: "hello" });
+    const run = startRun({
+      sessionId: "s1",
+      request: "hello",
+      agent: { id: "mock-agent", name: "Mock" },
+      permissionMode: "always-ask",
+      cwd: "/tmp",
+    });
     expect(run.outcome).toBeUndefined();
     const done = finalizeRun(run, { outcome: "completed", stopReason: "end_turn" });
     expect(done.outcome).toBe("completed");

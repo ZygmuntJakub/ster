@@ -24,6 +24,14 @@ export interface PendingApproval extends ApprovalRequest {
   allowOnceOptionId?: string;
 }
 
+export interface ApprovalDecisionRecord {
+  sessionId: string;
+  runId: string;
+  subject: string;
+  decidedBy: "user" | "rule" | "mode" | "cancelled";
+  optionKind?: "allow_once" | "allow_always" | "reject_once" | "reject_always";
+}
+
 export interface ApprovalBrokerOptions {
   store: Store;
   events: EventStream<CoreEvent>;
@@ -34,6 +42,8 @@ export interface ApprovalBrokerOptions {
   rules: RuleStore;
   permissionModes?: ReadonlyArray<PermissionModeDefinition>;
   onStatusChange?: (sessionId: string, status: "waiting-approval" | "working") => void;
+  /** Optional hook used to attach decisions to the active run record (US12). */
+  onDecision?: (record: ApprovalDecisionRecord) => void;
 }
 
 /**
@@ -92,6 +102,65 @@ export function createApprovalBroker(options: ApprovalBrokerOptions) {
   const modes = indexModes(options.permissionModes);
   const executeAllows: ExecuteApprovalTracker = createExecuteApprovalTracker();
 
+  const subjectLabel = (subject: unknown): string => {
+    if (subject && typeof subject === "object") {
+      const record = subject as Record<string, unknown>;
+      if (typeof record["title"] === "string") {
+        return record["title"];
+      }
+      if (typeof record["toolCallId"] === "string") {
+        return record["toolCallId"];
+      }
+      if (typeof record["reason"] === "string") {
+        return record["reason"];
+      }
+      if (typeof record["commandLine"] === "string") {
+        return record["commandLine"];
+      }
+    }
+    return "permission";
+  };
+
+  const optionKindFor = (
+    outcome: ApprovalOutcome,
+    offered: ReadonlyArray<ApprovalOption>,
+  ): ApprovalDecisionRecord["optionKind"] | undefined => {
+    if (outcome.by === "cancelled") {
+      return undefined;
+    }
+    const match = offered.find((option) => option.optionId === outcome.optionId);
+    if (
+      match?.kind === "allow_once" ||
+      match?.kind === "allow_always" ||
+      match?.kind === "reject_once" ||
+      match?.kind === "reject_always"
+    ) {
+      return match.kind;
+    }
+    return undefined;
+  };
+
+  const recordDecision = (
+    sessionId: string,
+    runId: string,
+    subject: unknown,
+    outcome: ApprovalOutcome,
+    offered: ReadonlyArray<ApprovalOption> = [],
+  ): void => {
+    const decidedBy = outcome.by;
+    const record: ApprovalDecisionRecord = {
+      sessionId,
+      runId,
+      subject: subjectLabel(subject),
+      decidedBy,
+    };
+    const optionKind = optionKindFor(outcome, offered);
+    if (optionKind !== undefined) {
+      record.optionKind = optionKind;
+    }
+    options.onDecision?.(record);
+  };
+
   const cancelOne = (approval: PendingApproval, at: string): void => {
     const outcome: ApprovalOutcome = { by: "cancelled" };
     options.events.publish({
@@ -107,6 +176,7 @@ export function createApprovalBroker(options: ApprovalBrokerOptions) {
       payload: { notice: "approval-cancelled", approvalId: approval.id },
       createdAt: at,
     });
+    recordDecision(approval.sessionId, approval.runId, approval.subject, outcome, approval.options);
     approval.resolve(outcome);
   };
 
@@ -189,6 +259,7 @@ export function createApprovalBroker(options: ApprovalBrokerOptions) {
           approvalId: `auto-${randomUUID()}`,
           outcome,
         });
+        recordDecision(input.sessionId, runId, input.subject, outcome, oneTime);
         finishAllow(input.sessionId, input.subject, outcome, oneTime);
         return Promise.resolve(outcome);
       }
@@ -263,6 +334,13 @@ export function createApprovalBroker(options: ApprovalBrokerOptions) {
           outcome,
         });
         options.onStatusChange?.(approval.sessionId, "working");
+        recordDecision(
+          approval.sessionId,
+          approval.runId,
+          approval.subject,
+          outcome,
+          approval.options,
+        );
         approval.resolve(outcome);
         return;
       }
@@ -305,6 +383,13 @@ export function createApprovalBroker(options: ApprovalBrokerOptions) {
           outcome,
         });
         options.onStatusChange?.(approval.sessionId, "working");
+        recordDecision(
+          approval.sessionId,
+          approval.runId,
+          approval.subject,
+          outcome,
+          approval.options,
+        );
         finishAllow(approval.sessionId, approval.subject, outcome, approval.options);
         approval.resolve(outcome);
         return;
@@ -324,6 +409,13 @@ export function createApprovalBroker(options: ApprovalBrokerOptions) {
         outcome,
       });
       options.onStatusChange?.(approval.sessionId, "working");
+      recordDecision(
+        approval.sessionId,
+        approval.runId,
+        approval.subject,
+        outcome,
+        approval.options,
+      );
       finishAllow(approval.sessionId, approval.subject, outcome, approval.options);
       approval.resolve(outcome);
     },

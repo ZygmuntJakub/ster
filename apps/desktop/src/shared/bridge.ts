@@ -173,6 +173,53 @@ export const bridgePayloadSchemas: Record<string, z.ZodType> = {
     })
     .strict(),
   "factory.applied": z.object({ sessionId: idSchema }).strict(),
+  "runs.list": z
+    .object({
+      filter: z
+        .object({
+          sessionId: idSchema.optional(),
+          agentId: idSchema.optional(),
+          model: z.string().min(1).optional(),
+          cwd: z.string().min(1).optional(),
+          outcome: z.string().min(1).optional(),
+          kind: z.string().min(1).optional(),
+          from: z.string().min(1).optional(),
+          to: z.string().min(1).optional(),
+          userRatingMin: z.number().optional(),
+          userRatingMax: z.number().optional(),
+          agentScoreMin: z.number().optional(),
+          agentScoreMax: z.number().optional(),
+        })
+        .strict()
+        .optional(),
+      offset: z.number().int().nonnegative().optional(),
+      limit: z.number().int().positive().max(500).default(50),
+    })
+    .strict()
+    .optional(),
+  "runs.get": z.object({ runId: idSchema }).strict(),
+  "runs.rate": z
+    .object({
+      runId: idSchema,
+      value: z.number().int().min(1).max(5),
+      note: z.string().optional(),
+    })
+    .strict(),
+  "runs.judge": z.object({ runId: idSchema, agentId: idSchema }).strict(),
+  "runs.export": z
+    .object({
+      filter: z.record(z.string(), z.unknown()).optional(),
+    })
+    .strict()
+    .optional(),
+  "runs.delete": z
+    .object({
+      ids: z.array(idSchema).optional(),
+      sessionId: idSchema.optional(),
+      agentId: idSchema.optional(),
+      outcome: z.string().min(1).optional(),
+    })
+    .strict(),
 };
 
 /**

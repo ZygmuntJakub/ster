@@ -1,5 +1,6 @@
 import type { SessionNotification } from "@agentclientprotocol/sdk";
 import type { EventStream } from "../events/stream.js";
+import type { RunUsage } from "../runs/lifecycle.js";
 import type { Store } from "../store/store.js";
 import { actionFromUpdate, mergeActionUpdate, type AgentAction } from "./actions.js";
 import {
@@ -37,6 +38,8 @@ export interface UpdateHandlerContext {
   setTitle?: (title: string) => void;
   setConfigOptions?: (options: ConfigOption[]) => void;
   setAvailableCommands?: (commands: AvailableCommandInfo[]) => void;
+  onAction?: (action: AgentAction) => void;
+  onUsage?: (usage: RunUsage) => void;
 }
 
 function textFromContent(content: unknown): string {
@@ -156,6 +159,7 @@ export function applySessionUpdate(
         kind === "tool_call_update" ? mergeActionUpdate(currentPayload, record) : incoming;
       updateConversationItemPayload(ctx.store, ctx.session.id, existingSeq, merged);
       publishItemUpdated(ctx, existingSeq, { payload: merged, kind: "action" });
+      ctx.onAction?.(merged);
       return { ...ctx, streaming: null };
     }
 
@@ -168,7 +172,37 @@ export function applySessionUpdate(
     const actionsById = new Map(ctx.actionsById);
     actionsById.set(incoming.toolCallId, item.seq);
     publishItemAppended(ctx, item);
+    ctx.onAction?.(incoming);
     return { ...ctx, streaming: null, actionsById };
+  }
+
+  if (kind === "usage_update") {
+    const record = asRecord(update);
+    const usage: RunUsage = {};
+    if (typeof record["used"] === "number") {
+      usage.contextUsed = record["used"];
+    } else if (typeof record["contextUsed"] === "number") {
+      usage.contextUsed = record["contextUsed"];
+    }
+    if (typeof record["size"] === "number") {
+      usage.contextSize = record["size"];
+    } else if (typeof record["contextSize"] === "number") {
+      usage.contextSize = record["contextSize"];
+    }
+    const cost = record["cost"];
+    if (
+      cost &&
+      typeof cost === "object" &&
+      typeof (cost as { amount?: unknown }).amount === "number" &&
+      typeof (cost as { currency?: unknown }).currency === "string"
+    ) {
+      usage.cost = {
+        amount: (cost as { amount: number }).amount,
+        currency: (cost as { currency: string }).currency,
+      };
+    }
+    ctx.onUsage?.(usage);
+    return { ...ctx, streaming: null };
   }
 
   if (kind === "plan") {

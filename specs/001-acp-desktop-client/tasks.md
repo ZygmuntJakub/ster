@@ -389,22 +389,22 @@ description: "Task list for Ster — ACP Desktop Client"
 
 ### Tests for User Story 12
 
-- [ ] T162 [P] [US12] Integration tests that every turn (completed, cancelled, failed, interrupted) yields exactly one complete record in `packages/core/tests/integration/run-records.test.ts` (SC-019)
-- [ ] T163 [P] [US12] Unit tests for filters and totals, and a test validating exported lines against contracts/run-record.schema.json, in `packages/core/tests/unit/runs.test.ts`
-- [ ] T164 [P] [US12] Integration tests for judging (separate session, no file writes, no commands, score stored with judge identity) in `packages/core/tests/integration/judging.test.ts`, including a judging agent blocked by policy
-- [ ] T165 [P] [US12] End-to-end flow for US12 in `apps/desktop/tests/e2e/us12-runs.spec.ts`
+- [x] T162 [P] [US12] Integration tests that every turn (completed, cancelled, failed, interrupted) yields exactly one complete record in `packages/core/tests/integration/run-records.test.ts` (SC-019)
+- [x] T163 [P] [US12] Unit tests for filters and totals, and a test validating exported lines against contracts/run-record.schema.json, in `packages/core/tests/unit/runs.test.ts`
+- [x] T164 [P] [US12] Integration tests for judging (separate session, no file writes, no commands, score stored with judge identity) in `packages/core/tests/integration/judging.test.ts`, including a judging agent blocked by policy
+- [x] T165 [P] [US12] End-to-end flow for US12 in `apps/desktop/tests/e2e/us12-runs.spec.ts`
 
 ### Implementation for User Story 12
 
-- [ ] T166 [US12] Extend the run lifecycle in `packages/core/src/runs/lifecycle.ts` to capture the full record per data-model.md `RunRecord.request`, `RunRecord.agent`, `RunRecord.actions`, `RunRecord.approvals`, `RunRecord.commands`, `RunRecord.outcome`, and `RunRecord.usage` from `usage_update` (unknown when not reported)
-- [ ] T167 [US12] Implement `RunService.list` with filters and totals, `get`, and `delete` in `packages/core/src/runs/service.ts`, and the keep-without-text path used by session deletion; user rating and agent score are separate filters and separate totals (FR-071)
-- [ ] T168 [P] [US12] Implement scores and user rating in `packages/core/src/runs/scores.ts` per data-model.md `Score.value`, `Score.scale`, `Score.source`
-- [ ] T169 [US12] Implement on-demand judging in `packages/core/src/runs/judge.ts`: separate hidden session with reduced client capabilities, read-only permission handling, criteria from the trusted factory definition, lenient parsing of the JSON result (research.md R15); refuse a judging agent that organization policy does not allow (`blocked-by-policy`, FR-074); store per data-model.md `Score.judge`, `Score.scale`, and mark the run `RunRecord.kind` = `judging`
-- [ ] T170 [P] [US12] Implement JSON Lines export in `packages/core/src/runs/export.ts` conforming to contracts/run-record.schema.json
-- [ ] T171 [US12] Add bridge functions `runs.list`, `runs.get`, `runs.rate`, `runs.judge`, `runs.export` (native save dialog), `runs.delete` in `apps/desktop/src/main/handlers/runs.ts`
-- [ ] T172 [P] [US12] Build the runs view with filters and totals in `apps/desktop/src/renderer/features/runs/RunsView.tsx`
-- [ ] T173 [P] [US12] Build the run detail with rating, judge action, and scores in `apps/desktop/src/renderer/features/runs/RunDetail.tsx`, and add EN/PL strings
-- [ ] T174 [P] [US12] Write `docs/run-records.md` describing the export format and how a third-party tool reads it (SC-021)
+- [x] T166 [US12] Extend the run lifecycle in `packages/core/src/runs/lifecycle.ts` to capture the full record per data-model.md `RunRecord.request`, `RunRecord.agent`, `RunRecord.actions`, `RunRecord.approvals`, `RunRecord.commands`, `RunRecord.outcome`, and `RunRecord.usage` from `usage_update` (unknown when not reported)
+- [x] T167 [US12] Implement `RunService.list` with filters and totals, `get`, and `delete` in `packages/core/src/runs/service.ts`, and the keep-without-text path used by session deletion; user rating and agent score are separate filters and separate totals (FR-071)
+- [x] T168 [P] [US12] Implement scores and user rating in `packages/core/src/runs/scores.ts` per data-model.md `Score.value`, `Score.scale`, `Score.source`
+- [x] T169 [US12] Implement on-demand judging in `packages/core/src/runs/judge.ts`: separate hidden session with reduced client capabilities, read-only permission handling, criteria from the trusted factory definition, lenient parsing of the JSON result (research.md R15); refuse a judging agent that organization policy does not allow (`blocked-by-policy`, FR-074); store per data-model.md `Score.judge`, `Score.scale`, and mark the run `RunRecord.kind` = `judging`
+- [x] T170 [P] [US12] Implement JSON Lines export in `packages/core/src/runs/export.ts` conforming to contracts/run-record.schema.json
+- [x] T171 [US12] Add bridge functions `runs.list`, `runs.get`, `runs.rate`, `runs.judge`, `runs.export` (native save dialog), `runs.delete` in `apps/desktop/src/main/handlers/runs.ts`
+- [x] T172 [P] [US12] Build the runs view with filters and totals in `apps/desktop/src/renderer/features/runs/RunsView.tsx`
+- [x] T173 [P] [US12] Build the run detail with rating, judge action, and scores in `apps/desktop/src/renderer/features/runs/RunDetail.tsx`, and add EN/PL strings
+- [x] T174 [P] [US12] Write `docs/run-records.md` describing the export format and how a third-party tool reads it (SC-021)
 
 **Checkpoint**: Increment 5 complete: the local foundations of the software factory are in place
 

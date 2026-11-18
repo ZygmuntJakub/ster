@@ -13,11 +13,19 @@ import { SterError } from "./errors.js";
 import { indexById, indexPolicyItems, type CoreExtensions } from "./extensions/index.js";
 import { createLogger, type Logger } from "./log.js";
 import type { Brand } from "./brand.js";
-import type { RegistryStatus, RunSummary, Score } from "./model/events.js";
+import type { RegistryStatus } from "./model/events.js";
 import { BUILTIN_PERMISSION_MODES, filterPermissionModes } from "./permissions/modes.js";
 import { createPolicyService, type PolicyService, type PolicySource } from "./policy/service.js";
 import { resolveShellEnv, type ResolvedEnv } from "./platform/shell-env.js";
 import type { RunRecord } from "./runs/lifecycle.js";
+import {
+  createRunService,
+  type Page,
+  type RunFilter,
+  type RunService,
+  type RunTotals,
+  type WritableTarget,
+} from "./runs/service.js";
 import { createSettingsService, type SettingsService } from "./settings/service.js";
 import {
   createSessionService,
@@ -34,6 +42,7 @@ export type { Agent, AgentHints, CustomAgentInput, IconData, InstallPlan, Progre
 export type { AuthMethod, PermissionRule, PromptContent, Session, SessionFilter, SessionService };
 export type { RunRecord };
 export type { AgentService };
+export type { Page, RunFilter, RunService, RunTotals, WritableTarget };
 
 /**
  * Host-provided platform hooks. The core never opens URLs or terminals itself.
@@ -46,31 +55,6 @@ export interface PlatformAdapter {
 export type { AppliedDefinition, FactoryLookup, FactoryService } from "./factory/service.js";
 import type { FactoryService } from "./factory/service.js";
 import { createFactoryService } from "./factory/service.js";
-
-export interface RunFilter {
-  sessionId?: string;
-  agentId?: string;
-}
-
-export interface Page {
-  offset?: number;
-  limit: number;
-}
-
-export interface RunTotals {
-  count: number;
-}
-
-export type WritableTarget = { kind: "path"; path: string };
-
-export interface RunService {
-  list(filter: RunFilter, page: Page): Promise<{ runs: RunSummary[]; totals: RunTotals }>;
-  get(runId: string): Promise<RunRecord>;
-  rate(runId: string, rating: { value: number; note?: string }): Promise<Score>;
-  judge(runId: string, opts: { agentId: string }): Promise<Score>;
-  export(filter: RunFilter, destination: WritableTarget): Promise<{ count: number }>;
-  delete(filter: RunFilter | { ids: string[] }): Promise<{ count: number }>;
-}
 
 export interface CreateCoreOptions {
   dataDir: string;
@@ -105,24 +89,6 @@ export interface Core {
   readonly settings: SettingsService;
   readonly events: EventStream<CoreEvent>;
   dispose(): Promise<void>;
-}
-
-function notReadyError(service: string, method: string): SterError {
-  return new SterError("invalid-argument", `${service}.${method} is not available yet`, {
-    service,
-    method,
-  });
-}
-
-function createRunServiceStub(): RunService {
-  return {
-    list: () => Promise.resolve({ runs: [], totals: { count: 0 } }),
-    get: () => Promise.reject(notReadyError("runs", "get")),
-    rate: () => Promise.reject(notReadyError("runs", "rate")),
-    judge: () => Promise.reject(notReadyError("runs", "judge")),
-    export: () => Promise.reject(notReadyError("runs", "export")),
-    delete: () => Promise.resolve({ count: 0 }),
-  };
 }
 
 /**
@@ -223,19 +189,6 @@ export async function createCore(options: CreateCoreOptions): Promise<Core> {
   if (allowedModeIds !== null && !allowedModeIds.includes(defaultPermissionMode)) {
     defaultPermissionMode = permissionModes[0]?.id ?? defaultPermissionMode;
   }
-  const factoryRef: { current: FactoryService | null } = { current: null };
-  const sessionsHandle = createSessionService({
-    store,
-    agents,
-    events,
-    environment,
-    log,
-    policy,
-    defaultPermissionMode,
-    permissionModes,
-    resolveFactory: (cwd) => factoryRef.current?.resolveApplied(cwd) ?? null,
-  });
-
   const factory = createFactoryService({
     store,
     policy,
@@ -260,8 +213,42 @@ export async function createCore(options: CreateCoreOptions): Promise<Core> {
       };
     },
   });
-  factoryRef.current = factory;
-  const runs = createRunServiceStub();
+
+  const runs = createRunService({
+    store,
+    events,
+    agents,
+    policy,
+    factory,
+    environment,
+    log,
+  });
+
+  const sessionsHandle = createSessionService({
+    store,
+    agents,
+    events,
+    environment,
+    log,
+    policy,
+    defaultPermissionMode,
+    permissionModes,
+    resolveFactory: (cwd) => factory.resolveApplied(cwd),
+    runs: {
+      save: (run) => {
+        runs.save(run);
+      },
+      markInterrupted: (runIds) => {
+        runs.markInterrupted(runIds);
+      },
+      deleteForSession: async (sessionId) => {
+        await runs.deleteForSession(sessionId);
+      },
+      keepWithoutText: async (sessionId) => {
+        await runs.keepWithoutText(sessionId);
+      },
+    },
+  });
 
   let disposed = false;
 
