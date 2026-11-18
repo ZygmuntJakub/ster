@@ -16,7 +16,15 @@
     "working": "Praca",
     "waiting": "Oczekuje",
     "finished": "Zakończone",
-    "failed": "Błąd"
+    "failed": "Błąd",
+    "attention": "Wymaga uwagi"
+  },
+  "history": {
+    "readOnly": "Ta sesja jest zamknięta. Możesz czytać historię lub kontynuować, jeśli agent obsługuje wznawianie.",
+    "continue": "Kontynuuj",
+    "notResumable": "Ten agent nie może wznowić sesji.",
+    "newInFolder": "Nowa sesja w tym folderze",
+    "delete": "Usuń"
   },
   "conversation": {
     "title": "Rozmowa",

@@ -16,7 +16,15 @@
     "working": "Working",
     "waiting": "Waiting",
     "finished": "Finished",
-    "failed": "Failed"
+    "failed": "Failed",
+    "attention": "Needs attention"
+  },
+  "history": {
+    "readOnly": "This session is closed. You can read the history or continue if the agent supports resume.",
+    "continue": "Continue",
+    "notResumable": "This agent cannot resume the session.",
+    "newInFolder": "New session in this folder",
+    "delete": "Delete"
   },
   "conversation": {
     "title": "Conversation",

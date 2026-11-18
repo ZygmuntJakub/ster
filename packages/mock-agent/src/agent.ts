@@ -13,6 +13,8 @@ export interface MockAgentOptions {
   protocolVersion?: number;
   /** When true, session/new requires authenticate first. */
   requireAuth?: boolean;
+  /** When false, omit session resume capability (default true). */
+  supportResume?: boolean;
 }
 
 /**
@@ -29,6 +31,7 @@ export function createMockAgent(options: MockAgentOptions = {}): AgentApp {
         throw RequestError.unsupportedProtocolVersion(params.protocolVersion, [PROTOCOL_VERSION]);
       }
       const terminalAuth = params.clientCapabilities?.auth?.terminal === true;
+      const supportResume = options.supportResume !== false;
       return {
         protocolVersion,
         agentCapabilities: {
@@ -38,6 +41,7 @@ export function createMockAgent(options: MockAgentOptions = {}): AgentApp {
             audio: false,
             embeddedContext: true,
           },
+          ...(supportResume ? { sessionCapabilities: { resume: {} } } : {}),
         },
         agentInfo: {
           name: "ster-mock-agent",
@@ -117,6 +121,21 @@ export function createMockAgent(options: MockAgentOptions = {}): AgentApp {
       sessions.delete(params.sessionId);
       return {};
     })
+    .onRequest(methods.agent.session.resume, ({ params }) => {
+      if (options.supportResume === false) {
+        throw RequestError.invalidParams({}, "Resume is not supported");
+      }
+      if (!authenticated) {
+        throw RequestError.authRequired({ reason: "mock agent requires login" });
+      }
+      sessions.set(params.sessionId, {
+        id: params.sessionId,
+        cwd: params.cwd,
+        cancelled: false,
+        authenticated,
+      });
+      return {};
+    })
     .onRequest(methods.agent.session.setConfigOption, () => {
       return {
         configOptions: [
@@ -141,6 +160,7 @@ export function mockAgentRequireAuthFromEnv(
 ): MockAgentOptions {
   const options: MockAgentOptions = {
     requireAuth: env["STER_MOCK_AUTH_REQUIRED"] === "1",
+    supportResume: env["STER_MOCK_NO_RESUME"] !== "1",
   };
   if (env["STER_MOCK_PROTOCOL_VERSION"]) {
     options.protocolVersion = Number(env["STER_MOCK_PROTOCOL_VERSION"]);

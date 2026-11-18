@@ -237,18 +237,18 @@ description: "Task list for Ster — ACP Desktop Client"
 
 ### Tests for User Story 6
 
-- [ ] T106 [P] [US6] Integration tests for concurrent sessions, startup recovery of interrupted runs, resume and load, and deletion in `packages/core/tests/integration/history.test.ts`
-- [ ] T107 [P] [US6] End-to-end flow for US6 in `apps/desktop/tests/e2e/us6-sessions.spec.ts`
+- [x] T106 [P] [US6] Integration tests for concurrent sessions, startup recovery of interrupted runs, resume and load, and deletion in `packages/core/tests/integration/history.test.ts`
+- [x] T107 [P] [US6] End-to-end flow for US6 in `apps/desktop/tests/e2e/us6-sessions.spec.ts`
 
 ### Implementation for User Story 6
 
-- [ ] T108 [US6] Implement the session manager for concurrent sessions and startup recovery (sessions left `working` become `ended`, open runs become `interrupted`) in `packages/core/src/sessions/manager.ts`
-- [ ] T109 [US6] Implement `list` with filters, `rename`, and `delete` with the run-record choice in `packages/core/src/sessions/service.ts` per data-model.md `Session.lastActivityAt`, `Session.title`
-- [ ] T110 [US6] Implement `resume` using `session/resume` or `session/load` gated by agent capabilities in `packages/core/src/sessions/resume.ts` per data-model.md `Session.resumable`, `Session.agentSessionId`
-- [ ] T111 [US6] Add bridge functions `sessions.list`, `sessions.resume`, `sessions.rename`, `sessions.delete` in `apps/desktop/src/main/handlers/sessions.ts`
-- [ ] T112 [P] [US6] Build the session list with status and attention indicators in `apps/desktop/src/renderer/features/sessions/SessionList.tsx`, as the session board of the mockup: status counts on top and one card per session with status chip, progress, agent, and model
-- [ ] T113 [P] [US6] Build the read-only history view with "continue" and "new session in this folder" in `apps/desktop/src/renderer/features/sessions/HistoryView.tsx`
-- [ ] T114 [US6] Make the renderer stores multi-session (per-session item caches, paging from the store) in `apps/desktop/src/renderer/app/stores/sessions.ts` and add EN/PL strings
+- [x] T108 [US6] Implement the session manager for concurrent sessions and startup recovery (sessions left `working` become `ended`, open runs become `interrupted`) in `packages/core/src/sessions/manager.ts`
+- [x] T109 [US6] Implement `list` with filters, `rename`, and `delete` with the run-record choice in `packages/core/src/sessions/service.ts` per data-model.md `Session.lastActivityAt`, `Session.title`
+- [x] T110 [US6] Implement `resume` using `session/resume` or `session/load` gated by agent capabilities in `packages/core/src/sessions/resume.ts` per data-model.md `Session.resumable`, `Session.agentSessionId`
+- [x] T111 [US6] Add bridge functions `sessions.list`, `sessions.resume`, `sessions.rename`, `sessions.delete` in `apps/desktop/src/main/handlers/sessions.ts`
+- [x] T112 [P] [US6] Build the session list with status and attention indicators in `apps/desktop/src/renderer/features/sessions/SessionList.tsx`, as the session board of the mockup: status counts on top and one card per session with status chip, progress, agent, and model
+- [x] T113 [P] [US6] Build the read-only history view with "continue" and "new session in this folder" in `apps/desktop/src/renderer/features/sessions/HistoryView.tsx`
+- [x] T114 [US6] Make the renderer stores multi-session (per-session item caches, paging from the store) in `apps/desktop/src/renderer/app/stores/sessions.ts` and add EN/PL strings
 
 **Checkpoint**: The application supports sustained daily use across tasks and days
 

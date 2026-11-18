@@ -18,7 +18,16 @@ import {
   saveCustom,
 } from "./handlers/agents.js";
 import { openLocation } from "./handlers/files.js";
-import { killCommand, listRules, revokeRule, setPermissionMode } from "./handlers/sessions.js";
+import {
+  deleteSession,
+  killCommand,
+  listRules,
+  listSessions,
+  renameSession,
+  resumeSession,
+  revokeRule,
+  setPermissionMode,
+} from "./handlers/sessions.js";
 import { createLinkIndex } from "./link-index.js";
 import { createLocationIndex } from "./location-index.js";
 import { createLoginTerminalManager } from "./login-terminal.js";
@@ -200,7 +209,12 @@ async function handleMethod(
       return ok(session);
     }
     case "sessions.list":
-      return ok(await core.sessions.list(payload as undefined | { agentId?: string }));
+      return ok(
+        await listSessions(
+          core,
+          payload as undefined | { agentId?: string; cwd?: string; status?: string },
+        ),
+      );
     case "sessions.get": {
       const { sessionId } = payload as { sessionId: string };
       return ok(await core.sessions.get(sessionId));
@@ -274,10 +288,13 @@ async function handleMethod(
       const { sessionId } = payload as { sessionId: string };
       return ok(await core.sessions.restart(sessionId));
     }
+    case "sessions.resume": {
+      const { sessionId } = payload as { sessionId: string };
+      return ok(await resumeSession(core, sessionId));
+    }
     case "sessions.rename": {
       const { sessionId, title } = payload as { sessionId: string; title: string };
-      await core.sessions.rename(sessionId, title);
-      return ok({ renamed: true });
+      return ok(await renameSession(core, sessionId, title));
     }
     case "sessions.end": {
       const { sessionId } = payload as { sessionId: string };
@@ -290,9 +307,9 @@ async function handleMethod(
         sessionId: string;
         runRecords: "delete" | "keep-without-text";
       };
-      await core.sessions.delete(sessionId, { runRecords });
+      const result = await deleteSession(core, sessionId, runRecords);
       ctx.links.clearSession(sessionId);
-      return ok({ deleted: true });
+      return ok(result);
     }
     case "files.openLocation": {
       const { sessionId, itemSeq, locationIndex } = payload as {

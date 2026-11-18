@@ -5,7 +5,9 @@ import { PermissionModeSelect } from "../../features/approvals/PermissionModeSel
 import { RulesPanel } from "../../features/approvals/RulesPanel.js";
 import { Composer } from "../../features/conversation/Composer.js";
 import { ConversationView } from "../../features/conversation/ConversationView.js";
+import { HistoryView } from "../../features/sessions/HistoryView.js";
 import { LoginPanel, type AuthMethodView } from "../../features/sessions/LoginPanel.js";
+import { NewSessionDialog } from "../../features/sessions/NewSessionDialog.js";
 import { SessionStatus } from "../../features/sessions/SessionStatus.js";
 import {
   appendCommandOutput,
@@ -18,8 +20,10 @@ import {
   getPendingApproval,
   getSelectedSessionId,
   getSessions,
+  loadOlderItems,
   patchItem,
   removeSession,
+  selectSession,
   setItems,
   setPendingApproval,
   subscribeSessions,
@@ -38,6 +42,8 @@ export function ConversationPane(): JSX.Element {
   const [authMethods, setAuthMethods] = useState<AuthMethodView[]>([]);
   const [permissionMode, setPermissionMode] = useState("always-ask");
   const [rulesRefresh, setRulesRefresh] = useState(0);
+  const [continuing, setContinuing] = useState(false);
+  const [newInFolderOpen, setNewInFolderOpen] = useState(false);
 
   useEffect(
     () =>
@@ -60,7 +66,8 @@ export function ConversationPane(): JSX.Element {
       setItems(sessionId, list as ConversationItemView[]);
     });
     void window.ster.sessions.get({ sessionId }).then((full) => {
-      const record = full as { permissionMode?: string };
+      const record = full as SessionCard & { permissionMode?: string };
+      upsertSession(record);
       if (typeof record.permissionMode === "string") {
         setPermissionMode(record.permissionMode);
       }
@@ -73,6 +80,16 @@ export function ConversationPane(): JSX.Element {
       setAuthMethods([]);
     }
   }, [sessionId, session?.status]);
+
+  useEffect(() => {
+    if (!sessionId || items.length === 0) {
+      return;
+    }
+    const first = items[0];
+    if (first && first.seq > 1) {
+      void loadOlderItems(sessionId, 20);
+    }
+  }, [sessionId, items.length]);
 
   useEffect(() => {
     return window.ster.events.subscribe((event) => {
@@ -167,6 +184,7 @@ export function ConversationPane(): JSX.Element {
   const working = session.status === "working" || session.status === "waiting-approval";
   const needsLogin = session.status === "needs-login";
   const failed = session.status === "failed";
+  const historyOnly = session.status === "ended";
 
   return (
     <section className="conv col" aria-label={t("conversation.title")}>
@@ -177,51 +195,87 @@ export function ConversationPane(): JSX.Element {
           </h1>
           <p className="muted text-sm">{session.status}</p>
         </div>
-        <PermissionModeSelect
-          sessionId={sessionId}
-          mode={permissionMode}
-          disabled={needsLogin || failed || session.status === "ended"}
-          onChanged={(mode) => {
-            setPermissionMode(mode);
-          }}
-        />
+        {!historyOnly ? (
+          <PermissionModeSelect
+            sessionId={sessionId}
+            mode={permissionMode}
+            disabled={needsLogin || failed}
+            onChanged={(mode) => {
+              setPermissionMode(mode);
+            }}
+          />
+        ) : null}
       </header>
-      <SessionStatus
-        status={session.status}
-        onRestart={() => {
-          void window.ster.sessions.restart({ sessionId }).then((next) => {
-            upsertSession(next as SessionCard);
-          });
-        }}
-      />
-      <RulesPanel sessionId={sessionId} refreshKey={rulesRefresh} />
-      {needsLogin ? (
-        <LoginPanel
-          sessionId={sessionId}
-          methods={authMethods}
-          onAuthenticated={() => {
-            void window.ster.sessions.get({ sessionId }).then((next) => {
-              upsertSession(next as SessionCard);
-            });
-          }}
-        />
-      ) : null}
-      <div className="msgs grow scroll px-3 py-2">
-        <ConversationView sessionId={sessionId} items={items} />
-      </div>
-      {approval && approval.sessionId === sessionId ? (
-        <ApprovalPrompt
-          approval={approval}
-          onResolved={() => {
-            setPendingApproval(null);
-          }}
-        />
-      ) : null}
-      <Composer
-        sessionId={sessionId}
-        disabled={needsLogin || failed || session.status === "ended"}
-        working={working}
-      />
+      {historyOnly ? (
+        <>
+          <HistoryView
+            session={session}
+            items={items}
+            continuing={continuing}
+            onContinue={() => {
+              setContinuing(true);
+              void window.ster.sessions
+                .resume({ sessionId })
+                .then((next) => {
+                  upsertSession(next as SessionCard);
+                })
+                .finally(() => {
+                  setContinuing(false);
+                });
+            }}
+            onNewInFolder={() => {
+              setNewInFolderOpen(true);
+            }}
+          />
+          <NewSessionDialog
+            open={newInFolderOpen}
+            onClose={() => {
+              setNewInFolderOpen(false);
+            }}
+            onCreated={(id) => {
+              selectSession(id);
+              void window.ster.sessions.get({ sessionId: id }).then((next) => {
+                upsertSession(next as SessionCard);
+              });
+            }}
+          />
+        </>
+      ) : (
+        <>
+          <SessionStatus
+            status={session.status}
+            onRestart={() => {
+              void window.ster.sessions.restart({ sessionId }).then((next) => {
+                upsertSession(next as SessionCard);
+              });
+            }}
+          />
+          <RulesPanel sessionId={sessionId} refreshKey={rulesRefresh} />
+          {needsLogin ? (
+            <LoginPanel
+              sessionId={sessionId}
+              methods={authMethods}
+              onAuthenticated={() => {
+                void window.ster.sessions.get({ sessionId }).then((next) => {
+                  upsertSession(next as SessionCard);
+                });
+              }}
+            />
+          ) : null}
+          <div className="msgs grow scroll px-3 py-2">
+            <ConversationView sessionId={sessionId} items={items} />
+          </div>
+          {approval && approval.sessionId === sessionId ? (
+            <ApprovalPrompt
+              approval={approval}
+              onResolved={() => {
+                setPendingApproval(null);
+              }}
+            />
+          ) : null}
+          <Composer sessionId={sessionId} disabled={needsLogin || failed} working={working} />
+        </>
+      )}
     </section>
   );
 }

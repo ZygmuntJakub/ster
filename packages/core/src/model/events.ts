@@ -10,6 +10,9 @@ export interface SessionSummary {
   status: string;
   cwd: string;
   lastActivityAt: string;
+  resumable?: boolean;
+  needsAttention?: boolean;
+  agentVersion?: string;
 }
 
 export interface ConversationItem {

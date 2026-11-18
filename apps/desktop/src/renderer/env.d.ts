@@ -68,8 +68,14 @@ type SterApi = {
     killCommand: (payload: { commandRunId: string }) => Promise<unknown>;
     authMethods: (payload: { sessionId: string }) => Promise<unknown>;
     authenticate: (payload: { sessionId: string; methodId: string }) => Promise<unknown>;
+    resume: (payload: { sessionId: string }) => Promise<unknown>;
     restart: (payload: { sessionId: string }) => Promise<unknown>;
+    rename: (payload: { sessionId: string; title: string }) => Promise<unknown>;
     end: (payload: { sessionId: string }) => Promise<unknown>;
+    delete: (payload: {
+      sessionId: string;
+      runRecords: "delete" | "keep-without-text";
+    }) => Promise<unknown>;
   };
   files: {
     openLocation: (payload: {

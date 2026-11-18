@@ -17,6 +17,12 @@ export interface Session {
   createdAt: string;
   lastActivityAt: string;
   failureReason?: string;
+  /** Derived: agent advertised resume/load and an agentSessionId is stored. */
+  resumable?: boolean;
+  needsAttention?: boolean;
+  supportsResume?: boolean;
+  supportsLoad?: boolean;
+  openRunId?: string;
 }
 
 export interface SessionFilter {

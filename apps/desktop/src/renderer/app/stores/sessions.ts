@@ -5,6 +5,9 @@ export interface SessionCard {
   status: string;
   cwd: string;
   lastActivityAt: string;
+  resumable?: boolean;
+  needsAttention?: boolean;
+  agentVersion?: string;
 }
 
 export interface ConversationItemView {
@@ -142,4 +145,36 @@ export function patchItem(sessionId: string, seq: number, patch: Record<string, 
 export function setPendingApproval(approval: ApprovalView | null): void {
   pendingApproval = approval;
   emit();
+}
+
+/**
+ * Load an older page of items for a session (before the oldest cached seq).
+ */
+export async function loadOlderItems(
+  sessionId: string,
+  limit = 50,
+): Promise<ConversationItemView[]> {
+  const existing = itemsBySession.get(sessionId) ?? [];
+  const before = existing.length > 0 ? existing[0]?.seq : undefined;
+  const page = (await window.ster.sessions.items({
+    sessionId,
+    ...(before !== undefined ? { before } : {}),
+    limit,
+  })) as ConversationItemView[];
+  if (page.length === 0) {
+    return [];
+  }
+  const merged = [...page, ...existing];
+  const bySeq = new Map<number, ConversationItemView>();
+  for (const item of merged) {
+    bySeq.set(item.seq, item);
+  }
+  const next = [...bySeq.values()].sort((a, b) => a.seq - b.seq);
+  itemsBySession.set(sessionId, next);
+  emit();
+  return page;
+}
+
+export function hasSessionItems(sessionId: string): boolean {
+  return (itemsBySession.get(sessionId)?.length ?? 0) > 0;
 }

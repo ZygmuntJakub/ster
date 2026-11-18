@@ -49,6 +49,8 @@ import {
   type TerminalLoginPlan,
 } from "./auth.js";
 import { appendConversationItem, listConversationItems } from "./items.js";
+import { recoverInterruptedSessions } from "./manager.js";
+import { reattachAgentSession, sessionIsResumable } from "./resume.js";
 import {
   transitionSessionStatus,
   type Session,
@@ -125,6 +127,26 @@ interface LiveSession {
 interface SessionPayload {
   agentSessionId?: string;
   failureReason?: string;
+  openRunId?: string;
+  supportsResume?: boolean;
+  supportsLoad?: boolean;
+  interruptedRunIds?: string[];
+}
+
+function needsAttentionStatus(status: SessionStatus): boolean {
+  return status === "waiting-approval" || status === "needs-login";
+}
+
+function enrichSession(session: Session, live: boolean): Session {
+  const next: Session = { ...session };
+  next.needsAttention = needsAttentionStatus(session.status);
+  next.resumable = sessionIsResumable({
+    session,
+    live,
+    ...(session.supportsResume !== undefined ? { supportsResume: session.supportsResume } : {}),
+    ...(session.supportsLoad !== undefined ? { supportsLoad: session.supportsLoad } : {}),
+  });
+  return next;
 }
 
 function assertDirectory(cwd: string): void {
@@ -145,14 +167,22 @@ function assertDirectory(cwd: string): void {
 }
 
 function toSummary(session: Session): SessionSummary {
-  return {
+  const summary: SessionSummary = {
     id: session.id,
     agentId: session.agentId,
     title: session.title,
     status: session.status,
     cwd: session.cwd,
     lastActivityAt: session.lastActivityAt,
+    agentVersion: session.agentVersion,
   };
+  if (session.resumable !== undefined) {
+    summary.resumable = session.resumable;
+  }
+  if (session.needsAttention !== undefined) {
+    summary.needsAttention = session.needsAttention;
+  }
+  return summary;
 }
 
 function persist(store: Store, session: Session): void {
@@ -162,6 +192,15 @@ function persist(store: Store, session: Session): void {
   }
   if (session.failureReason !== undefined) {
     payload.failureReason = session.failureReason;
+  }
+  if (session.openRunId !== undefined) {
+    payload.openRunId = session.openRunId;
+  }
+  if (session.supportsResume !== undefined) {
+    payload.supportsResume = session.supportsResume;
+  }
+  if (session.supportsLoad !== undefined) {
+    payload.supportsLoad = session.supportsLoad;
   }
   store.putSession({
     id: session.id,
@@ -204,6 +243,15 @@ function fromRow(row: ReturnType<Store["getSession"]>): Session | null {
   if (payload.failureReason !== undefined) {
     session.failureReason = payload.failureReason;
   }
+  if (payload.openRunId !== undefined) {
+    session.openRunId = payload.openRunId;
+  }
+  if (payload.supportsResume !== undefined) {
+    session.supportsResume = payload.supportsResume;
+  }
+  if (payload.supportsLoad !== undefined) {
+    session.supportsLoad = payload.supportsLoad;
+  }
   return session;
 }
 
@@ -232,6 +280,7 @@ export function createSessionService(options: CreateSessionServiceOptions): Sess
   const live = new Map<string, LiveSession>();
   const snapshots = createSnapshotStore();
   const defaultMode = options.defaultPermissionMode ?? "always-ask";
+  recoverInterruptedSessions(options.store);
 
   const setStatus = (session: Session, next: SessionStatus): void => {
     session.status = transitionSessionStatus(session.status, next);
@@ -240,7 +289,7 @@ export function createSessionService(options: CreateSessionServiceOptions): Sess
     options.events.publish({
       type: "session.status",
       sessionId: session.id,
-      session: toSummary(session),
+      session: toSummary(enrichSession(session, live.has(session.id))),
     });
   };
 
@@ -638,6 +687,10 @@ export function createSessionService(options: CreateSessionServiceOptions): Sess
       await failSession(entry, `Agent exited (code ${String(result.code)})`);
     });
 
+    const caps = connection.capabilities.agentCapabilities;
+    session.supportsResume = caps.sessionCapabilities?.resume != null;
+    session.supportsLoad = caps.loadSession === true;
+
     try {
       const acpSession = await connection.client.buildSession(input.cwd).start();
       session.agentSessionId = acpSession.sessionId;
@@ -664,9 +717,111 @@ export function createSessionService(options: CreateSessionServiceOptions): Sess
     options.events.publish({
       type: "session.created",
       sessionId: session.id,
-      session: toSummary(session),
+      session: toSummary(enrichSession(session, true)),
     });
 
+    return entry;
+  };
+
+  const attachExisting = async (session: Session): Promise<LiveSession> => {
+    const agent = options.agents.get(session.agentId);
+    if (!agent) {
+      throw new SterError("not-found", `Unknown agent ${session.agentId}`);
+    }
+    if (!agent.launch) {
+      throw new SterError("agent-not-ready", "Agent has no launch command", { agentId: agent.id });
+    }
+    await options.agents.assertIntegrity(session.agentId);
+    if (!agent.confirmedAt) {
+      throw new SterError("agent-not-confirmed", "Confirm the agent before the first start", {
+        agentId: agent.id,
+      });
+    }
+    assertDirectory(session.cwd);
+
+    session.status = "starting";
+    persist(options.store, session);
+
+    const proc = spawnAgentProcess({
+      launch: {
+        command: agent.launch.command,
+        args: agent.launch.args,
+        env: agent.launch.env,
+      },
+      environment: options.environment,
+      log: options.log,
+    });
+
+    let connection: AcpConnection;
+    try {
+      connection = await connectAgent({
+        process: proc,
+        log: options.log,
+        clientInfo: { name: "ster", version: "0.0.0" },
+        handlers: buildClientHandlers(),
+      });
+    } catch (error) {
+      await proc.kill();
+      session.failureReason = error instanceof Error ? error.message : String(error);
+      session.status = "failed";
+      persist(options.store, session);
+      throw error;
+    }
+
+    const caps = connection.capabilities.agentCapabilities;
+    session.supportsResume = caps.sessionCapabilities?.resume != null;
+    session.supportsLoad = caps.loadSession === true;
+
+    const entry: LiveSession = {
+      session,
+      process: proc,
+      connection,
+      agentSessionId: session.agentSessionId ?? "",
+      promptInFlight: false,
+      cancelRequested: false,
+    };
+    live.set(session.id, entry);
+
+    void proc.exit.then(async (result) => {
+      if (!live.has(session.id)) {
+        return;
+      }
+      options.log.warn("agent exited for session", {
+        sessionId: session.id,
+        code: result.code,
+        signal: result.signal,
+      });
+      await failSession(entry, `Agent exited (code ${String(result.code)})`);
+    });
+
+    try {
+      const attached = await reattachAgentSession(connection, session);
+      entry.agentSessionId = attached.agentSessionId;
+      session.agentSessionId = attached.agentSessionId;
+      session.status = transitionSessionStatus("starting", "idle");
+      session.lastActivityAt = new Date().toISOString();
+      delete session.failureReason;
+      persist(options.store, session);
+    } catch (error) {
+      live.delete(session.id);
+      connection.close();
+      await proc.kill();
+      if (error instanceof SterError && error.code === "not-resumable") {
+        session.status = "ended";
+        persist(options.store, session);
+        throw error;
+      }
+      session.failureReason = error instanceof Error ? error.message : String(error);
+      session.status = "failed";
+      persist(options.store, session);
+      throw error;
+    }
+
+    options.events.publish({
+      type: "session.updated",
+      sessionId: session.id,
+      session: toSummary(enrichSession(session, true)),
+    });
     return entry;
   };
 
@@ -698,6 +853,7 @@ export function createSessionService(options: CreateSessionServiceOptions): Sess
           }
           return true;
         })
+        .map((session) => enrichSession(session, live.has(session.id)))
         .map(toSummary);
       return Promise.resolve(summaries);
     },
@@ -705,9 +861,9 @@ export function createSessionService(options: CreateSessionServiceOptions): Sess
     get: (sessionId) => {
       const liveEntry = live.get(sessionId);
       if (liveEntry) {
-        return Promise.resolve({ ...liveEntry.session });
+        return Promise.resolve(enrichSession({ ...liveEntry.session }, true));
       }
-      return Promise.resolve({ ...loadOrThrow(sessionId) });
+      return Promise.resolve(enrichSession({ ...loadOrThrow(sessionId) }, false));
     },
 
     items: (sessionId, page) => {
@@ -736,6 +892,7 @@ export function createSessionService(options: CreateSessionServiceOptions): Sess
       entry.promptInFlight = true;
       entry.cancelRequested = false;
       entry.currentRunId = run.id;
+      entry.session.openRunId = run.id;
       setStatus(entry.session, "working");
       options.events.publish({
         type: "run.started",
@@ -794,6 +951,8 @@ export function createSessionService(options: CreateSessionServiceOptions): Sess
         unsubscribe();
         entry.promptInFlight = false;
         delete entry.currentRunId;
+        delete entry.session.openRunId;
+        persist(options.store, entry.session);
         approvals.cancelSession(sessionId);
         const message = error instanceof Error ? error.message : String(error);
         const failed = finalizeRun(run, {
@@ -816,6 +975,8 @@ export function createSessionService(options: CreateSessionServiceOptions): Sess
       unsubscribe();
       entry.promptInFlight = false;
       delete entry.currentRunId;
+      delete entry.session.openRunId;
+      persist(options.store, entry.session);
 
       if (!live.has(sessionId)) {
         const failed = finalizeRun(run, {
@@ -962,7 +1123,26 @@ export function createSessionService(options: CreateSessionServiceOptions): Sess
       }
       return buildTerminalLoginPlan(agent.launch, method);
     },
-    resume: () => Promise.reject(new SterError("not-resumable", "Resume arrives later")),
+    async resume(sessionId) {
+      if (live.has(sessionId)) {
+        return enrichSession({ ...requireLive(sessionId).session }, true);
+      }
+      const session = loadOrThrow(sessionId);
+      if (
+        !sessionIsResumable({
+          session,
+          live: false,
+          ...(session.supportsResume !== undefined
+            ? { supportsResume: session.supportsResume }
+            : {}),
+          ...(session.supportsLoad !== undefined ? { supportsLoad: session.supportsLoad } : {}),
+        })
+      ) {
+        throw new SterError("not-resumable", "Session cannot be resumed", { sessionId });
+      }
+      const entry = await attachExisting(session);
+      return enrichSession({ ...entry.session }, true);
+    },
 
     async restart(sessionId) {
       const session = loadOrThrow(sessionId);
@@ -1005,48 +1185,89 @@ export function createSessionService(options: CreateSessionServiceOptions): Sess
     },
 
     async end(sessionId) {
-      const entry = live.get(sessionId);
-      const session = entry?.session ?? loadOrThrow(sessionId);
-      approvals.cancelSession(sessionId);
-      rules.clearSession(sessionId);
-      snapshots.clearSession(sessionId);
-      if (entry) {
-        await cleanupCommands(entry);
-      }
-      if (session.status !== "ended") {
-        try {
-          setStatus(session, "ended");
-        } catch {
-          session.status = "ended";
-          persist(options.store, session);
-        }
-      }
-      if (entry) {
-        if (entry.agentSessionId) {
-          try {
-            await entry.connection.client.request(methods.agent.session.close, {
-              sessionId: entry.agentSessionId,
-            });
-          } catch {
-            // Agent may already be gone.
-          }
-        }
-        entry.connection.close();
-        await entry.process.kill();
-        live.delete(sessionId);
-      }
+      const session = await teardownLive(sessionId, { markEnded: true });
       options.events.publish({
-        type: "session.deleted",
+        type: "session.updated",
         sessionId,
-        session: toSummary(session),
+        session: toSummary(enrichSession(session, false)),
       });
     },
 
-    async delete(sessionId) {
-      await service.end(sessionId);
+    async delete(sessionId, opts) {
+      await teardownLive(sessionId, { markEnded: true });
+      if (opts.runRecords === "keep-without-text") {
+        const items = options.store.listItems(sessionId, { limit: 10_000 });
+        for (const item of items) {
+          let payload: unknown = {};
+          try {
+            payload = JSON.parse(item.payloadJson) as unknown;
+          } catch {
+            payload = {};
+          }
+          const redacted =
+            payload && typeof payload === "object"
+              ? {
+                  ...(payload as Record<string, unknown>),
+                  text: undefined,
+                  content: undefined,
+                  redacted: true,
+                }
+              : { redacted: true };
+          options.store.updateItemPayload(sessionId, item.seq, JSON.stringify(redacted));
+        }
+        const session = loadOrThrow(sessionId);
+        options.events.publish({
+          type: "session.updated",
+          sessionId,
+          session: toSummary(enrichSession(session, false)),
+        });
+        return;
+      }
       options.store.deleteSession(sessionId);
+      options.events.publish({
+        type: "session.deleted",
+        sessionId,
+      });
     },
   };
+
+  async function teardownLive(sessionId: string, opts: { markEnded: boolean }): Promise<Session> {
+    const entry = live.get(sessionId);
+    const session = entry?.session ?? loadOrThrow(sessionId);
+    approvals.cancelSession(sessionId);
+    rules.clearSession(sessionId);
+    snapshots.clearSession(sessionId);
+    if (entry) {
+      if (entry.session.openRunId) {
+        // Quit mid-turn: open run is interrupted.
+        delete entry.session.openRunId;
+      }
+      await cleanupCommands(entry);
+    }
+    if (opts.markEnded && session.status !== "ended") {
+      try {
+        setStatus(session, "ended");
+      } catch {
+        session.status = "ended";
+        persist(options.store, session);
+      }
+    }
+    if (entry) {
+      if (entry.agentSessionId) {
+        try {
+          await entry.connection.client.request(methods.agent.session.close, {
+            sessionId: entry.agentSessionId,
+          });
+        } catch {
+          // Agent may already be gone.
+        }
+      }
+      entry.connection.close();
+      await entry.process.kill();
+      live.delete(sessionId);
+    }
+    return session;
+  }
 
   return {
     service,
