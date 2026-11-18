@@ -32,7 +32,15 @@ export {
   type WritableTarget,
 } from "./core.js";
 
-export { MOCK_AGENT_ID, type AgentOrigin, type AgentReadiness } from "./agents/agent.js";
+export {
+  MOCK_AGENT_ID,
+  type AgentDistribution,
+  type AgentOrigin,
+  type AgentReadiness,
+} from "./agents/agent.js";
+
+export { resolvePlatformKey, detectMusl, selectBinaryTarget } from "./agents/platform.js";
+export { parseRegistryDocument, DEFAULT_REGISTRY_URL } from "./agents/registry.js";
 export { transitionSessionStatus, type SessionStatus } from "./sessions/session.js";
 
 export { brandSchema, loadBrandFromJson, parseBrand, type Brand } from "./brand.js";

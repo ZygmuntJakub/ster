@@ -1,5 +1,6 @@
 import { useEffect, useState, type JSX } from "react";
 import { useTranslation } from "react-i18next";
+import { AgentsPane } from "../features/agents/AgentsPane.js";
 import { ConversationPane } from "./layout/ConversationPane.js";
 import { IconRail, type ShellSection } from "./layout/IconRail.js";
 import { SessionBoard } from "./layout/SessionBoard.js";
@@ -63,6 +64,8 @@ export function App(): JSX.Element {
               }
             }}
           />
+        ) : section === "agents" ? (
+          <AgentsPane />
         ) : section === "conversation" ? (
           <div className="mainc flex min-w-0 flex-1">
             <SessionBoard />

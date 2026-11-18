@@ -51,3 +51,20 @@ export interface CustomAgentInput {
   env: Record<string, string>;
   id?: string;
 }
+
+export interface Progress {
+  phase: string;
+  fraction?: number;
+  message?: string;
+}
+
+export interface IconData {
+  mimeType: string;
+  data: Uint8Array;
+}
+
+/**
+ * Executable-name hints for detecting installed agents (research.md R8).
+ * Keys are agent ids; values are candidate binary names on PATH.
+ */
+export type AgentHints = Readonly<Record<string, readonly string[]>>;

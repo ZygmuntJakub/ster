@@ -6,7 +6,7 @@ import {
   type InstallPlan,
   type Progress,
 } from "./agents/service.js";
-import type { Agent, CustomAgentInput } from "./agents/agent.js";
+import type { Agent, AgentHints, CustomAgentInput } from "./agents/agent.js";
 import { attachEventConsumers } from "./events/consumers.js";
 import { createEventStream, type CoreEvent, type EventStream } from "./events/stream.js";
 import { SterError } from "./errors.js";
@@ -29,16 +29,10 @@ import type { Session, SessionFilter } from "./sessions/session.js";
 import { openSqliteStore } from "./store/sqlite.js";
 import type { Store } from "./store/store.js";
 
-export type { Agent, CustomAgentInput, IconData, InstallPlan, Progress };
+export type { Agent, AgentHints, CustomAgentInput, IconData, InstallPlan, Progress };
 export type { AuthMethod, PermissionRule, PromptContent, Session, SessionFilter, SessionService };
 export type { RunRecord };
 export type { AgentService };
-
-/**
- * Executable-name hints for detecting installed agents (research.md R8).
- * Keys are agent ids; values are candidate binary names on PATH.
- */
-export type AgentHints = Readonly<Record<string, readonly string[]>>;
 
 /**
  * Host-provided platform hooks. The core never opens URLs or terminals itself.
@@ -111,6 +105,10 @@ export interface CreateCoreOptions {
   includeMockAgent?: boolean;
   mockAgentEntry?: string;
   nodeExecutable?: string;
+  /** Override the ACP registry index URL (tests / org policy). */
+  registryUrl?: string;
+  fetchImpl?: typeof fetch;
+  seedNodeBinary?: string;
 }
 
 export interface Core {
@@ -199,6 +197,8 @@ export async function createCore(options: CreateCoreOptions): Promise<Core> {
     store,
     settings,
     log,
+    environment,
+    events,
   };
   if (options.includeMockAgent !== undefined) {
     agentOptions.includeMockAgent = options.includeMockAgent;
@@ -208,6 +208,21 @@ export async function createCore(options: CreateCoreOptions): Promise<Core> {
   }
   if (options.nodeExecutable !== undefined) {
     agentOptions.nodeExecutable = options.nodeExecutable;
+  }
+  if (options.agentHints !== undefined) {
+    agentOptions.agentHints = options.agentHints;
+  }
+  if (extensions.agentSources !== undefined) {
+    agentOptions.agentSources = extensions.agentSources;
+  }
+  if (options.registryUrl !== undefined) {
+    agentOptions.registryUrl = options.registryUrl;
+  }
+  if (options.fetchImpl !== undefined) {
+    agentOptions.fetchImpl = options.fetchImpl;
+  }
+  if (options.seedNodeBinary !== undefined) {
+    agentOptions.seedNodeBinary = options.seedNodeBinary;
   }
   const agents = createAgentService(agentOptions);
 

@@ -179,28 +179,28 @@ description: "Task list for Ster — ACP Desktop Client"
 
 ### Tests for User Story 4
 
-- [ ] T080 [P] [US4] Unit tests for registry parsing (lenient to unknown keys), platform key resolution including musl, and readiness derivation in `packages/core/tests/unit/registry.test.ts`
-- [ ] T081 [P] [US4] Security tests for installation in `packages/core/tests/security/install.test.ts`: checksum mismatch, archive path traversal, `cmd` outside the install directory, non-HTTPS URL, tampered launch file before start
-- [ ] T082 [P] [US4] Integration tests for install, update, and remove against a local fixture registry in `packages/core/tests/integration/agents.test.ts`
-- [ ] T083 [P] [US4] End-to-end flow for US4 in `apps/desktop/tests/e2e/us4-agents.spec.ts`
+- [x] T080 [P] [US4] Unit tests for registry parsing (lenient to unknown keys), platform key resolution including musl, and readiness derivation in `packages/core/tests/unit/registry.test.ts`
+- [x] T081 [P] [US4] Security tests for installation in `packages/core/tests/security/install.test.ts`: checksum mismatch, archive path traversal, `cmd` outside the install directory, non-HTTPS URL, tampered launch file before start
+- [x] T082 [P] [US4] Integration tests for install, update, and remove against a local fixture registry in `packages/core/tests/integration/agents.test.ts`
+- [x] T083 [P] [US4] End-to-end flow for US4 in `apps/desktop/tests/e2e/us4-agents.spec.ts`
 
 ### Implementation for User Story 4
 
-- [ ] T084 [P] [US4] Implement the registry client with hourly throttle, ETag, and offline cache in `packages/core/src/agents/registry.ts` per data-model.md `RegistryEntry.distribution` (research.md R5)
-- [ ] T085 [P] [US4] Implement platform key resolution in `packages/core/src/agents/platform.ts`
-- [ ] T086 [P] [US4] Implement detection of installed agents in `packages/core/src/agents/detect.ts` using the `agentHints` option of `createCore` and the resolved shell environment (research.md R8, R19); load `apps/desktop/resources/agent-hints.json` in `apps/desktop/src/main/core-host.ts` and pass it in
-- [ ] T087 [US4] Implement `planInstall` in `packages/core/src/agents/plan.ts`, producing source, size, and verification status (FR-020, FR-077)
-- [ ] T088 [US4] Implement the binary installer in `packages/core/src/agents/install-binary.ts`: staged HTTPS download, SHA-256 verification when present, safe extraction, `cmd` validation, per data-model.md `Agent.install`, `Agent.launch`
-- [ ] T089 [US4] Implement the managed Node runtime (pinned version, embedded checksums) in `packages/core/src/agents/node-runtime.ts` (research.md R7)
-- [ ] T090 [US4] Implement the package installer in `packages/core/src/agents/install-npm.ts` (`npm install --save-exact --ignore-scripts`, per-agent opt-in for scripts, launch through the managed runtime) and `uvx` support when `uv` is present in `packages/core/src/agents/install-uvx.ts` (research.md R6)
-- [ ] T091 [US4] Implement launch-hash recording at install and re-check before every start in `packages/core/src/agents/integrity.ts`, surfacing `integrity-failed` (FR-077)
-- [ ] T092 [US4] Implement agent icon retrieval in `packages/core/src/agents/icons.ts` (same origin as the registry in effect, size limit, disk cache, placeholder otherwise; research.md R5) and the bridge function `agents.icon` in `apps/desktop/src/main/handlers/agents.ts`, with tests in `packages/core/tests/security/icons.test.ts`
-- [ ] T093 [US4] Wire `AgentSource` extensions into agent listing in `packages/core/src/agents/sources.ts`, with a test using a fake source in `packages/core/tests/unit/agent-sources.test.ts` (FR-059)
-- [ ] T094 [US4] Complete `AgentService` in `packages/core/src/agents/service.ts`: merged listing with data-model.md `Agent.readiness`, `refreshRegistry`, `install` with progress, update to a new version directory, `remove`, custom agent edit and delete
-- [ ] T095 [US4] Add bridge functions `agents.refreshRegistry`, `agents.planInstall`, `agents.install`, `agents.remove`, `agents.saveCustom`, `agents.deleteCustom` and the `install.progress` event in `apps/desktop/src/main/handlers/agents.ts`
-- [ ] T096 [P] [US4] Build the agent list with readiness states and registry status in `apps/desktop/src/renderer/features/agents/AgentList.tsx`, showing icons obtained through `agents.icon` or a placeholder
-- [ ] T097 [P] [US4] Build the install confirmation dialog (what, from where, verified or not, scripts opt-in) and progress view in `apps/desktop/src/renderer/features/agents/InstallDialog.tsx`
-- [ ] T098 [P] [US4] Build the custom agent form in `apps/desktop/src/renderer/features/agents/CustomAgentForm.tsx`, and add EN/PL strings
+- [x] T084 [P] [US4] Implement the registry client with hourly throttle, ETag, and offline cache in `packages/core/src/agents/registry.ts` per data-model.md `RegistryEntry.distribution` (research.md R5)
+- [x] T085 [P] [US4] Implement platform key resolution in `packages/core/src/agents/platform.ts`
+- [x] T086 [P] [US4] Implement detection of installed agents in `packages/core/src/agents/detect.ts` using the `agentHints` option of `createCore` and the resolved shell environment (research.md R8, R19); load `apps/desktop/resources/agent-hints.json` in `apps/desktop/src/main/core-host.ts` and pass it in
+- [x] T087 [US4] Implement `planInstall` in `packages/core/src/agents/plan.ts`, producing source, size, and verification status (FR-020, FR-077)
+- [x] T088 [US4] Implement the binary installer in `packages/core/src/agents/install-binary.ts`: staged HTTPS download, SHA-256 verification when present, safe extraction, `cmd` validation, per data-model.md `Agent.install`, `Agent.launch`
+- [x] T089 [US4] Implement the managed Node runtime (pinned version, embedded checksums) in `packages/core/src/agents/node-runtime.ts` (research.md R7)
+- [x] T090 [US4] Implement the package installer in `packages/core/src/agents/install-npm.ts` (`npm install --save-exact --ignore-scripts`, per-agent opt-in for scripts, launch through the managed runtime) and `uvx` support when `uv` is present in `packages/core/src/agents/install-uvx.ts` (research.md R6)
+- [x] T091 [US4] Implement launch-hash recording at install and re-check before every start in `packages/core/src/agents/integrity.ts`, surfacing `integrity-failed` (FR-077)
+- [x] T092 [US4] Implement agent icon retrieval in `packages/core/src/agents/icons.ts` (same origin as the registry in effect, size limit, disk cache, placeholder otherwise; research.md R5) and the bridge function `agents.icon` in `apps/desktop/src/main/handlers/agents.ts`, with tests in `packages/core/tests/security/icons.test.ts`
+- [x] T093 [US4] Wire `AgentSource` extensions into agent listing in `packages/core/src/agents/sources.ts`, with a test using a fake source in `packages/core/tests/unit/agent-sources.test.ts` (FR-059)
+- [x] T094 [US4] Complete `AgentService` in `packages/core/src/agents/service.ts`: merged listing with data-model.md `Agent.readiness`, `refreshRegistry`, `install` with progress, update to a new version directory, `remove`, custom agent edit and delete
+- [x] T095 [US4] Add bridge functions `agents.refreshRegistry`, `agents.planInstall`, `agents.install`, `agents.remove`, `agents.saveCustom`, `agents.deleteCustom` and the `install.progress` event in `apps/desktop/src/main/handlers/agents.ts`
+- [x] T096 [P] [US4] Build the agent list with readiness states and registry status in `apps/desktop/src/renderer/features/agents/AgentList.tsx`, showing icons obtained through `agents.icon` or a placeholder
+- [x] T097 [P] [US4] Build the install confirmation dialog (what, from where, verified or not, scripts opt-in) and progress view in `apps/desktop/src/renderer/features/agents/InstallDialog.tsx`
+- [x] T098 [P] [US4] Build the custom agent form in `apps/desktop/src/renderer/features/agents/CustomAgentForm.tsx`, and add EN/PL strings
 
 **Checkpoint**: Any registry agent available for the platform can be installed and used
 

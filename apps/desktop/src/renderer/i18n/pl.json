@@ -105,6 +105,35 @@
     "themeLight": "Jasny",
     "themeDark": "Ciemny"
   },
+  "agents": {
+    "title": "Agenci",
+    "refresh": "Odśwież rejestr",
+    "registryReachable": "Rejestr dostępny",
+    "registryOffline": "Rejestr niedostępny{{error}}",
+    "install": "Zainstaluj",
+    "update": "Aktualizuj",
+    "remove": "Usuń",
+    "installTitle": "Potwierdź instalację",
+    "verified": "Suma kontrolna pobrania zweryfikowana względem rejestru.",
+    "unverified": "Brak sumy kontrolnej w rejestrze — zaufanie przy pierwszym użyciu; skrót pliku startowego zostanie zapisany.",
+    "confirmInstall": "Zainstaluj",
+    "installing": "Instalowanie…",
+    "cancel": "Anuluj",
+    "customTitle": "Własny agent",
+    "customName": "Nazwa",
+    "customCommand": "Polecenie",
+    "customArgs": "Argumenty",
+    "saveCustom": "Zapisz własnego agenta",
+    "readiness": {
+      "ready": "Gotowy",
+      "needs-login": "Wymaga logowania",
+      "not-installed": "Nie zainstalowany",
+      "unavailable": "Niedostępny na tym systemie",
+      "blocked-by-policy": "Zablokowany przez organizację",
+      "update-available": "Dostępna aktualizacja",
+      "integrity-failed": "Błąd integralności"
+    }
+  },
   "errors": {
     "policy-invalid": "Polityka organizacji jest nieprawidłowa",
     "blocked-by-policy": "Zablokowane przez politykę organizacji",

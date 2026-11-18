@@ -39,7 +39,14 @@ export type CoreEventPayload =
   | { type: "run.started" | "run.finished"; sessionId: string; run: RunSummary }
   | { type: "score.recorded"; runId: string; score: Score }
   | { type: "agent.changed"; agentId: string }
-  | { type: "registry.updated"; status: RegistryStatus };
+  | { type: "registry.updated"; status: RegistryStatus }
+  | {
+      type: "install.progress";
+      planId: string;
+      phase: string;
+      received?: number;
+      total?: number;
+    };
 
 export type CoreEvent = CoreEventPayload & {
   at: string;

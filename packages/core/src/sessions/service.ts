@@ -460,6 +460,12 @@ export function createSessionService(options: CreateSessionServiceOptions): Sess
     if (!agent) {
       throw new SterError("not-found", `Unknown agent ${input.agentId}`);
     }
+    if (agent.readiness === "integrity-failed") {
+      throw new SterError("integrity-failed", "Agent launch files failed integrity check", {
+        agentId: agent.id,
+      });
+    }
+    await options.agents.assertIntegrity(input.agentId);
     if (!agent.confirmedAt) {
       throw new SterError("agent-not-confirmed", "Confirm the agent before the first start", {
         agentId: agent.id,

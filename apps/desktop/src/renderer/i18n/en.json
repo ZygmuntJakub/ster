@@ -105,6 +105,35 @@
     "themeLight": "Light",
     "themeDark": "Dark"
   },
+  "agents": {
+    "title": "Agents",
+    "refresh": "Refresh registry",
+    "registryReachable": "Registry reachable",
+    "registryOffline": "Registry offline{{error}}",
+    "install": "Install",
+    "update": "Update",
+    "remove": "Remove",
+    "installTitle": "Confirm install",
+    "verified": "Download checksum verified against the registry.",
+    "unverified": "No registry checksum — trust on first use; the launch hash will be recorded.",
+    "confirmInstall": "Install",
+    "installing": "Installing…",
+    "cancel": "Cancel",
+    "customTitle": "Custom agent",
+    "customName": "Name",
+    "customCommand": "Command",
+    "customArgs": "Arguments",
+    "saveCustom": "Save custom agent",
+    "readiness": {
+      "ready": "Ready",
+      "needs-login": "Needs login",
+      "not-installed": "Not installed",
+      "unavailable": "Unavailable on this system",
+      "blocked-by-policy": "Blocked by organization",
+      "update-available": "Update available",
+      "integrity-failed": "Integrity failed"
+    }
+  },
   "errors": {
     "policy-invalid": "Organization policy is invalid",
     "blocked-by-policy": "Blocked by organization policy",

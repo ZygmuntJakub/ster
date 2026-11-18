@@ -31,6 +31,7 @@ describe("AgentService", () => {
       store,
       settings,
       log: createLogger({ sink: () => undefined }),
+      environment: { PATH: process.env["PATH"] ?? "/usr/bin", HOME: dataDir },
       includeMockAgent: true,
       mockAgentEntry,
     });
@@ -68,6 +69,7 @@ describe("AgentService", () => {
       store,
       settings,
       log: createLogger({ sink: () => undefined }),
+      environment: { PATH: "/usr/bin", HOME: dataDir },
       includeMockAgent: false,
     });
     expect(await agents.list()).toEqual([]);

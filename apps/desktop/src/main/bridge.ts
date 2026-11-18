@@ -8,6 +8,15 @@ import {
 } from "../shared/bridge.js";
 import type { CoreHost } from "./core-host.js";
 import { createEventForwarder } from "./event-forwarder.js";
+import {
+  agentIcon,
+  deleteCustom,
+  installAgent,
+  planInstall,
+  refreshRegistry,
+  removeAgent,
+  saveCustom,
+} from "./handlers/agents.js";
 import { openLocation } from "./handlers/files.js";
 import { listRules, revokeRule, setPermissionMode } from "./handlers/sessions.js";
 import { createLinkIndex } from "./link-index.js";
@@ -101,6 +110,40 @@ async function handleMethod(
       return ok({ subscribed: true });
     case "agents.list":
       return ok(await core.agents.list());
+    case "agents.icon": {
+      const { agentId } = payload as { agentId: string };
+      return ok(await agentIcon(core, agentId));
+    }
+    case "agents.refreshRegistry": {
+      const body = payload as { force?: boolean } | undefined;
+      return ok(await refreshRegistry(core, body?.force));
+    }
+    case "agents.planInstall": {
+      const { agentId } = payload as { agentId: string };
+      return ok(await planInstall(core, agentId));
+    }
+    case "agents.install": {
+      const { planId } = payload as { planId: string };
+      return ok(await installAgent(core, planId));
+    }
+    case "agents.remove": {
+      const { agentId } = payload as { agentId: string };
+      return ok(await removeAgent(core, agentId));
+    }
+    case "agents.saveCustom": {
+      const input = payload as {
+        id?: string;
+        name: string;
+        command: string;
+        args: string[];
+        env: Record<string, string>;
+      };
+      return ok(await saveCustom(core, input));
+    }
+    case "agents.deleteCustom": {
+      const { agentId } = payload as { agentId: string };
+      return ok(await deleteCustom(core, agentId));
+    }
     case "agents.confirmFirstStart": {
       const { agentId } = payload as { agentId: string };
       await core.agents.confirmFirstStart(agentId);

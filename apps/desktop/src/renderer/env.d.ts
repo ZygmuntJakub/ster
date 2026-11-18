@@ -24,6 +24,19 @@ type SterApi = {
   };
   agents: {
     list: () => Promise<unknown>;
+    icon: (payload: { agentId: string }) => Promise<unknown>;
+    refreshRegistry: (payload?: { force?: boolean }) => Promise<unknown>;
+    planInstall: (payload: { agentId: string }) => Promise<unknown>;
+    install: (payload: { planId: string }) => Promise<unknown>;
+    remove: (payload: { agentId: string }) => Promise<unknown>;
+    saveCustom: (payload: {
+      id?: string;
+      name: string;
+      command: string;
+      args: string[];
+      env: Record<string, string>;
+    }) => Promise<unknown>;
+    deleteCustom: (payload: { agentId: string }) => Promise<unknown>;
     confirmFirstStart: (payload: { agentId: string }) => Promise<unknown>;
   };
   dialogs: {

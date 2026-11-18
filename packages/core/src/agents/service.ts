@@ -1,31 +1,36 @@
 import { randomUUID } from "node:crypto";
-import { existsSync } from "node:fs";
+import { existsSync, mkdirSync, readFileSync, readdirSync, rmSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
+import type { EventStream, CoreEvent } from "../events/stream.js";
+import type { AgentSource } from "../extensions/index.js";
 import { SterError } from "../errors.js";
 import type { Logger } from "../log.js";
 import type { RegistryStatus } from "../model/events.js";
+import type { ResolvedEnv } from "../platform/shell-env.js";
 import type { SettingsService } from "../settings/service.js";
 import type { Store } from "../store/store.js";
-import { MOCK_AGENT_ID, type Agent, type AgentLaunch, type CustomAgentInput } from "./agent.js";
+import {
+  MOCK_AGENT_ID,
+  type Agent,
+  type AgentHints,
+  type AgentLaunch,
+  type CustomAgentInput,
+  type IconData,
+  type Progress,
+} from "./agent.js";
+import { detectInstalledAgents, findOnPath } from "./detect.js";
+import { fetchAgentIcon } from "./icons.js";
+import { installBinaryAgent } from "./install-binary.js";
+import { installNpmAgent } from "./install-npm.js";
+import { installUvxAgent } from "./install-uvx.js";
+import { assertLaunchIntegrity } from "./integrity.js";
+import { planInstall, readinessForRegistryEntry, type InstallPlan } from "./plan.js";
+import { resolvePlatformKey } from "./platform.js";
+import { createRegistryClient, type RegistryClient } from "./registry.js";
+import { listExtensionAgents } from "./sources.js";
 
-export interface IconData {
-  mimeType: string;
-  data: Uint8Array;
-}
-
-export interface InstallPlan {
-  agentId: string;
-  version: string;
-  source: string;
-  verified: boolean;
-}
-
-export interface Progress {
-  phase: string;
-  fraction?: number;
-  message?: string;
-}
+export type { IconData, InstallPlan, Progress };
 
 export interface AgentService {
   list(): Promise<Agent[]>;
@@ -39,12 +44,21 @@ export interface AgentService {
   confirmFirstStart(agentId: string): Promise<void>;
   /** Resolve a known agent by id (including mock / custom). */
   get(agentId: string): Agent | null;
+  /** Verify launch hash for an installed agent before start. */
+  assertIntegrity(agentId: string): Promise<void>;
 }
 
 export interface CreateAgentServiceOptions {
   store: Store;
   settings: SettingsService;
   log: Logger;
+  environment: ResolvedEnv;
+  events?: EventStream<CoreEvent>;
+  agentHints?: AgentHints;
+  agentSources?: ReadonlyArray<AgentSource>;
+  registryUrl?: string;
+  fetchImpl?: typeof fetch;
+  seedNodeBinary?: string;
   /** When true (default outside production), expose the mock ACP agent. */
   includeMockAgent?: boolean;
   /** Absolute path to the mock-agent entry script. */
@@ -57,8 +71,15 @@ function confirmedKey(agentId: string): string {
   return `agent.confirmed.${agentId}`;
 }
 
+function installedMetaPath(dataDir: string, agentId: string): string {
+  return join(dataDir, "agents", agentId, "installed.json");
+}
+
+interface InstalledMeta {
+  agent: Agent;
+}
+
 function defaultMockEntry(): string {
-  // packages/core/src/agents -> packages/mock-agent/src/index.ts
   const here = dirname(fileURLToPath(import.meta.url));
   return join(here, "../../../mock-agent/src/index.ts");
 }
@@ -71,17 +92,66 @@ function mockLaunch(options: CreateAgentServiceOptions): AgentLaunch {
   };
 }
 
+function writeInstalled(dataDir: string, agent: Agent): void {
+  const path = installedMetaPath(dataDir, agent.id);
+  mkdirSync(dirname(path), { recursive: true });
+  writeFileSync(path, JSON.stringify({ agent } satisfies InstalledMeta, null, 2));
+}
+
+function readInstalled(dataDir: string, agentId: string): Agent | null {
+  const path = installedMetaPath(dataDir, agentId);
+  if (!existsSync(path)) {
+    return null;
+  }
+  try {
+    const raw = JSON.parse(readFileSync(path, "utf8")) as InstalledMeta;
+    return raw.agent;
+  } catch {
+    return null;
+  }
+}
+
+function listInstalled(dataDir: string): Agent[] {
+  const root = join(dataDir, "agents");
+  if (!existsSync(root)) {
+    return [];
+  }
+  const agents: Agent[] = [];
+  for (const id of readdirSync(root)) {
+    if (id.startsWith(".")) {
+      continue;
+    }
+    const agent = readInstalled(dataDir, id);
+    if (agent) {
+      agents.push(agent);
+    }
+  }
+  return agents;
+}
+
 /**
- * Minimal AgentService for US1: mock agent in development + custom agents from settings.
+ * Full AgentService: registry, detection, install, custom agents (US4).
  */
 export function createAgentService(options: CreateAgentServiceOptions): AgentService {
   const includeMock = options.includeMockAgent ?? process.env["NODE_ENV"] !== "production";
   const now = options.now ?? (() => new Date());
+  const dataDir = options.store.dataDir;
+  const hints = options.agentHints ?? {};
+  const platformKey = resolvePlatformKey();
+  const registry: RegistryClient = createRegistryClient({
+    dataDir,
+    ...(options.registryUrl !== undefined ? { url: options.registryUrl } : {}),
+    ...(options.fetchImpl !== undefined ? { fetchImpl: options.fetchImpl } : {}),
+    now,
+  });
+  const plans = new Map<string, InstallPlan>();
 
   const confirmedAt = (agentId: string): string | undefined => {
     const value = options.store.getSetting(confirmedKey(agentId));
     return value ?? undefined;
   };
+
+  const uvAvailable = (): boolean => Boolean(findOnPath("uv", options.environment));
 
   const loadCustoms = (): Agent[] => {
     return options.settings.get().customAgents.map((custom) => {
@@ -130,28 +200,208 @@ export function createAgentService(options: CreateAgentServiceOptions): AgentSer
     return agent;
   };
 
-  const byId = (): Map<string, Agent> => {
-    const map = new Map<string, Agent>();
+  const mergeList = async (): Promise<Agent[]> => {
+    const byId = new Map<string, Agent>();
+
     const mock = mockAgent();
     if (mock) {
-      map.set(mock.id, mock);
+      byId.set(mock.id, mock);
     }
+
     for (const custom of loadCustoms()) {
-      map.set(custom.id, custom);
+      byId.set(custom.id, custom);
     }
-    return map;
+
+    for (const installed of listInstalled(dataDir)) {
+      const at = confirmedAt(installed.id);
+      const copy = { ...installed };
+      if (at !== undefined) {
+        copy.confirmedAt = at;
+      }
+      if (installed.install && installed.launch) {
+        try {
+          await assertLaunchIntegrity(installed.launch.command, installed.install.launchHash);
+        } catch {
+          copy.readiness = "integrity-failed";
+        }
+      }
+      const entry = registry.getEntry(installed.id);
+      if (entry && entry.version !== installed.version) {
+        copy.readiness =
+          copy.readiness === "integrity-failed" ? "integrity-failed" : "update-available";
+      }
+      byId.set(copy.id, copy);
+    }
+
+    const detected = detectInstalledAgents({
+      entries: registry.listEntries(),
+      env: options.environment,
+      platformKey,
+      hints,
+    });
+    for (const agent of detected) {
+      if (byId.has(agent.id)) {
+        continue;
+      }
+      const at = confirmedAt(agent.id);
+      if (at !== undefined) {
+        agent.confirmedAt = at;
+      }
+      byId.set(agent.id, agent);
+    }
+
+    for (const entry of registry.listEntries()) {
+      if (byId.has(entry.id)) {
+        continue;
+      }
+      const readiness = readinessForRegistryEntry({
+        entry,
+        platformKey,
+        uvAvailable: uvAvailable(),
+      });
+      byId.set(entry.id, {
+        id: entry.id,
+        name: entry.name,
+        origin: "registry",
+        version: entry.version,
+        distribution: entry.distribution.binary
+          ? "binary"
+          : entry.distribution.npx
+            ? "npx"
+            : entry.distribution.uvx
+              ? "uvx"
+              : "none",
+        readiness,
+      });
+    }
+
+    if (options.agentSources?.length) {
+      const extensionAgents = await listExtensionAgents(options.agentSources, {
+        env: options.environment,
+        dataDir,
+      });
+      for (const agent of extensionAgents) {
+        if (!byId.has(agent.id)) {
+          byId.set(agent.id, agent);
+        }
+      }
+    }
+
+    return [...byId.values()];
   };
 
-  return {
+  const service: AgentService = {
     get(agentId) {
-      return byId().get(agentId) ?? null;
+      // Sync snapshot without integrity await — list()/assertIntegrity for full checks.
+      const installed = readInstalled(dataDir, agentId);
+      if (installed) {
+        return installed;
+      }
+      return null;
     },
-    list: () => Promise.resolve([...byId().values()]),
-    icon: () => Promise.resolve(null),
-    refreshRegistry: () => Promise.resolve({ reachable: false }),
-    planInstall: () => Promise.reject(new SterError("not-found", "Install plans arrive in US4")),
-    install: () => Promise.reject(new SterError("not-found", "Install arrives in US4")),
-    remove: () => Promise.reject(new SterError("not-found", "Remove arrives in US4")),
+
+    list: () => mergeList(),
+
+    async icon(agentId) {
+      const entry = registry.getEntry(agentId);
+      return fetchAgentIcon({
+        dataDir,
+        registryUrl: registry.url,
+        agentId,
+        ...(entry?.icon !== undefined ? { icon: entry.icon } : {}),
+        ...(options.fetchImpl !== undefined ? { fetchImpl: options.fetchImpl } : {}),
+      });
+    },
+
+    async refreshRegistry(opts) {
+      const status = await registry.refresh(opts);
+      options.events?.publish({ type: "registry.updated", status });
+      return status;
+    },
+
+    planInstall: (agentId) => {
+      const entry = registry.getEntry(agentId);
+      if (!entry) {
+        return Promise.reject(new SterError("not-found", `Unknown registry agent ${agentId}`));
+      }
+      const plan = planInstall({
+        entry,
+        platformKey,
+        uvAvailable: uvAvailable(),
+      });
+      plans.set(plan.id, plan);
+      return Promise.resolve(plan);
+    },
+
+    async install(plan, onProgress) {
+      const stored = plans.get(plan.id) ?? plan;
+      const progress = (p: Progress): void => {
+        onProgress?.(p);
+        options.events?.publish({
+          type: "install.progress",
+          planId: stored.id,
+          phase: p.phase,
+          ...(p.fraction !== undefined ? { received: p.fraction } : {}),
+        });
+      };
+
+      let result: { agent: Agent };
+      if (stored.detail.kind === "binary") {
+        result = await installBinaryAgent({
+          plan: stored,
+          dataDir,
+          ...(options.fetchImpl !== undefined ? { fetchImpl: options.fetchImpl } : {}),
+          onProgress: progress,
+        });
+      } else if (stored.detail.kind === "npx") {
+        result = await installNpmAgent({
+          plan: stored,
+          dataDir,
+          platformKey,
+          ...(options.fetchImpl !== undefined ? { fetchImpl: options.fetchImpl } : {}),
+          onProgress: progress,
+          ...(options.seedNodeBinary !== undefined
+            ? { seedNodeBinary: options.seedNodeBinary }
+            : options.nodeExecutable !== undefined
+              ? { seedNodeBinary: options.nodeExecutable }
+              : { seedNodeBinary: process.execPath }),
+          allowScripts: stored.scriptsAllowed,
+        });
+      } else {
+        const uvPath = findOnPath("uv", options.environment);
+        if (!uvPath) {
+          throw new SterError("agent-not-ready", "uv is not available on PATH");
+        }
+        result = await installUvxAgent({
+          plan: stored,
+          dataDir,
+          uvPath,
+          onProgress: progress,
+        });
+      }
+
+      const entry = registry.getEntry(stored.agentId);
+      const agent: Agent = {
+        ...result.agent,
+        name: entry?.name ?? result.agent.name,
+      };
+      writeInstalled(dataDir, agent);
+      plans.delete(stored.id);
+      options.events?.publish({ type: "agent.changed", agentId: agent.id });
+      options.log.info("agent installed", { agentId: agent.id, version: agent.version });
+      return agent;
+    },
+
+    remove: (agentId) => {
+      const installed = readInstalled(dataDir, agentId);
+      if (!installed) {
+        return Promise.reject(new SterError("not-found", `Agent ${agentId} is not installed`));
+      }
+      rmSync(join(dataDir, "agents", agentId), { recursive: true, force: true });
+      options.events?.publish({ type: "agent.changed", agentId });
+      return Promise.resolve();
+    },
+
     saveCustom: (def) => {
       const id = def.id ?? `custom:${randomUUID()}`;
       const settings = options.settings.get();
@@ -165,12 +415,16 @@ export function createAgentService(options: CreateAgentServiceOptions): AgentSer
       });
       options.settings.set({ customAgents: next });
       options.log.info("custom agent saved", { agentId: id });
-      const agent = byId().get(id);
-      if (!agent) {
-        return Promise.reject(new SterError("not-found", "Custom agent missing after save"));
-      }
-      return Promise.resolve(agent);
+      options.events?.publish({ type: "agent.changed", agentId: id });
+      return mergeList().then((list) => {
+        const agent = list.find((a) => a.id === id);
+        if (!agent) {
+          throw new SterError("not-found", "Custom agent missing after save");
+        }
+        return agent;
+      });
     },
+
     deleteCustom: (agentId) => {
       if (!agentId.startsWith("custom:")) {
         return Promise.reject(
@@ -181,21 +435,63 @@ export function createAgentService(options: CreateAgentServiceOptions): AgentSer
       options.settings.set({
         customAgents: settings.customAgents.filter((c) => c.id !== agentId),
       });
+      options.events?.publish({ type: "agent.changed", agentId });
       return Promise.resolve();
     },
+
     confirmFirstStart: (agentId) => {
-      const agent = byId().get(agentId);
-      if (!agent) {
-        return Promise.reject(new SterError("not-found", `Unknown agent ${agentId}`));
+      return mergeList().then((list) => {
+        const agent = list.find((a) => a.id === agentId);
+        if (!agent) {
+          throw new SterError("not-found", `Unknown agent ${agentId}`);
+        }
+        if (!agent.launch) {
+          throw new SterError("agent-not-ready", `Agent ${agentId} has no launch command`);
+        }
+        if (agent.readiness === "integrity-failed") {
+          throw new SterError("integrity-failed", `Agent ${agentId} failed integrity check`);
+        }
+        options.store.setSetting(confirmedKey(agentId), now().toISOString());
+        options.log.info("agent first-start confirmed", { agentId });
+      });
+    },
+
+    async assertIntegrity(agentId) {
+      const installed = readInstalled(dataDir, agentId);
+      if (!installed?.install || !installed.launch) {
+        return;
       }
-      if (!agent.launch) {
-        return Promise.reject(
-          new SterError("agent-not-ready", `Agent ${agentId} has no launch command`),
-        );
-      }
-      options.store.setSetting(confirmedKey(agentId), now().toISOString());
-      options.log.info("agent first-start confirmed", { agentId });
-      return Promise.resolve();
+      await assertLaunchIntegrity(installed.launch.command, installed.install.launchHash);
     },
   };
+
+  // Eager sync get that includes mock/custom for session starts.
+  const originalGet = service.get.bind(service);
+  service.get = (agentId: string): Agent | null => {
+    const installed = originalGet(agentId);
+    if (installed) {
+      const at = confirmedAt(agentId);
+      return at !== undefined ? { ...installed, confirmedAt: at } : installed;
+    }
+    if (agentId === MOCK_AGENT_ID) {
+      return mockAgent();
+    }
+    const custom = loadCustoms().find((a) => a.id === agentId);
+    if (custom) {
+      return custom;
+    }
+    const detected = detectInstalledAgents({
+      entries: registry.listEntries(),
+      env: options.environment,
+      platformKey,
+      hints,
+    }).find((a) => a.id === agentId);
+    if (detected) {
+      const at = confirmedAt(agentId);
+      return at !== undefined ? { ...detected, confirmedAt: at } : detected;
+    }
+    return null;
+  };
+
+  return service;
 }

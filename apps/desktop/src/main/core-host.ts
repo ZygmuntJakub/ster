@@ -60,6 +60,20 @@ export async function startCoreHost(): Promise<CoreHost> {
     process.env["npm_node_execpath"] ??
     environment["STER_NODE_BINARY"] ??
     "node";
+
+  const hintsCandidates = [
+    join(app.getAppPath(), "resources", "agent-hints.json"),
+    join(__dirname, "../../resources/agent-hints.json"),
+    join(process.cwd(), "resources", "agent-hints.json"),
+  ];
+  let agentHints: Record<string, string[]> | undefined;
+  for (const candidate of hintsCandidates) {
+    if (existsSync(candidate)) {
+      agentHints = JSON.parse(readFileSync(candidate, "utf8")) as Record<string, string[]>;
+      break;
+    }
+  }
+
   const core = await createCore({
     dataDir,
     brand,
@@ -69,6 +83,8 @@ export async function startCoreHost(): Promise<CoreHost> {
     nodeExecutable,
     includeMockAgent: process.env["NODE_ENV"] !== "production" && hasMockAgent,
     ...(hasMockAgent ? { mockAgentEntry } : {}),
+    ...(agentHints !== undefined ? { agentHints } : {}),
+    ...(process.env["STER_REGISTRY_URL"] ? { registryUrl: process.env["STER_REGISTRY_URL"] } : {}),
     platform: {
       openExternal: async (url) => {
         await shell.openExternal(url);
