@@ -31,6 +31,17 @@ export interface Session {
   availableCommands?: AvailableCommandInfo[];
   /** Hash of the trusted factory definition applied at session create (US11). */
   factoryDefinitionHash?: string;
+  /** Agent prompt capabilities from initialize (FR-004 / FR-023). */
+  promptCapabilities?: {
+    image?: boolean;
+    audio?: boolean;
+    embeddedContext?: boolean;
+  };
+  /**
+   * Sticky attention for finished/failed turns while the session was not in view (FR-029).
+   * Cleared by `markViewed`.
+   */
+  attentionPending?: boolean;
 }
 
 export interface SessionFilter {

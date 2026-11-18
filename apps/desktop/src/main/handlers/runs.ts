@@ -1,5 +1,6 @@
 import { dialog, BrowserWindow } from "electron";
 import type { Core, RunFilter } from "@ster/core";
+import { t } from "../i18n.js";
 
 export async function runsList(
   core: Core,
@@ -31,9 +32,9 @@ export async function runsExport(
 ): Promise<{ count: number; path?: string; cancelled?: boolean }> {
   const window = BrowserWindow.getFocusedWindow() ?? BrowserWindow.getAllWindows()[0];
   const dialogOptions = {
-    title: "Export run records",
+    title: t("dialogs.exportRunsTitle"),
     defaultPath: "ster-runs.jsonl",
-    filters: [{ name: "JSON Lines", extensions: ["jsonl", "json"] }],
+    filters: [{ name: t("dialogs.exportRunsFilter"), extensions: ["jsonl", "json"] }],
   };
   const result = window
     ? await dialog.showSaveDialog(window, dialogOptions)

@@ -99,6 +99,13 @@ export function planInstall(options: PlanInstallOptions): InstallPlan {
   }
 
   if (npx) {
+    if (options.requireChecksum) {
+      throw new SterError(
+        "invalid-argument",
+        "Organization policy requires a checksum; npm packages cannot provide one",
+        { agentId: entry.id, distribution: "npx" },
+      );
+    }
     const lines: InstallPlanLine[] = [
       { label: `npm package ${npx.package}` },
       {
@@ -133,6 +140,13 @@ export function planInstall(options: PlanInstallOptions): InstallPlan {
         "agent-not-ready",
         "This agent requires uv, which was not found on PATH",
         { agentId: entry.id },
+      );
+    }
+    if (options.requireChecksum) {
+      throw new SterError(
+        "invalid-argument",
+        "Organization policy requires a checksum; uvx packages cannot provide one",
+        { agentId: entry.id, distribution: "uvx" },
       );
     }
     return {

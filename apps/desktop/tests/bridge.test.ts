@@ -130,12 +130,24 @@ describe("bridge surface", () => {
   });
 
   it("accepts minimal valid payloads for post-phase-2 methods", () => {
-    expect(validateBridgePayload("factory.find", { cwd: "/tmp/project" })).toEqual({
-      cwd: "/tmp/project",
+    expect(validateBridgePayload("factory.find", { folderToken: "folder:test" })).toEqual({
+      folderToken: "folder:test",
     });
+    expect(() => validateBridgePayload("factory.find", { cwd: "/tmp/project" })).toThrow(
+      /Invalid payload/,
+    );
     expect(
+      validateBridgePayload("factory.trust", {
+        folderToken: "folder:test",
+        contentHash: "abc",
+      }),
+    ).toEqual({ folderToken: "folder:test", contentHash: "abc" });
+    expect(() =>
       validateBridgePayload("factory.trust", { folder: "/tmp/project", contentHash: "abc" }),
-    ).toEqual({ folder: "/tmp/project", contentHash: "abc" });
+    ).toThrow(/Invalid payload/);
+    expect(() => validateBridgePayload("factory.revoke", { folder: "/tmp/project" })).toThrow(
+      /Invalid payload/,
+    );
     expect(validateBridgePayload("runs.get", { runId: "run-1" })).toEqual({ runId: "run-1" });
     expect(validateBridgePayload("runs.rate", { runId: "run-1", value: 4 })).toEqual({
       runId: "run-1",

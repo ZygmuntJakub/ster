@@ -137,34 +137,14 @@ export const bridgePayloadSchemas: Record<string, z.ZodType> = {
       rows: z.number().int().positive().max(200),
     })
     .strict(),
-  "factory.find": z
-    .object({
-      folderToken: tokenSchema.optional(),
-      cwd: z.string().min(1).optional(),
-    })
-    .strict()
-    .refine((value) => value.folderToken !== undefined || value.cwd !== undefined, {
-      message: "folderToken or cwd required",
-    }),
+  "factory.find": z.object({ folderToken: tokenSchema }).strict(),
   "factory.trust": z
     .object({
-      folderToken: tokenSchema.optional(),
-      folder: z.string().min(1).optional(),
+      folderToken: tokenSchema,
       contentHash: z.string().min(1),
     })
-    .strict()
-    .refine((value) => value.folderToken !== undefined || value.folder !== undefined, {
-      message: "folderToken or folder required",
-    }),
-  "factory.revoke": z
-    .object({
-      folderToken: tokenSchema.optional(),
-      folder: z.string().min(1).optional(),
-    })
-    .strict()
-    .refine((value) => value.folderToken !== undefined || value.folder !== undefined, {
-      message: "folderToken or folder required",
-    }),
+    .strict(),
+  "factory.revoke": z.object({ folderToken: tokenSchema }).strict(),
   "factory.renderTemplate": z
     .object({
       sessionId: idSchema,

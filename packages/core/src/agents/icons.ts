@@ -1,6 +1,7 @@
 import { createHash } from "node:crypto";
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
+import { assertAllowedNetworkUrl, createNetworkAllowlist } from "../net/allowlist.js";
 import type { IconData } from "./agent.js";
 
 const MAX_ICON_BYTES = 256 * 1024;
@@ -52,6 +53,15 @@ export async function fetchAgentIcon(input: {
 
   const fetchImpl = input.fetchImpl ?? fetch;
   try {
+    const host = new URL(absolute).hostname;
+    assertAllowedNetworkUrl(
+      absolute,
+      createNetworkAllowlist({
+        registryEnabled: true,
+        includePublicRegistry: false,
+        downloadHosts: [host],
+      }),
+    );
     const response = await fetchImpl(absolute);
     if (!response.ok) {
       return null;

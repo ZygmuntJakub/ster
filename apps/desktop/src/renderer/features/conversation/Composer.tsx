@@ -7,6 +7,8 @@ export interface ComposerProps {
   sessionId: string;
   disabled?: boolean;
   working?: boolean;
+  /** When false, hide Attach (agent lacks image/embeddedContext prompt caps). */
+  canAttach?: boolean;
   commands?: AvailableCommandView[];
   onSent?: () => void;
 }
@@ -18,6 +20,7 @@ export function Composer({
   sessionId,
   disabled,
   working,
+  canAttach = false,
   commands = [],
   onSent,
 }: ComposerProps): JSX.Element {
@@ -102,25 +105,28 @@ export function Composer({
         }}
       />
       <div className="mt-2 flex items-center gap-2">
-        <button
-          type="button"
-          className="btn ghost"
-          disabled={disabled || busy}
-          onClick={() => {
-            void (async () => {
-              const result = (await window.ster.dialogs.pickAttachments({ sessionId })) as {
-                cancelled?: boolean;
-                attachments?: Array<{ token: string; name: string }>;
-              };
-              if (!result.cancelled && result.attachments) {
-                const next = result.attachments;
-                setAttachments((prev) => [...prev, ...next]);
-              }
-            })();
-          }}
-        >
-          {t("composer.attach")}
-        </button>
+        {canAttach ? (
+          <button
+            type="button"
+            className="btn ghost"
+            disabled={disabled || busy}
+            data-testid="composer-attach"
+            onClick={() => {
+              void (async () => {
+                const result = (await window.ster.dialogs.pickAttachments({ sessionId })) as {
+                  cancelled?: boolean;
+                  attachments?: Array<{ token: string; name: string }>;
+                };
+                if (!result.cancelled && result.attachments) {
+                  const next = result.attachments;
+                  setAttachments((prev) => [...prev, ...next]);
+                }
+              })();
+            }}
+          >
+            {t("composer.attach")}
+          </button>
+        ) : null}
         {!disabled ? (
           <TemplatePicker
             sessionId={sessionId}

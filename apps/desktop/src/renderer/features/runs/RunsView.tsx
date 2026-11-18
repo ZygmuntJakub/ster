@@ -21,10 +21,12 @@ interface RunTotals {
   count: number;
   averageUserRating: number | null;
   averageAgentScore: number | null;
+  totalDurationMs: number;
+  totalCost: { amount: number; currency: string } | null;
 }
 
 /**
- * Browse and filter run records (US12).
+ * Browse and filter run records (US12 / FR-071).
  */
 export function RunsView(): JSX.Element {
   const { t } = useTranslation();
@@ -33,22 +35,44 @@ export function RunsView(): JSX.Element {
     count: 0,
     averageUserRating: null,
     averageAgentScore: null,
+    totalDurationMs: 0,
+    totalCost: null,
   });
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [agentId, setAgentId] = useState("");
+  const [model, setModel] = useState("");
   const [outcome, setOutcome] = useState("");
   const [cwd, setCwd] = useState("");
+  const [from, setFrom] = useState("");
+  const [to, setTo] = useState("");
+  const [userRatingMin, setUserRatingMin] = useState("");
+  const [agentScoreMin, setAgentScoreMin] = useState("");
 
   const reload = (): void => {
-    const filter: Record<string, string> = {};
+    const filter: Record<string, string | number> = {};
     if (agentId.trim()) {
       filter.agentId = agentId.trim();
+    }
+    if (model.trim()) {
+      filter.model = model.trim();
     }
     if (outcome.trim()) {
       filter.outcome = outcome.trim();
     }
     if (cwd.trim()) {
       filter.cwd = cwd.trim();
+    }
+    if (from.trim()) {
+      filter.from = from.trim();
+    }
+    if (to.trim()) {
+      filter.to = to.trim();
+    }
+    if (userRatingMin.trim()) {
+      filter.userRatingMin = Number(userRatingMin);
+    }
+    if (agentScoreMin.trim()) {
+      filter.agentScoreMin = Number(agentScoreMin);
     }
     void window.ster.runs
       .list({
@@ -77,6 +101,13 @@ export function RunsView(): JSX.Element {
       />
     );
   }
+
+  const durationLabel =
+    totals.totalDurationMs > 0 ? `${(totals.totalDurationMs / 1000).toFixed(1)}s` : "—";
+  const costLabel =
+    totals.totalCost === null
+      ? "—"
+      : `${totals.totalCost.amount.toFixed(4)} ${totals.totalCost.currency}`;
 
   return (
     <section className="conv col px-6 py-4" aria-label={t("runs.title")} data-testid="runs-view">
@@ -107,6 +138,17 @@ export function RunsView(): JSX.Element {
           />
         </label>
         <label className="flex flex-col gap-1">
+          <span className="muted">{t("runs.filterModel")}</span>
+          <input
+            value={model}
+            onChange={(event) => {
+              setModel(event.target.value);
+            }}
+            className="input"
+            data-testid="runs-filter-model"
+          />
+        </label>
+        <label className="flex flex-col gap-1">
           <span className="muted">{t("runs.filterOutcome")}</span>
           <select
             value={outcome}
@@ -134,6 +176,58 @@ export function RunsView(): JSX.Element {
             data-testid="runs-filter-cwd"
           />
         </label>
+        <label className="flex flex-col gap-1">
+          <span className="muted">{t("runs.filterFrom")}</span>
+          <input
+            type="date"
+            value={from}
+            onChange={(event) => {
+              setFrom(event.target.value);
+            }}
+            className="input"
+            data-testid="runs-filter-from"
+          />
+        </label>
+        <label className="flex flex-col gap-1">
+          <span className="muted">{t("runs.filterTo")}</span>
+          <input
+            type="date"
+            value={to}
+            onChange={(event) => {
+              setTo(event.target.value);
+            }}
+            className="input"
+            data-testid="runs-filter-to"
+          />
+        </label>
+        <label className="flex flex-col gap-1">
+          <span className="muted">{t("runs.filterUserRating")}</span>
+          <input
+            type="number"
+            min={1}
+            max={5}
+            value={userRatingMin}
+            onChange={(event) => {
+              setUserRatingMin(event.target.value);
+            }}
+            className="input"
+            data-testid="runs-filter-user-rating"
+          />
+        </label>
+        <label className="flex flex-col gap-1">
+          <span className="muted">{t("runs.filterAgentScore")}</span>
+          <input
+            type="number"
+            min={0}
+            max={100}
+            value={agentScoreMin}
+            onChange={(event) => {
+              setAgentScoreMin(event.target.value);
+            }}
+            className="input"
+            data-testid="runs-filter-agent-score"
+          />
+        </label>
         <button
           type="button"
           className="btn self-end"
@@ -151,6 +245,8 @@ export function RunsView(): JSX.Element {
           count: totals.count,
           userAvg: totals.averageUserRating === null ? "—" : totals.averageUserRating.toFixed(1),
           agentAvg: totals.averageAgentScore === null ? "—" : totals.averageAgentScore.toFixed(1),
+          duration: durationLabel,
+          cost: costLabel,
         })}
       </p>
 
@@ -162,24 +258,23 @@ export function RunsView(): JSX.Element {
             <li key={run.id}>
               <button
                 type="button"
-                className="w-full rounded border border-[var(--border)] px-3 py-2 text-left hover:bg-[var(--surface-2)]"
+                className="w-full rounded border border-[var(--line)] bg-[var(--surface)] px-3 py-2 text-left"
                 data-testid={`run-row-${run.id}`}
                 onClick={() => {
                   setSelectedId(run.id);
                 }}
               >
-                <div className="flex justify-between gap-2">
-                  <span className="font-medium">
-                    {run.agentName ?? run.agentId ?? run.id.slice(0, 8)}
-                  </span>
-                  <span className="muted text-xs">{run.outcome ?? "…"}</span>
+                <div className="flex items-baseline justify-between gap-2">
+                  <span className="font-medium">{run.agentName ?? run.agentId ?? run.id}</span>
+                  <span className="muted text-xs">{run.outcome ?? "—"}</span>
                 </div>
-                <div className="muted mt-1 truncate text-xs">{run.cwd ?? run.sessionId}</div>
-                <div className="muted mt-1 text-xs">
+                <p className="muted mt-1 text-xs">
                   {new Date(run.startedAt).toLocaleString()}
+                  {run.model ? ` · ${run.model}` : ""}
+                  {run.cwd ? ` · ${run.cwd}` : ""}
                   {run.userRating !== undefined ? ` · ★ ${String(run.userRating)}` : ""}
                   {run.agentScore !== undefined ? ` · score ${String(run.agentScore)}` : ""}
-                </div>
+                </p>
               </button>
             </li>
           ))}

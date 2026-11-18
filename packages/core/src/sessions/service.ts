@@ -110,6 +110,8 @@ export interface SessionService {
   resume(sessionId: string): Promise<Session>;
   restart(sessionId: string): Promise<Session>;
   rename(sessionId: string, title: string): Promise<void>;
+  /** Clear finish/fail attention because the session is now in view (FR-029). */
+  markViewed(sessionId: string): Promise<Session>;
   end(sessionId: string): Promise<void>;
   delete(sessionId: string, opts: { runRecords: "delete" | "keep-without-text" }): Promise<void>;
 }
@@ -158,15 +160,21 @@ interface SessionPayload {
   configOptions?: ConfigOption[];
   availableCommands?: AvailableCommandInfo[];
   factoryDefinitionHash?: string;
+  promptCapabilities?: Session["promptCapabilities"];
+  attentionPending?: boolean;
 }
 
-function needsAttentionStatus(status: SessionStatus): boolean {
-  return status === "waiting-approval" || status === "needs-login";
+function needsAttentionStatus(session: Session): boolean {
+  return (
+    session.status === "waiting-approval" ||
+    session.status === "needs-login" ||
+    session.attentionPending === true
+  );
 }
 
 function enrichSession(session: Session, live: boolean): Session {
   const next: Session = { ...session };
-  next.needsAttention = needsAttentionStatus(session.status);
+  next.needsAttention = needsAttentionStatus(session);
   next.resumable = sessionIsResumable({
     session,
     live,
@@ -238,6 +246,12 @@ function persist(store: Store, session: Session): void {
   if (session.factoryDefinitionHash !== undefined) {
     payload.factoryDefinitionHash = session.factoryDefinitionHash;
   }
+  if (session.promptCapabilities !== undefined) {
+    payload.promptCapabilities = session.promptCapabilities;
+  }
+  if (session.attentionPending !== undefined) {
+    payload.attentionPending = session.attentionPending;
+  }
   store.putSession({
     id: session.id,
     agentId: session.agentId,
@@ -297,6 +311,12 @@ function fromRow(row: ReturnType<Store["getSession"]>): Session | null {
   if (payload.factoryDefinitionHash !== undefined) {
     session.factoryDefinitionHash = payload.factoryDefinitionHash;
   }
+  if (payload.promptCapabilities !== undefined) {
+    session.promptCapabilities = payload.promptCapabilities;
+  }
+  if (payload.attentionPending !== undefined) {
+    session.attentionPending = payload.attentionPending;
+  }
   return session;
 }
 
@@ -324,6 +344,8 @@ const STALE_WRITE_OPTIONS = [
 export function createSessionService(options: CreateSessionServiceOptions): SessionServiceHandle {
   const live = new Map<string, LiveSession>();
   const snapshots = createSnapshotStore();
+  /** Session currently in view in the host UI (FR-029). */
+  let focusedSessionId: string | null = null;
   const defaultMode = options.defaultPermissionMode ?? "always-ask";
   const recovered = recoverInterruptedSessions(options.store);
   const interruptedIds = recovered.sessions
@@ -426,11 +448,18 @@ export function createSessionService(options: CreateSessionServiceOptions): Sess
     }
   };
 
+  const noteAttentionIfUnfocused = (session: Session): void => {
+    if (focusedSessionId !== session.id) {
+      session.attentionPending = true;
+    }
+  };
+
   const failSession = async (entry: LiveSession, reason: string): Promise<void> => {
     approvals.cancelSession(entry.session.id);
     snapshots.clearSession(entry.session.id);
     await cleanupCommands(entry);
     entry.session.failureReason = reason;
+    noteAttentionIfUnfocused(entry.session);
     try {
       if (entry.session.status !== "failed" && entry.session.status !== "ended") {
         setStatus(entry.session, "failed");
@@ -769,6 +798,11 @@ export function createSessionService(options: CreateSessionServiceOptions): Sess
     const caps = connection.capabilities.agentCapabilities;
     session.supportsResume = caps.sessionCapabilities?.resume != null;
     session.supportsLoad = caps.loadSession === true;
+    session.promptCapabilities = {
+      ...(caps.promptCapabilities?.image === true ? { image: true } : {}),
+      ...(caps.promptCapabilities?.audio === true ? { audio: true } : {}),
+      ...(caps.promptCapabilities?.embeddedContext === true ? { embeddedContext: true } : {}),
+    };
 
     try {
       const acpSession = await connection.client.buildSession(input.cwd).start();
@@ -858,6 +892,11 @@ export function createSessionService(options: CreateSessionServiceOptions): Sess
     const caps = connection.capabilities.agentCapabilities;
     session.supportsResume = caps.sessionCapabilities?.resume != null;
     session.supportsLoad = caps.loadSession === true;
+    session.promptCapabilities = {
+      ...(caps.promptCapabilities?.image === true ? { image: true } : {}),
+      ...(caps.promptCapabilities?.audio === true ? { audio: true } : {}),
+      ...(caps.promptCapabilities?.embeddedContext === true ? { embeddedContext: true } : {}),
+    };
 
     const entry: LiveSession = {
       session,
@@ -961,11 +1000,7 @@ export function createSessionService(options: CreateSessionServiceOptions): Sess
     },
 
     get: (sessionId) => {
-      const liveEntry = live.get(sessionId);
-      if (liveEntry) {
-        return Promise.resolve(enrichSession({ ...liveEntry.session }, true));
-      }
-      return Promise.resolve(enrichSession({ ...loadOrThrow(sessionId) }, false));
+      return service.markViewed(sessionId);
     },
 
     items: (sessionId, page) => {
@@ -1153,12 +1188,8 @@ export function createSessionService(options: CreateSessionServiceOptions): Sess
       try {
         response = await entry.connection.client.request(methods.agent.session.prompt, {
           sessionId: entry.agentSessionId,
-          prompt: content.map((block) => {
-            if (block.type === "text") {
-              return { type: "text" as const, text: block.text };
-            }
-            return block as { type: "text"; text: string };
-          }),
+          // PromptContent already matches ACP ContentBlock shapes (text/image/resource).
+          prompt: content,
         });
       } catch (error) {
         unsubscribe();
@@ -1208,6 +1239,7 @@ export function createSessionService(options: CreateSessionServiceOptions): Sess
       });
       const status = entry.session.status as SessionStatus;
       if (status === "working" || status === "waiting-approval") {
+        noteAttentionIfUnfocused(entry.session);
         setStatus(entry.session, "idle");
       }
       return finishAndPublish(finished);
@@ -1454,6 +1486,22 @@ export function createSessionService(options: CreateSessionServiceOptions): Sess
         sessionId,
         session: toSummary(enrichSession(session, false)),
       });
+    },
+
+    markViewed(sessionId) {
+      focusedSessionId = sessionId;
+      const liveEntry = live.get(sessionId);
+      const session = liveEntry?.session ?? loadOrThrow(sessionId);
+      if (session.attentionPending) {
+        delete session.attentionPending;
+        persist(options.store, session);
+        options.events.publish({
+          type: "session.updated",
+          sessionId,
+          session: toSummary(enrichSession(session, live.has(sessionId))),
+        });
+      }
+      return Promise.resolve(enrichSession({ ...session }, live.has(sessionId)));
     },
 
     async delete(sessionId, opts) {

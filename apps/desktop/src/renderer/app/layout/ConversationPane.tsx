@@ -48,6 +48,7 @@ export function ConversationPane(): JSX.Element {
   const [permissionMode, setPermissionMode] = useState("always-ask");
   const [configOptions, setConfigOptions] = useState<ConfigOptionView[]>([]);
   const [availableCommands, setAvailableCommands] = useState<AvailableCommandView[]>([]);
+  const [canAttach, setCanAttach] = useState(false);
   const [rulesRefresh, setRulesRefresh] = useState(0);
   const [continuing, setContinuing] = useState(false);
   const [newInFolderOpen, setNewInFolderOpen] = useState(false);
@@ -93,6 +94,7 @@ export function ConversationPane(): JSX.Element {
         permissionMode?: string;
         configOptions?: ConfigOptionView[];
         availableCommands?: AvailableCommandView[];
+        promptCapabilities?: { image?: boolean; embeddedContext?: boolean };
       };
       upsertSession(record);
       if (typeof record.permissionMode === "string") {
@@ -100,6 +102,8 @@ export function ConversationPane(): JSX.Element {
       }
       setConfigOptions(Array.isArray(record.configOptions) ? record.configOptions : []);
       setAvailableCommands(Array.isArray(record.availableCommands) ? record.availableCommands : []);
+      const caps = record.promptCapabilities;
+      setCanAttach(caps?.image === true || caps?.embeddedContext === true);
     });
     if (session?.status === "needs-login") {
       void window.ster.sessions.authMethods({ sessionId }).then((methods) => {
@@ -332,6 +336,7 @@ export function ConversationPane(): JSX.Element {
             sessionId={sessionId}
             disabled={needsLogin || failed}
             working={working}
+            canAttach={canAttach}
             commands={availableCommands}
           />
         </>

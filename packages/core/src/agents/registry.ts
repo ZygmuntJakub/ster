@@ -2,8 +2,9 @@ import { createHash } from "node:crypto";
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { z } from "zod";
-import type { RegistryStatus } from "../model/events.js";
 import { SterError } from "../errors.js";
+import type { RegistryStatus } from "../model/events.js";
+import { assertAllowedNetworkUrl, createNetworkAllowlist } from "../net/allowlist.js";
 
 export const DEFAULT_REGISTRY_URL =
   "https://cdn.agentclientprotocol.com/registry/v1/latest/registry.json";
@@ -214,6 +215,15 @@ export function createRegistryClient(options: RegistryClientOptions) {
         if (cached?.etag) {
           headers["If-None-Match"] = cached.etag;
         }
+        const registryHost = new URL(url).hostname;
+        assertAllowedNetworkUrl(
+          url,
+          createNetworkAllowlist({
+            registryEnabled: true,
+            includePublicRegistry: mode === "public",
+            downloadHosts: [registryHost],
+          }),
+        );
         const response = await fetchImpl(url, { headers });
         if (response.status === 304 && cached) {
           const next = { ...cached, fetchedAt: now().toISOString() };

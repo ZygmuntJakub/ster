@@ -1,10 +1,15 @@
 import { mkdirSync, readFileSync, renameSync, rmSync, writeFileSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
 import { SterError } from "../errors.js";
+import {
+  assertAllowedHttpsUrl,
+  createNetworkAllowlist,
+  type NetworkAllowlist,
+} from "../net/allowlist.js";
+import type { Agent, AgentInstall, AgentLaunch, Progress } from "./agent.js";
 import { extractTarGz, installRawBinary, isTarGz } from "./extract.js";
 import { assertSafeBinaryCmd, hashBuffer, hashFile } from "./integrity.js";
 import type { InstallPlan } from "./plan.js";
-import type { Agent, AgentInstall, AgentLaunch, Progress } from "./agent.js";
 
 export interface BinaryInstallResult {
   agent: Omit<Agent, "readiness" | "confirmedAt"> & {
@@ -14,22 +19,26 @@ export interface BinaryInstallResult {
   };
 }
 
-function assertHttpsUrl(url: string): void {
+function assertDownloadUrl(url: string, allowlist?: NetworkAllowlist): void {
   let parsed: URL;
   try {
     parsed = new URL(url);
   } catch {
     throw new SterError("invalid-argument", "Archive URL is invalid", { url });
   }
-  if (parsed.protocol !== "https:" && parsed.protocol !== "http:") {
-    // http allowed only for local fixture servers in tests (127.0.0.1 / localhost).
-    throw new SterError("invalid-argument", "Archive URL must use HTTPS", { url });
-  }
+  // http allowed only for local fixture servers in tests (127.0.0.1 / localhost).
   if (parsed.protocol === "http:") {
     const host = parsed.hostname;
     if (host !== "127.0.0.1" && host !== "localhost" && host !== "::1") {
       throw new SterError("invalid-argument", "Archive URL must use HTTPS", { url });
     }
+    return;
+  }
+  if (parsed.protocol !== "https:") {
+    throw new SterError("invalid-argument", "Archive URL must use HTTPS", { url });
+  }
+  if (allowlist) {
+    assertAllowedHttpsUrl(url, allowlist);
   }
 }
 
@@ -40,9 +49,10 @@ export async function downloadToFile(
     fetchImpl?: typeof fetch;
     onProgress?: (p: Progress) => void;
     expectedSha256?: string;
+    allowlist?: NetworkAllowlist;
   },
 ): Promise<{ bytes: Buffer; sha256: string }> {
-  assertHttpsUrl(url);
+  assertDownloadUrl(url, options.allowlist);
   const fetchImpl = options.fetchImpl ?? fetch;
   const response = await fetchImpl(url);
   if (!response.ok || !response.body) {
@@ -88,6 +98,7 @@ export async function installBinaryAgent(input: {
   dataDir: string;
   fetchImpl?: typeof fetch;
   onProgress?: (p: Progress) => void;
+  allowlist?: NetworkAllowlist;
 }): Promise<BinaryInstallResult> {
   if (input.plan.detail.kind !== "binary") {
     throw new SterError("invalid-argument", "Plan is not a binary install");
@@ -100,6 +111,20 @@ export async function installBinaryAgent(input: {
   rmSync(staging, { recursive: true, force: true });
   mkdirSync(staging, { recursive: true });
 
+  let allowlist = input.allowlist;
+  if (!allowlist) {
+    try {
+      const host = new URL(detail.archive).hostname;
+      allowlist = createNetworkAllowlist({
+        registryEnabled: true,
+        includePublicRegistry: false,
+        downloadHosts: [host],
+      });
+    } catch {
+      allowlist = undefined;
+    }
+  }
+
   try {
     input.onProgress?.({ phase: "download", message: "Downloading archive" });
     const archivePath = join(staging, "archive.bin");
@@ -107,6 +132,7 @@ export async function installBinaryAgent(input: {
       ...(input.fetchImpl !== undefined ? { fetchImpl: input.fetchImpl } : {}),
       ...(input.onProgress !== undefined ? { onProgress: input.onProgress } : {}),
       ...(detail.sha256 !== undefined ? { expectedSha256: detail.sha256 } : {}),
+      ...(allowlist !== undefined ? { allowlist } : {}),
     });
 
     input.onProgress?.({ phase: "extract", message: "Extracting archive" });

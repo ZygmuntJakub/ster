@@ -298,6 +298,7 @@ export {
  */
 export {
   assertAllowedHttpsUrl,
+  assertAllowedNetworkUrl,
   createNetworkAllowlist,
   PUBLIC_REGISTRY_HOST,
   type NetworkAllowlist,

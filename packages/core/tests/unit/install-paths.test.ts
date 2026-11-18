@@ -135,15 +135,70 @@ describe("install path coverage", () => {
     expect(agent.launch.command).toBe("/usr/bin/uv");
   });
 
-  it("refuses managed node download when checksums are unset", async () => {
+  it("refuses managed node for unsupported platforms such as musl", async () => {
     const dataDir = mkdtempSync(join(tmpdir(), "ster-rt-fail-"));
     tempDirs.push(dataDir);
     await expect(
       ensureManagedNode({
         dataDir,
-        platformKey: resolvePlatformKey(),
+        platformKey: "linux-x86_64-musl",
       }),
     ).rejects.toSatisfy((error: unknown) => isSterError(error) && error.code === "agent-not-ready");
+  });
+
+  it("rejects npx/uvx plans when requireChecksum is set", () => {
+    expect(() =>
+      planInstall({
+        entry: {
+          id: "n",
+          name: "N",
+          version: "1.0.0",
+          distribution: { npx: { package: "@scope/pkg@1.0.0" } },
+        },
+        platformKey: resolvePlatformKey(),
+        uvAvailable: true,
+        requireChecksum: true,
+      }),
+    ).toThrow(/checksum/);
+
+    expect(() =>
+      planInstall({
+        entry: {
+          id: "u",
+          name: "U",
+          version: "1.0.0",
+          distribution: { uvx: { package: "pkg==1.0.0" } },
+        },
+        platformKey: resolvePlatformKey(),
+        uvAvailable: true,
+        requireChecksum: true,
+      }),
+    ).toThrow(/checksum/);
+  });
+
+  it("rejects managed Node downloads when the archive checksum mismatches", async () => {
+    const dataDir = mkdtempSync(join(tmpdir(), "ster-rt-dl-"));
+    tempDirs.push(dataDir);
+    const archiveBytes = gzipSync(ustar("node-v22.14.0-darwin-arm64/bin/node", Buffer.from("x")));
+    const fetchImpl = (() =>
+      Promise.resolve(
+        new Response(archiveBytes, {
+          status: 200,
+          headers: {
+            "content-type": "application/gzip",
+            "content-length": String(archiveBytes.length),
+          },
+        }),
+      )) as typeof fetch;
+    await expect(
+      ensureManagedNode({
+        dataDir,
+        platformKey: "darwin-aarch64",
+        fetchImpl,
+      }),
+    ).rejects.toSatisfy(
+      (error: unknown) => isSterError(error) && error.code === "integrity-failed",
+    );
   });
 
   it("installs an npm agent from a local package using a seeded node", async () => {

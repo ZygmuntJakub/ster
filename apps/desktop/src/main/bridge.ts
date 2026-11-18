@@ -1,5 +1,13 @@
-import { isSterError, type Core, type CoreEvent, type ConversationItem } from "@ster/core";
+import {
+  isSterError,
+  type Core,
+  type CoreEvent,
+  type ConversationItem,
+  type PromptContent,
+} from "@ster/core";
 import { BrowserWindow, dialog, ipcMain, shell, type IpcMainInvokeEvent } from "electron";
+import { readFileSync, realpathSync, statSync } from "node:fs";
+import { extname, relative, sep } from "node:path";
 import {
   INVOKE_CHANNEL,
   isTrustedSender,
@@ -42,6 +50,80 @@ import { createLinkIndex } from "./link-index.js";
 import { createLocationIndex } from "./location-index.js";
 import { createLoginTerminalManager } from "./login-terminal.js";
 import { createTokenStore } from "./tokens.js";
+
+const IMAGE_MIME: Readonly<Record<string, string>> = {
+  ".png": "image/png",
+  ".jpg": "image/jpeg",
+  ".jpeg": "image/jpeg",
+  ".gif": "image/gif",
+  ".webp": "image/webp",
+  ".svg": "image/svg+xml",
+};
+
+function isInsideFolder(cwd: string, filePath: string): boolean {
+  try {
+    const root = realpathSync(cwd);
+    const target = realpathSync(filePath);
+    const rel = relative(root, target);
+    return rel === "" || (!rel.startsWith(`..${sep}`) && rel !== ".." && !rel.startsWith(".."));
+  } catch {
+    return false;
+  }
+}
+
+function mimeForPath(filePath: string): string {
+  return IMAGE_MIME[extname(filePath).toLowerCase()] ?? "application/octet-stream";
+}
+
+function attachmentToPromptContent(
+  filePath: string,
+  name: string,
+  caps: { image?: boolean; embeddedContext?: boolean } | undefined,
+): PromptContent {
+  const mime = mimeForPath(filePath);
+  const bytes = readFileSync(filePath);
+  const isImage = mime.startsWith("image/");
+  if (isImage && caps?.image === true) {
+    return {
+      type: "image",
+      data: bytes.toString("base64"),
+      mimeType: mime,
+      uri: `file://${filePath}`,
+    };
+  }
+  if (caps?.embeddedContext === true) {
+    const looksText =
+      mime.startsWith("text/") ||
+      mime === "application/json" ||
+      mime === "application/javascript" ||
+      mime === "application/octet-stream";
+    if (looksText && !isImage) {
+      return {
+        type: "resource",
+        resource: {
+          uri: `file://${filePath}`,
+          mimeType: mime === "application/octet-stream" ? "text/plain" : mime,
+          text: bytes.toString("utf8"),
+        },
+      };
+    }
+    return {
+      type: "resource",
+      resource: {
+        uri: `file://${filePath}`,
+        mimeType: mime,
+        blob: bytes.toString("base64"),
+      },
+    };
+  }
+  if (isImage) {
+    throw Object.assign(new Error("Agent does not accept image attachments"), {
+      code: "unsupported",
+    });
+  }
+  // Fallback: include a text note so the prompt still references the file name.
+  return { type: "text", text: `[attachment: ${name}]` };
+}
 
 const allowedMethods = new Set(listBridgeMethods());
 
@@ -200,17 +282,35 @@ async function handleMethod(
     }
     case "dialogs.pickAttachments": {
       const { sessionId } = payload as { sessionId: string };
+      const session = await core.sessions.get(sessionId);
+      const caps = session.promptCapabilities;
+      const canAttach = caps?.image === true || caps?.embeddedContext === true;
+      if (!canAttach) {
+        return fail("unsupported", { reason: "attachments-not-supported" });
+      }
       const result = await dialog.showOpenDialog({
         title: t("dialogs.pickAttachmentsTitle"),
+        defaultPath: session.cwd,
         properties: ["openFile", "multiSelections"],
       });
       if (result.canceled || result.filePaths.length === 0) {
         return ok({ cancelled: true, attachments: [] });
       }
-      const attachments = result.filePaths.map((path) => {
+      const attachments: Array<{ token: string; name: string }> = [];
+      for (const path of result.filePaths) {
+        if (!isInsideFolder(session.cwd, path)) {
+          return fail("invalid-argument", { reason: "outside-working-folder", path });
+        }
+        try {
+          if (!statSync(path).isFile()) {
+            return fail("invalid-argument", { reason: "not-a-file", path });
+          }
+        } catch {
+          return fail("invalid-argument", { reason: "unreadable", path });
+        }
         const record = ctx.tokens.issueAttachment(sessionId, path);
-        return { token: record.token, name: record.name };
-      });
+        attachments.push({ token: record.token, name: record.name });
+      }
       return ok({ attachments });
     }
     case "sessions.create": {
@@ -261,11 +361,21 @@ async function handleMethod(
         text: string;
         attachmentTokens: string[];
       };
+      const session = await core.sessions.get(sessionId);
+      const content: PromptContent[] = [{ type: "text", text }];
       for (const token of attachmentTokens) {
-        ctx.tokens.resolveAttachment(token, sessionId);
+        const attachment = ctx.tokens.resolveAttachment(token, sessionId);
+        if (!isInsideFolder(session.cwd, attachment.path)) {
+          return fail("invalid-argument", {
+            reason: "outside-working-folder",
+            path: attachment.path,
+          });
+        }
+        content.push(
+          attachmentToPromptContent(attachment.path, attachment.name, session.promptCapabilities),
+        );
       }
-      // Attachments are validated; US1 prompt content is text-only until media lands.
-      const run = await core.sessions.prompt(sessionId, [{ type: "text", text }]);
+      const run = await core.sessions.prompt(sessionId, content);
       return ok(run);
     }
     case "sessions.cancel": {
@@ -398,43 +508,18 @@ async function handleMethod(
       return ok({ resized: true });
     }
     case "factory.find": {
-      const input = payload as { folderToken?: string; cwd?: string };
-      const cwd =
-        input.cwd ??
-        (input.folderToken !== undefined
-          ? ctx.tokens.resolveFolder(input.folderToken).path
-          : undefined);
-      if (!cwd) {
-        return fail("invalid-argument", { reason: "missing-folder" });
-      }
+      const input = payload as { folderToken: string };
+      const cwd = ctx.tokens.resolveFolder(input.folderToken).path;
       return ok(await factoryFind(core, cwd));
     }
     case "factory.trust": {
-      const input = payload as {
-        folderToken?: string;
-        folder?: string;
-        contentHash: string;
-      };
-      const folder =
-        input.folder ??
-        (input.folderToken !== undefined
-          ? ctx.tokens.resolveFolder(input.folderToken).path
-          : undefined);
-      if (!folder) {
-        return fail("invalid-argument", { reason: "missing-folder" });
-      }
+      const input = payload as { folderToken: string; contentHash: string };
+      const folder = ctx.tokens.resolveFolder(input.folderToken).path;
       return ok(await factoryTrust(core, folder, input.contentHash));
     }
     case "factory.revoke": {
-      const input = payload as { folderToken?: string; folder?: string };
-      const folder =
-        input.folder ??
-        (input.folderToken !== undefined
-          ? ctx.tokens.resolveFolder(input.folderToken).path
-          : undefined);
-      if (!folder) {
-        return fail("invalid-argument", { reason: "missing-folder" });
-      }
+      const input = payload as { folderToken: string };
+      const folder = ctx.tokens.resolveFolder(input.folderToken).path;
       return ok(await factoryRevoke(core, folder));
     }
     case "factory.renderTemplate": {

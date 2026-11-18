@@ -35,6 +35,11 @@ export function createNetworkAllowlist(input: {
   };
 }
 
+function isLoopbackHost(host: string): boolean {
+  const normalized = host.toLowerCase();
+  return normalized === "127.0.0.1" || normalized === "localhost" || normalized === "::1";
+}
+
 /**
  * Assert a URL is https and its host is on the allow-list.
  */
@@ -62,4 +67,23 @@ export function assertAllowedHttpsUrl(url: string, allowlist: NetworkAllowlist):
     });
   }
   return parsed;
+}
+
+/**
+ * Assert a registry/download URL: loopback http is allowed for tests; otherwise HTTPS allow-list.
+ */
+export function assertAllowedNetworkUrl(url: string, allowlist: NetworkAllowlist): URL {
+  let parsed: URL;
+  try {
+    parsed = new URL(url);
+  } catch {
+    throw new SterError("invalid-argument", "Invalid URL", { url });
+  }
+  if (parsed.protocol === "http:" && isLoopbackHost(parsed.hostname)) {
+    if (!allowlist.registryEnabled && allowlist.downloadHosts.size === 0) {
+      throw new SterError("blocked-by-policy", "Network access is disabled", { url });
+    }
+    return parsed;
+  }
+  return assertAllowedHttpsUrl(url, allowlist);
 }

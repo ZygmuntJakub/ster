@@ -412,7 +412,7 @@ export function createAgentService(options: CreateAgentServiceOptions): AgentSer
             ? { seedNodeBinary: options.seedNodeBinary }
             : options.nodeExecutable !== undefined
               ? { seedNodeBinary: options.nodeExecutable }
-              : { seedNodeBinary: process.execPath }),
+              : {}),
           allowScripts: stored.scriptsAllowed,
         });
       } else {

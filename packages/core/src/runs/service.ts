@@ -42,6 +42,10 @@ export interface RunTotals {
   averageUserRating: number | null;
   /** Average of agent scores in the filtered set; null when none. */
   averageAgentScore: number | null;
+  /** Sum of known durations in the filtered set (ms). */
+  totalDurationMs: number;
+  /** Sum of reported costs in the filtered set; null when no run reports cost. */
+  totalCost: { amount: number; currency: string } | null;
 }
 
 export type WritableTarget = { kind: "path"; path: string };
@@ -211,10 +215,30 @@ export function createRunService(options: CreateRunServiceOptions): RunService {
     const agentScores = runs.flatMap((run) =>
       run.scores.filter((score) => score.source === "agent"),
     );
+    let totalDurationMs = 0;
+    let costAmount = 0;
+    let costCurrency: string | null = null;
+    let costCount = 0;
+    for (const run of runs) {
+      if (typeof run.durationMs === "number") {
+        totalDurationMs += run.durationMs;
+      }
+      const cost = run.usage?.cost;
+      if (cost) {
+        costAmount += cost.amount;
+        costCurrency = costCurrency ?? cost.currency;
+        costCount += 1;
+      }
+    }
     return {
       count: runs.length,
       averageUserRating: averageScores(userScores),
       averageAgentScore: averageScores(agentScores),
+      totalDurationMs,
+      totalCost:
+        costCount > 0 && costCurrency !== null
+          ? { amount: costAmount, currency: costCurrency }
+          : null,
     };
   };
 
