@@ -362,20 +362,20 @@ description: "Task list for Ster — ACP Desktop Client"
 
 ### Tests for User Story 11
 
-- [ ] T151 [P] [US11] Unit tests for definition lookup (nearest ancestor), validation, and template rendering in `packages/core/tests/unit/factory.test.ts`
-- [ ] T152 [P] [US11] Security tests with hostile definitions in `packages/core/tests/security/factory-definition.test.ts`: untrusted definition has no effect, changed content resets trust, policy cannot be loosened, command-declared agent needs confirmation, template inputs are not evaluated (SC-018)
-- [ ] T153 [P] [US11] End-to-end flow for US11 in `apps/desktop/tests/e2e/us11-factory.spec.ts`
+- [x] T151 [P] [US11] Unit tests for definition lookup (nearest ancestor), validation, and template rendering in `packages/core/tests/unit/factory.test.ts`
+- [x] T152 [P] [US11] Security tests with hostile definitions in `packages/core/tests/security/factory-definition.test.ts`: untrusted definition has no effect, changed content resets trust, policy cannot be loosened, command-declared agent needs confirmation, template inputs are not evaluated (SC-018)
+- [x] T153 [P] [US11] End-to-end flow for US11 in `apps/desktop/tests/e2e/us11-factory.spec.ts`
 
 ### Implementation for User Story 11
 
-- [ ] T154 [P] [US11] Implement lookup and YAML parsing with validation mirroring contracts/factory.schema.json in `packages/core/src/factory/definition.ts` per data-model.md `FactoryDefinition.agents`, `FactoryDefinition.templates`, `FactoryDefinition.judging`
-- [ ] T155 [P] [US11] Implement folder trust in `packages/core/src/factory/trust.ts` per data-model.md `FolderTrust.folder`, `FolderTrust.contentHash`, including the change summary against the trusted version
-- [ ] T156 [US11] Implement application of a trusted definition at session creation in `packages/core/src/factory/apply.ts`: preselect agent and mode, filter through policy, report dropped parts, and route command-declared agents through first-start confirmation; record `Session.factoryDefinitionHash`
-- [ ] T157 [US11] Implement plain-text template rendering and `FactoryService` in `packages/core/src/factory/service.ts`
-- [ ] T158 [US11] Add bridge functions `factory.find`, `factory.trust`, `factory.revoke`, `factory.renderTemplate` in `apps/desktop/src/main/handlers/factory.ts`
-- [ ] T159 [P] [US11] Build the trust dialog showing what the definition would change, and the changed-definition prompt, in `apps/desktop/src/renderer/features/factory/TrustDialog.tsx`
-- [ ] T160 [P] [US11] Build the task template picker with input blanks in `apps/desktop/src/renderer/features/factory/TemplatePicker.tsx`, and add EN/PL strings
-- [ ] T161 [P] [US11] Write `docs/factory-definition.md` with every item and a complete example file (FR-069)
+- [x] T154 [P] [US11] Implement lookup and YAML parsing with validation mirroring contracts/factory.schema.json in `packages/core/src/factory/definition.ts` per data-model.md `FactoryDefinition.agents`, `FactoryDefinition.templates`, `FactoryDefinition.judging`
+- [x] T155 [P] [US11] Implement folder trust in `packages/core/src/factory/trust.ts` per data-model.md `FolderTrust.folder`, `FolderTrust.contentHash`, including the change summary against the trusted version
+- [x] T156 [US11] Implement application of a trusted definition at session creation in `packages/core/src/factory/apply.ts`: preselect agent and mode, filter through policy, report dropped parts, and route command-declared agents through first-start confirmation; record `Session.factoryDefinitionHash`
+- [x] T157 [US11] Implement plain-text template rendering and `FactoryService` in `packages/core/src/factory/service.ts`
+- [x] T158 [US11] Add bridge functions `factory.find`, `factory.trust`, `factory.revoke`, `factory.renderTemplate` in `apps/desktop/src/main/handlers/factory.ts`
+- [x] T159 [P] [US11] Build the trust dialog showing what the definition would change, and the changed-definition prompt, in `apps/desktop/src/renderer/features/factory/TrustDialog.tsx`
+- [x] T160 [P] [US11] Build the task template picker with input blanks in `apps/desktop/src/renderer/features/factory/TemplatePicker.tsx`, and add EN/PL strings
+- [x] T161 [P] [US11] Write `docs/factory-definition.md` with every item and a complete example file (FR-069)
 
 **Checkpoint**: A team shares one reviewed agent setup through its repository
 

@@ -1,5 +1,6 @@
 import { useEffect, useState, type JSX } from "react";
 import { useTranslation } from "react-i18next";
+import { TrustDialog, type FactoryLookupView } from "../factory/TrustDialog.js";
 
 export interface AgentOption {
   id: string;
@@ -17,7 +18,7 @@ export interface NewSessionDialogProps {
 }
 
 /**
- * New session: pick agent + folder, first-start confirmation, confinement notice (FR-015).
+ * New session: pick agent + folder, factory trust, first-start confirmation (FR-015/FR-064).
  */
 export function NewSessionDialog({
   open,
@@ -32,14 +33,24 @@ export function NewSessionDialog({
   const [confirmLaunch, setConfirmLaunch] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [factoryLookup, setFactoryLookup] = useState<FactoryLookupView | null>(null);
+  const [permissionMode, setPermissionMode] = useState<string | undefined>(undefined);
+  const [factorySkipped, setFactorySkipped] = useState(false);
+
+  const refreshAgents = async (): Promise<AgentOption[]> => {
+    const list = (await window.ster.agents.list()) as AgentOption[];
+    setAgents(list);
+    return list;
+  };
 
   useEffect(() => {
     if (!open) {
       return;
     }
-    void window.ster.agents.list().then((list) => {
-      const agentsList = list as AgentOption[];
-      setAgents(agentsList);
+    setFactoryLookup(null);
+    setFactorySkipped(false);
+    setPermissionMode(undefined);
+    void refreshAgents().then((agentsList) => {
       const first = agentsList[0];
       if (first) {
         setAgentId(first.id);
@@ -53,10 +64,45 @@ export function NewSessionDialog({
 
   const selected = agents.find((a) => a.id === agentId);
   const needsConfirm = Boolean(selected && !selected.confirmedAt);
+  const pendingTrust: FactoryLookupView | null =
+    factoryLookup !== null &&
+    !factoryLookup.trusted &&
+    !factorySkipped &&
+    (factoryLookup.trustState === "untrusted" || factoryLookup.trustState === "changed")
+      ? factoryLookup
+      : null;
+  const needsTrust = pendingTrust !== null;
+
+  const applyFactorySelection = (lookup: FactoryLookupView, agentsList: AgentOption[]): void => {
+    const applied = lookup.applied;
+    if (!applied) {
+      return;
+    }
+    if (applied.permissionMode) {
+      setPermissionMode(applied.permissionMode);
+    }
+    const preferred = applied.defaultAgent;
+    if (!preferred) {
+      return;
+    }
+    const byId = agentsList.find((agent) => agent.id === preferred);
+    if (byId) {
+      setAgentId(byId.id);
+      return;
+    }
+    const byName = agentsList.find((agent) => agent.name === preferred);
+    if (byName) {
+      setAgentId(byName.id);
+    }
+  };
 
   const create = async (): Promise<void> => {
     if (!agentId || !folderToken) {
       setError(t("session.needAgentFolder"));
+      return;
+    }
+    if (needsTrust) {
+      setError(t("factory.trustRequired"));
       return;
     }
     setBusy(true);
@@ -70,10 +116,15 @@ export function NewSessionDialog({
         }
         await window.ster.agents.confirmFirstStart({ agentId });
       }
-      const session = (await window.ster.sessions.create({
-        agentId,
-        folderToken,
-      })) as { id: string };
+      const createPayload: {
+        agentId: string;
+        folderToken: string;
+        permissionMode?: string;
+      } = { agentId, folderToken };
+      if (permissionMode !== undefined) {
+        createPayload.permissionMode = permissionMode;
+      }
+      const session = (await window.ster.sessions.create(createPayload)) as { id: string };
       onCreated(session.id);
       onClose();
     } catch (err) {
@@ -123,15 +174,34 @@ export function NewSessionDialog({
               type="button"
               className="btn"
               onClick={() => {
-                void window.ster.dialogs.pickFolder().then((result) => {
+                void window.ster.dialogs.pickFolder().then(async (result) => {
                   const value = result as {
                     cancelled?: boolean;
                     folderToken?: string;
                     displayPath?: string;
                   };
-                  if (!value.cancelled && value.folderToken) {
-                    setFolderToken(value.folderToken);
-                    setDisplayPath(value.displayPath ?? value.folderToken);
+                  if (value.cancelled || !value.folderToken) {
+                    return;
+                  }
+                  setFolderToken(value.folderToken);
+                  setDisplayPath(value.displayPath ?? value.folderToken);
+                  setFactorySkipped(false);
+                  try {
+                    const lookup = (await window.ster.factory.find({
+                      folderToken: value.folderToken,
+                    })) as FactoryLookupView | null;
+                    setFactoryLookup(lookup);
+                    if (lookup?.trusted) {
+                      const agentsList = await refreshAgents();
+                      applyFactorySelection(lookup, agentsList);
+                    }
+                  } catch (err) {
+                    setFactoryLookup(null);
+                    const code =
+                      err && typeof err === "object" && "code" in err
+                        ? String(err.code)
+                        : "definition-invalid";
+                    setError(t(`errors.${code}`, { defaultValue: t("errors.definition-invalid") }));
                   }
                 });
               }}
@@ -143,6 +213,56 @@ export function NewSessionDialog({
             </span>
           </div>
         </div>
+
+        {pendingTrust ? (
+          <TrustDialog
+            lookup={pendingTrust}
+            busy={busy}
+            onSkip={() => {
+              setFactorySkipped(true);
+            }}
+            onTrust={() => {
+              const token = folderToken;
+              if (token === null) {
+                return;
+              }
+              setBusy(true);
+              setError(null);
+              void window.ster.factory
+                .trust({ folderToken: token, contentHash: pendingTrust.contentHash })
+                .then(async () => {
+                  const lookup = (await window.ster.factory.find({
+                    folderToken: token,
+                  })) as FactoryLookupView | null;
+                  setFactoryLookup(lookup);
+                  const agentsList = await refreshAgents();
+                  if (lookup !== null && lookup.trusted) {
+                    applyFactorySelection(lookup, agentsList);
+                  }
+                })
+                .catch((err: unknown) => {
+                  const code =
+                    err && typeof err === "object" && "code" in err
+                      ? String(err.code)
+                      : "invalid-argument";
+                  setError(t(`errors.${code}`, { defaultValue: t("errors.invalid-argument") }));
+                })
+                .finally(() => {
+                  setBusy(false);
+                });
+            }}
+          />
+        ) : null}
+
+        {factoryLookup !== null &&
+        factoryLookup.trusted &&
+        (factoryLookup.applied?.droppedParts.length ?? 0) > 0 ? (
+          <p className="mt-3 text-xs text-[var(--ink2)]" data-testid="factory-dropped-parts">
+            {t("factory.droppedByPolicy", {
+              parts: (factoryLookup.applied?.droppedParts ?? []).join(", "),
+            })}
+          </p>
+        ) : null}
 
         {needsConfirm && selected?.launch ? (
           <label className="mt-4 flex items-start gap-2 text-sm">
@@ -176,7 +296,7 @@ export function NewSessionDialog({
           <button
             type="button"
             className="btn primary"
-            disabled={busy}
+            disabled={busy || needsTrust}
             onClick={() => void create()}
           >
             {t("session.start")}

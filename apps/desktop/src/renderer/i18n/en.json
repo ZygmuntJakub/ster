@@ -139,6 +139,26 @@
     "invalidBody": "New sessions are blocked until the policy file is fixed and Ster is restarted. Existing conversation history stays readable.",
     "agentBlocked": "This agent is not allowed by organization policy."
   },
+  "factory": {
+    "trustTitle": "Trust this project factory?",
+    "trustBody": "A factory definition in this folder would change the following. Nothing is applied until you trust it.",
+    "changedTitle": "Factory definition changed",
+    "changedBody": "The trusted factory definition for this folder has changed. Review the new contents before trusting again.",
+    "trust": "Trust definition",
+    "trustAgain": "Trust new definition",
+    "skip": "Skip for now",
+    "trustRequired": "Trust or skip the factory definition before starting",
+    "summaryAgents": "Agents: {{agents}}",
+    "summaryDefaultAgent": "Default agent: {{agent}}",
+    "summaryMode": "Permission mode: {{mode}}",
+    "summaryTemplates": "Templates: {{templates}}",
+    "summaryJudging": "Judging criteria are defined",
+    "summaryCommandAgent": "Command agent {{name}}: {{command}}",
+    "droppedByPolicy": "Dropped by organization policy: {{parts}}",
+    "templates": "Templates",
+    "templateLabel": "Task template",
+    "insertTemplate": "Insert"
+  },
   "dialogs": {
     "cancel": "Cancel",
     "open": "Open",

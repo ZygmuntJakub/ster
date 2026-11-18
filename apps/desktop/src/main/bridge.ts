@@ -17,6 +17,13 @@ import {
   removeAgent,
   saveCustom,
 } from "./handlers/agents.js";
+import {
+  factoryApplied,
+  factoryFind,
+  factoryRenderTemplate,
+  factoryRevoke,
+  factoryTrust,
+} from "./handlers/factory.js";
 import { openLocation } from "./handlers/files.js";
 import {
   deleteSession,
@@ -388,6 +395,58 @@ async function handleMethod(
       };
       ctx.login.resize(terminalToken, cols, rows);
       return ok({ resized: true });
+    }
+    case "factory.find": {
+      const input = payload as { folderToken?: string; cwd?: string };
+      const cwd =
+        input.cwd ??
+        (input.folderToken !== undefined
+          ? ctx.tokens.resolveFolder(input.folderToken).path
+          : undefined);
+      if (!cwd) {
+        return fail("invalid-argument", { reason: "missing-folder" });
+      }
+      return ok(await factoryFind(core, cwd));
+    }
+    case "factory.trust": {
+      const input = payload as {
+        folderToken?: string;
+        folder?: string;
+        contentHash: string;
+      };
+      const folder =
+        input.folder ??
+        (input.folderToken !== undefined
+          ? ctx.tokens.resolveFolder(input.folderToken).path
+          : undefined);
+      if (!folder) {
+        return fail("invalid-argument", { reason: "missing-folder" });
+      }
+      return ok(await factoryTrust(core, folder, input.contentHash));
+    }
+    case "factory.revoke": {
+      const input = payload as { folderToken?: string; folder?: string };
+      const folder =
+        input.folder ??
+        (input.folderToken !== undefined
+          ? ctx.tokens.resolveFolder(input.folderToken).path
+          : undefined);
+      if (!folder) {
+        return fail("invalid-argument", { reason: "missing-folder" });
+      }
+      return ok(await factoryRevoke(core, folder));
+    }
+    case "factory.renderTemplate": {
+      const input = payload as {
+        sessionId: string;
+        templateId: string;
+        inputs: Record<string, string>;
+      };
+      return ok(await factoryRenderTemplate(core, input.sessionId, input.templateId, input.inputs));
+    }
+    case "factory.applied": {
+      const { sessionId } = payload as { sessionId: string };
+      return ok(await factoryApplied(core, sessionId));
     }
     default:
       return fail("invalid-argument", { method, reason: "not-implemented" });

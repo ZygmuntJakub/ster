@@ -46,6 +46,46 @@ export { transitionSessionStatus, type SessionStatus } from "./sessions/session.
 export { brandSchema, loadBrandFromJson, parseBrand, type Brand } from "./brand.js";
 
 export {
+  applyFactoryDefinition,
+  factoryCommandAgentId,
+  summarizeFactoryDefinition,
+  type AppliedFactory,
+  type FactoryChangeSummary,
+} from "./factory/apply.js";
+
+export {
+  FACTORY_RELATIVE_PATH,
+  findNearestFactoryDefinition,
+  hashFactoryContent,
+  isFactoryAgentCommand,
+  isFactoryAgentRef,
+  parseFactoryYaml,
+  renderFactoryTemplate,
+  validateFactoryDefinition,
+  type FactoryAgent,
+  type FactoryAgentCommand,
+  type FactoryAgentRef,
+  type FactoryDefinition,
+  type FactoryJudging,
+  type FactoryTemplate,
+  type LocatedFactoryDefinition,
+} from "./factory/definition.js";
+
+export {
+  createFactoryService,
+  type CreateFactoryServiceOptions,
+  type FolderTrustState,
+} from "./factory/service.js";
+
+export {
+  deriveTrustState,
+  getFolderTrust,
+  revokeFolderTrust,
+  trustFolder,
+  type FolderTrust,
+} from "./factory/trust.js";
+
+export {
   isSterError,
   isSterErrorCode,
   SterError,

@@ -1,5 +1,6 @@
 import { useState, type JSX, type SyntheticEvent } from "react";
 import { useTranslation } from "react-i18next";
+import { TemplatePicker } from "../factory/TemplatePicker.js";
 import { CommandMenu, type AvailableCommandView } from "./CommandMenu.js";
 
 export interface ComposerProps {
@@ -120,6 +121,14 @@ export function Composer({
         >
           {t("composer.attach")}
         </button>
+        {!disabled ? (
+          <TemplatePicker
+            sessionId={sessionId}
+            onRendered={(rendered) => {
+              setText(rendered);
+            }}
+          />
+        ) : null}
         <div className="grow" />
         {working ? (
           <button

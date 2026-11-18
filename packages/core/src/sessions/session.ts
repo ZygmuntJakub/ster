@@ -29,6 +29,8 @@ export interface Session {
   configOptions?: ConfigOption[];
   /** Slash commands from `available_commands_update`. */
   availableCommands?: AvailableCommandInfo[];
+  /** Hash of the trusted factory definition applied at session create (US11). */
+  factoryDefinitionHash?: string;
 }
 
 export interface SessionFilter {

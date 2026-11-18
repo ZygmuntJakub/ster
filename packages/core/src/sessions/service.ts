@@ -13,6 +13,7 @@ import {
 import { spawnAgentProcess, type AgentProcess } from "../acp/process.js";
 import { createTerminalHandlers } from "../acp/terminal-handlers.js";
 import type { AgentService } from "../agents/service.js";
+import type { AppliedFactory } from "../factory/apply.js";
 import type { PolicyService } from "../policy/service.js";
 import { SterError } from "../errors.js";
 import type { EventStream, CoreEvent } from "../events/stream.js";
@@ -119,6 +120,8 @@ export interface CreateSessionServiceOptions {
   defaultPermissionMode?: string;
   permissionModes?: ReadonlyArray<PermissionModeDefinition>;
   policy?: PolicyService;
+  /** Resolve a trusted factory for the session cwd (US11). */
+  resolveFactory?: (cwd: string) => AppliedFactory | null;
 }
 
 interface LiveSession {
@@ -141,6 +144,7 @@ interface SessionPayload {
   interruptedRunIds?: string[];
   configOptions?: ConfigOption[];
   availableCommands?: AvailableCommandInfo[];
+  factoryDefinitionHash?: string;
 }
 
 function needsAttentionStatus(status: SessionStatus): boolean {
@@ -218,6 +222,9 @@ function persist(store: Store, session: Session): void {
   if (session.availableCommands !== undefined) {
     payload.availableCommands = session.availableCommands;
   }
+  if (session.factoryDefinitionHash !== undefined) {
+    payload.factoryDefinitionHash = session.factoryDefinitionHash;
+  }
   store.putSession({
     id: session.id,
     agentId: session.agentId,
@@ -273,6 +280,9 @@ function fromRow(row: ReturnType<Store["getSession"]>): Session | null {
   }
   if (payload.availableCommands !== undefined) {
     session.availableCommands = payload.availableCommands;
+  }
+  if (payload.factoryDefinitionHash !== undefined) {
+    session.factoryDefinitionHash = payload.factoryDefinitionHash;
   }
   return session;
 }
@@ -624,6 +634,7 @@ export function createSessionService(options: CreateSessionServiceOptions): Sess
     cwd: string;
     permissionMode: string;
     existingId?: string;
+    factoryDefinitionHash?: string;
   }): Promise<LiveSession> => {
     if (options.policy?.state === "invalid") {
       throw new SterError(
@@ -668,6 +679,9 @@ export function createSessionService(options: CreateSessionServiceOptions): Sess
       createdAt: now,
       lastActivityAt: now,
     };
+    if (input.factoryDefinitionHash !== undefined) {
+      session.factoryDefinitionHash = input.factoryDefinitionHash;
+    }
     persist(options.store, session);
 
     const proc = spawnAgentProcess({
@@ -874,7 +888,8 @@ export function createSessionService(options: CreateSessionServiceOptions): Sess
           "Organization policy is invalid; new sessions are blocked",
         );
       }
-      const mode = input.permissionMode ?? defaultMode;
+      const appliedFactory = options.resolveFactory?.(input.cwd) ?? null;
+      const mode = input.permissionMode ?? appliedFactory?.permissionMode ?? defaultMode;
       const allowedModes = options.policy?.allowedPermissionModes();
       if (allowedModes !== null && allowedModes !== undefined && !allowedModes.includes(mode)) {
         throw new SterError(
@@ -886,6 +901,7 @@ export function createSessionService(options: CreateSessionServiceOptions): Sess
         agentId: input.agentId,
         cwd: input.cwd,
         permissionMode: mode,
+        ...(appliedFactory ? { factoryDefinitionHash: appliedFactory.contentHash } : {}),
       });
       return { ...entry.session };
     },

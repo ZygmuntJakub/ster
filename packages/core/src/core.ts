@@ -43,29 +43,9 @@ export interface PlatformAdapter {
   openTerminal?(cwd: string): Promise<void>;
 }
 
-export interface FactoryLookup {
-  folder: string;
-  contentHash: string;
-  trusted: boolean;
-}
-
-export interface AppliedDefinition {
-  folder: string;
-  contentHash: string;
-  droppedParts: string[];
-}
-
-export interface FactoryService {
-  find(cwd: string): Promise<FactoryLookup | null>;
-  trust(folder: string, contentHash: string): Promise<void>;
-  revoke(folder: string): Promise<void>;
-  applied(sessionId: string): Promise<AppliedDefinition | null>;
-  renderTemplate(
-    sessionId: string,
-    templateId: string,
-    inputs: Record<string, string>,
-  ): Promise<string>;
-}
+export type { AppliedDefinition, FactoryLookup, FactoryService } from "./factory/service.js";
+import type { FactoryService } from "./factory/service.js";
+import { createFactoryService } from "./factory/service.js";
 
 export interface RunFilter {
   sessionId?: string;
@@ -132,16 +112,6 @@ function notReadyError(service: string, method: string): SterError {
     service,
     method,
   });
-}
-
-function createFactoryServiceStub(): FactoryService {
-  return {
-    find: () => Promise.resolve(null),
-    trust: () => Promise.reject(notReadyError("factory", "trust")),
-    revoke: () => Promise.reject(notReadyError("factory", "revoke")),
-    applied: () => Promise.resolve(null),
-    renderTemplate: () => Promise.reject(notReadyError("factory", "renderTemplate")),
-  };
 }
 
 function createRunServiceStub(): RunService {
@@ -253,6 +223,7 @@ export async function createCore(options: CreateCoreOptions): Promise<Core> {
   if (allowedModeIds !== null && !allowedModeIds.includes(defaultPermissionMode)) {
     defaultPermissionMode = permissionModes[0]?.id ?? defaultPermissionMode;
   }
+  const factoryRef: { current: FactoryService | null } = { current: null };
   const sessionsHandle = createSessionService({
     store,
     agents,
@@ -262,9 +233,34 @@ export async function createCore(options: CreateCoreOptions): Promise<Core> {
     policy,
     defaultPermissionMode,
     permissionModes,
+    resolveFactory: (cwd) => factoryRef.current?.resolveApplied(cwd) ?? null,
   });
 
-  const factory = createFactoryServiceStub();
+  const factory = createFactoryService({
+    store,
+    policy,
+    agents,
+    getSessionFactory: (sessionId) => {
+      const row = store.getSession(sessionId);
+      if (!row) {
+        return null;
+      }
+      let factoryDefinitionHash: string | undefined;
+      try {
+        const payload = JSON.parse(row.payloadJson) as { factoryDefinitionHash?: string };
+        if (typeof payload.factoryDefinitionHash === "string") {
+          factoryDefinitionHash = payload.factoryDefinitionHash;
+        }
+      } catch {
+        factoryDefinitionHash = undefined;
+      }
+      return {
+        cwd: row.cwd,
+        ...(factoryDefinitionHash !== undefined ? { factoryDefinitionHash } : {}),
+      };
+    },
+  });
+  factoryRef.current = factory;
   const runs = createRunServiceStub();
 
   let disposed = false;

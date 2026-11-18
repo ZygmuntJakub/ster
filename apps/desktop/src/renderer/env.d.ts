@@ -98,7 +98,21 @@ type SterApi = {
   links: {
     open: (payload: { sessionId: string; itemSeq: number; linkIndex: number }) => Promise<unknown>;
   };
-  factory: Record<string, (payload?: unknown) => Promise<unknown>>;
+  factory: {
+    find: (payload: { folderToken?: string; cwd?: string }) => Promise<unknown>;
+    trust: (payload: {
+      folderToken?: string;
+      folder?: string;
+      contentHash: string;
+    }) => Promise<unknown>;
+    revoke: (payload: { folderToken?: string; folder?: string }) => Promise<unknown>;
+    renderTemplate: (payload: {
+      sessionId: string;
+      templateId: string;
+      inputs: Record<string, string>;
+    }) => Promise<unknown>;
+    applied: (payload: { sessionId: string }) => Promise<unknown>;
+  };
   runs: Record<string, (payload?: unknown) => Promise<unknown>>;
   login: {
     terminal: {

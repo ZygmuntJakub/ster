@@ -39,7 +39,7 @@ export const BRIDGE_SURFACE = {
   ],
   files: ["openLocation"],
   links: ["open"],
-  factory: ["find", "trust", "revoke", "renderTemplate"],
+  factory: ["find", "trust", "revoke", "renderTemplate", "applied"],
   runs: ["list", "get", "rate", "judge", "export", "delete"],
   login: {
     terminal: ["start", "input", "resize"],

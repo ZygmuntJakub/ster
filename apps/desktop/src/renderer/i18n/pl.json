@@ -139,6 +139,26 @@
     "invalidBody": "Nowe sesje są zablokowane, dopóki plik polityki nie zostanie poprawiony i Ster nie zostanie uruchomiony ponownie. Historia rozmów pozostaje czytelna.",
     "agentBlocked": "Ten agent nie jest dozwolony przez politykę organizacji."
   },
+  "factory": {
+    "trustTitle": "Zaufać fabryce projektu?",
+    "trustBody": "Definicja fabryki w tym folderze zmieniłaby poniższe elementy. Nic nie zostanie zastosowane, dopóki jej nie zaufasz.",
+    "changedTitle": "Definicja fabryki się zmieniła",
+    "changedBody": "Zaufana definicja fabryki dla tego folderu się zmieniła. Przejrzyj nową treść przed ponownym zaufaniem.",
+    "trust": "Zaufaj definicji",
+    "trustAgain": "Zaufaj nowej definicji",
+    "skip": "Pomiń na razie",
+    "trustRequired": "Zaufaj lub pomiń definicję fabryki przed startem",
+    "summaryAgents": "Agenci: {{agents}}",
+    "summaryDefaultAgent": "Domyślny agent: {{agent}}",
+    "summaryMode": "Tryb uprawnień: {{mode}}",
+    "summaryTemplates": "Szablony: {{templates}}",
+    "summaryJudging": "Zdefiniowano kryteria oceny",
+    "summaryCommandAgent": "Agent z polecenia {{name}}: {{command}}",
+    "droppedByPolicy": "Odrzucone przez politykę organizacji: {{parts}}",
+    "templates": "Szablony",
+    "templateLabel": "Szablon zadania",
+    "insertTemplate": "Wstaw"
+  },
   "dialogs": {
     "cancel": "Anuluj",
     "open": "Otwórz",
