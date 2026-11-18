@@ -1,0 +1,10 @@
+# Local Claude Code settings (may hold machine-specific permissions)
+.claude/settings.local.json
+
+node_modules/
+dist/
+out/
+.DS_Store
+
+# Browser automation output
+.playwright-mcp/
