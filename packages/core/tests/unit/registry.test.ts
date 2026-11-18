@@ -1,6 +1,11 @@
 import { describe, expect, it } from "vitest";
 import { parseRegistryDocument } from "../../src/agents/registry.js";
-import { detectMusl, resolvePlatformKey, selectBinaryTarget } from "../../src/agents/platform.js";
+import {
+  detectMusl,
+  resolvePlatformInfo,
+  resolvePlatformKey,
+  selectBinaryTarget,
+} from "../../src/agents/platform.js";
 import { readinessForRegistryEntry } from "../../src/agents/plan.js";
 
 describe("registry parsing", () => {
@@ -61,10 +66,38 @@ describe("platform key resolution", () => {
     ).toBe(true);
     expect(
       detectMusl({
+        platform: "linux",
+        exists: (path) => path === "/lib/ld-musl-x86_64.so.1",
+      }),
+    ).toBe(true);
+    expect(
+      detectMusl({
+        platform: "linux",
+        exists: () => false,
+      }),
+    ).toBe(false);
+    expect(
+      detectMusl({
         platform: "darwin",
         exists: () => true,
       }),
     ).toBe(false);
+  });
+
+  it("resolves platform info and rejects unsupported hosts", () => {
+    expect(resolvePlatformInfo({ platform: "darwin", arch: "arm64", isMusl: false })).toEqual({
+      os: "darwin",
+      arch: "aarch64",
+      isMusl: false,
+      key: "darwin-aarch64",
+    });
+    expect(resolvePlatformInfo({ platform: "linux", arch: "x64", isMusl: true }).key).toBe(
+      "linux-x86_64-musl",
+    );
+    expect(() => resolvePlatformKey({ platform: "aix" as NodeJS.Platform, arch: "x64" })).toThrow(
+      /Unsupported platform/u,
+    );
+    expect(selectBinaryTarget(undefined, "darwin-aarch64")).toBeUndefined();
   });
 
   it("does not fall back from musl to glibc binary targets", () => {
