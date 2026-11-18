@@ -18,7 +18,7 @@ import {
   saveCustom,
 } from "./handlers/agents.js";
 import { openLocation } from "./handlers/files.js";
-import { listRules, revokeRule, setPermissionMode } from "./handlers/sessions.js";
+import { killCommand, listRules, revokeRule, setPermissionMode } from "./handlers/sessions.js";
 import { createLinkIndex } from "./link-index.js";
 import { createLocationIndex } from "./location-index.js";
 import { createLoginTerminalManager } from "./login-terminal.js";
@@ -256,6 +256,10 @@ async function handleMethod(
     case "sessions.revokeRule": {
       const { ruleId } = payload as { ruleId: string };
       return ok(await revokeRule(core, ruleId));
+    }
+    case "sessions.killCommand": {
+      const { commandRunId } = payload as { commandRunId: string };
+      return ok(await killCommand(core, commandRunId));
     }
     case "sessions.authMethods": {
       const { sessionId } = payload as { sessionId: string };

@@ -214,16 +214,16 @@ description: "Task list for Ster — ACP Desktop Client"
 
 ### Tests for User Story 5
 
-- [ ] T099 [P] [US5] Integration tests for `terminal/*` (output, byte limit and truncation, wait, kill, release, cleanup on session end) in `packages/core/tests/integration/commands.test.ts`
-- [ ] T100 [P] [US5] End-to-end flow for US5 in `apps/desktop/tests/e2e/us5-commands.spec.ts`
+- [x] T099 [P] [US5] Integration tests for `terminal/*` (output, byte limit and truncation, wait, kill, release, cleanup on session end) in `packages/core/tests/integration/commands.test.ts`
+- [x] T100 [P] [US5] End-to-end flow for US5 in `apps/desktop/tests/e2e/us5-commands.spec.ts`
 
 ### Implementation for User Story 5
 
-- [ ] T101 [US5] Implement the command runner in `packages/core/src/workspace/commands.ts` per data-model.md `CommandRun.output`, `CommandRun.cwd`, `CommandRun.state` (research.md R4), using the resolved shell environment (research.md R19)
-- [ ] T102 [US5] Implement the `terminal/create`, `terminal/output`, `terminal/wait_for_exit`, `terminal/kill`, `terminal/release` handlers in `packages/core/src/acp/terminal-handlers.ts`, advertise the `terminal` client capability, and apply the guard from `packages/core/src/permissions/guard.ts`
-- [ ] T103 [US5] Emit `command.*` events with control sequences stripped for display, link `terminal` action content to command runs, and implement `killCommand` in `packages/core/src/sessions/service.ts`
-- [ ] T104 [US5] Add the bridge function `sessions.killCommand` in `apps/desktop/src/main/handlers/sessions.ts`
-- [ ] T105 [US5] Build the command output view (command, live output, truncation note, exit result, stop button) in `apps/desktop/src/renderer/features/terminal/CommandView.tsx`, integrate it into the action card, and add EN/PL strings
+- [x] T101 [US5] Implement the command runner in `packages/core/src/workspace/commands.ts` per data-model.md `CommandRun.output`, `CommandRun.cwd`, `CommandRun.state` (research.md R4), using the resolved shell environment (research.md R19)
+- [x] T102 [US5] Implement the `terminal/create`, `terminal/output`, `terminal/wait_for_exit`, `terminal/kill`, `terminal/release` handlers in `packages/core/src/acp/terminal-handlers.ts`, advertise the `terminal` client capability, and apply the guard from `packages/core/src/permissions/guard.ts`
+- [x] T103 [US5] Emit `command.*` events with control sequences stripped for display, link `terminal` action content to command runs, and implement `killCommand` in `packages/core/src/sessions/service.ts`
+- [x] T104 [US5] Add the bridge function `sessions.killCommand` in `apps/desktop/src/main/handlers/sessions.ts`
+- [x] T105 [US5] Build the command output view (command, live output, truncation note, exit result, stop button) in `apps/desktop/src/renderer/features/terminal/CommandView.tsx`, integrate it into the action card, and add EN/PL strings
 
 **Checkpoint**: Increment 2 complete: agents from the registry can edit files and verify their work
 

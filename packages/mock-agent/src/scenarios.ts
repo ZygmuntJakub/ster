@@ -144,6 +144,26 @@ async function requestEditPermission(
   return selectedAllowed(response);
 }
 
+async function requestExecutePermission(
+  client: AgentContext,
+  session: SessionState,
+  toolCallId: string,
+  command: string,
+  options: PermissionOption[] = onceOptions(),
+): Promise<boolean> {
+  const response = await client.request(methods.client.session.requestPermission, {
+    sessionId: session.id,
+    toolCall: {
+      toolCallId,
+      title: `Run ${command}`,
+      kind: "execute",
+      status: "pending",
+    },
+    options,
+  });
+  return selectedAllowed(response);
+}
+
 export async function runScenario(
   client: AgentContext,
   session: SessionState,
@@ -349,42 +369,143 @@ export async function runScenario(
       return { stopReason: "end_turn" };
     }
     case "run-command": {
-      if (!(await sleep(10, session))) {
-        const terminal = await client.createTerminal({
+      const toolCallId = randomUUID();
+      await client.notify("session/update", {
+        sessionId: session.id,
+        update: {
+          sessionUpdate: "tool_call",
+          toolCallId,
+          title: "Run printf",
+          kind: "execute",
+          status: "pending",
+        },
+      });
+      const allowed = await requestExecutePermission(client, session, toolCallId, "printf");
+      if (!allowed || isCancelled(session)) {
+        await client.notify("session/update", {
           sessionId: session.id,
-          command: "printf",
-          args: ["hello-from-command\n"],
-          cwd: session.cwd,
+          update: {
+            sessionUpdate: "tool_call_update",
+            toolCallId,
+            status: "failed",
+          },
         });
-        try {
-          const output = await terminal.waitForExit();
-          await emitMessage(
-            client,
-            session.id,
-            `Command exited with code ${String(output.exitCode ?? "null")}`,
-          );
-        } finally {
-          await terminal.release();
-        }
+        return { stopReason: isCancelled(session) ? "cancelled" : "end_turn" };
+      }
+      const terminal = await client.createTerminal({
+        sessionId: session.id,
+        command: "printf",
+        args: ["hello-from-command\n"],
+        cwd: session.cwd,
+      });
+      await client.notify("session/update", {
+        sessionId: session.id,
+        update: {
+          sessionUpdate: "tool_call_update",
+          toolCallId,
+          status: "in_progress",
+          content: [{ type: "terminal", terminalId: terminal.id }],
+        },
+      });
+      try {
+        const output = await terminal.waitForExit();
+        await client.notify("session/update", {
+          sessionId: session.id,
+          update: {
+            sessionUpdate: "tool_call_update",
+            toolCallId,
+            status: "completed",
+            content: [{ type: "terminal", terminalId: terminal.id }],
+          },
+        });
+        await emitMessage(
+          client,
+          session.id,
+          `Command exited with code ${String(output.exitCode ?? "null")}`,
+        );
+      } finally {
+        await terminal.release();
       }
       return { stopReason: isCancelled(session) ? "cancelled" : "end_turn" };
     }
     case "run-long": {
+      const toolCallId = randomUUID();
+      await client.notify("session/update", {
+        sessionId: session.id,
+        update: {
+          sessionUpdate: "tool_call",
+          toolCallId,
+          title: "Run sleep",
+          kind: "execute",
+          status: "pending",
+        },
+      });
+      const allowed = await requestExecutePermission(client, session, toolCallId, "sleep");
+      if (!allowed || isCancelled(session)) {
+        await client.notify("session/update", {
+          sessionId: session.id,
+          update: {
+            sessionUpdate: "tool_call_update",
+            toolCallId,
+            status: "failed",
+          },
+        });
+        return { stopReason: isCancelled(session) ? "cancelled" : "end_turn" };
+      }
       const terminal = await client.createTerminal({
         sessionId: session.id,
         command: "sleep",
         args: ["30"],
         cwd: session.cwd,
       });
+      await client.notify("session/update", {
+        sessionId: session.id,
+        update: {
+          sessionUpdate: "tool_call_update",
+          toolCallId,
+          status: "in_progress",
+          content: [{ type: "terminal", terminalId: terminal.id }],
+        },
+      });
       try {
-        for (let i = 0; i < 20; i += 1) {
+        const exitPromise = terminal.waitForExit();
+        let cancelled = false;
+        let finished = false;
+        while (!finished) {
           if (isCancelled(session)) {
+            cancelled = true;
             await terminal.kill();
-            return { stopReason: "cancelled" };
+            finished = true;
+            break;
           }
-          await sleep(100, session);
+          const raced = await Promise.race([
+            exitPromise.then((exit) => ({ kind: "exit" as const, exit })),
+            sleep(100, session).then((wasCancelled) => ({
+              kind: "tick" as const,
+              wasCancelled,
+            })),
+          ]);
+          if (raced.kind === "exit") {
+            finished = true;
+          } else if (raced.wasCancelled) {
+            cancelled = true;
+            await terminal.kill();
+            finished = true;
+          }
         }
-        await terminal.waitForExit();
+        await exitPromise;
+        await client.notify("session/update", {
+          sessionId: session.id,
+          update: {
+            sessionUpdate: "tool_call_update",
+            toolCallId,
+            status: cancelled ? "failed" : "completed",
+            content: [{ type: "terminal", terminalId: terminal.id }],
+          },
+        });
+        if (cancelled) {
+          return { stopReason: "cancelled" };
+        }
       } finally {
         await terminal.release();
       }

@@ -8,6 +8,11 @@ import { ConversationView } from "../../features/conversation/ConversationView.j
 import { LoginPanel, type AuthMethodView } from "../../features/sessions/LoginPanel.js";
 import { SessionStatus } from "../../features/sessions/SessionStatus.js";
 import {
+  appendCommandOutput,
+  markCommandExited,
+  upsertCommandStarted,
+} from "../stores/commands.js";
+import {
   appendItem,
   getItems,
   getPendingApproval,
@@ -83,6 +88,13 @@ export function ConversationPane(): JSX.Element {
         patch?: Record<string, unknown>;
         approval?: ApprovalView;
         approvalId?: string;
+        commandRunId?: string;
+        data?: string;
+        command?: string;
+        args?: string[];
+        cwd?: string;
+        truncated?: boolean;
+        exit?: { code?: number | null; signal?: string | null };
       };
 
       if (
@@ -116,6 +128,21 @@ export function ConversationPane(): JSX.Element {
       }
       if (typed.type === "item.appended" && typed.item?.kind === "notice") {
         setRulesRefresh((n) => n + 1);
+      }
+      if (typed.type === "command.started" && typed.sessionId && typed.commandRunId) {
+        upsertCommandStarted({
+          commandRunId: typed.commandRunId,
+          sessionId: typed.sessionId,
+          ...(typed.command !== undefined ? { command: typed.command } : {}),
+          ...(typed.args !== undefined ? { args: typed.args } : {}),
+          ...(typed.cwd !== undefined ? { cwd: typed.cwd } : {}),
+        });
+      }
+      if (typed.type === "command.output" && typed.commandRunId && typed.data) {
+        appendCommandOutput(typed.commandRunId, typed.data, typed.truncated);
+      }
+      if (typed.type === "command.exited" && typed.commandRunId) {
+        markCommandExited(typed.commandRunId, typed.exit);
       }
     });
   }, []);

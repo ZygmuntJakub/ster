@@ -1,6 +1,9 @@
 import type { JSX } from "react";
+import { useSyncExternalStore } from "react";
 import { useTranslation } from "react-i18next";
+import { getCommand, subscribeCommands } from "../../app/stores/commands.js";
 import { DiffView } from "../diff/DiffView.js";
+import { CommandView } from "../terminal/CommandView.js";
 
 export interface ActionLocationView {
   path: string;
@@ -37,6 +40,15 @@ export interface ActionCardProps {
  */
 export function ActionCard({ sessionId, itemSeq, action }: ActionCardProps): JSX.Element {
   const { t } = useTranslation();
+  useSyncExternalStore(subscribeCommands, () =>
+    action.content
+      .filter((block) => block.type === "terminal" && block.commandRunId)
+      .map((block) => getCommand(block.commandRunId ?? ""))
+      .map((run) =>
+        run ? `${run.state}:${String(run.output.length)}:${run.truncated ? "1" : "0"}` : "",
+      )
+      .join("|"),
+  );
 
   return (
     <article
@@ -90,6 +102,17 @@ export function ActionCard({ sessionId, itemSeq, action }: ActionCardProps): JSX
                 {block.text}
               </p>
             );
+          }
+          if (block.type === "terminal" && block.commandRunId) {
+            const run = getCommand(block.commandRunId);
+            if (!run) {
+              return (
+                <p key={`terminal-${String(index)}`} className="text-xs text-[var(--ink2)]">
+                  {t("command.waiting")}
+                </p>
+              );
+            }
+            return <CommandView key={`terminal-${String(index)}`} run={run} />;
           }
           return null;
         })}

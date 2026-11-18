@@ -11,6 +11,7 @@ import {
   type ConnectAgentClientHandlers,
 } from "../acp/connection.js";
 import { spawnAgentProcess, type AgentProcess } from "../acp/process.js";
+import { createTerminalHandlers } from "../acp/terminal-handlers.js";
 import type { AgentService } from "../agents/service.js";
 import { SterError } from "../errors.js";
 import type { EventStream, CoreEvent } from "../events/stream.js";
@@ -21,6 +22,7 @@ import { createApprovalBroker } from "../permissions/approvals.js";
 import {
   classifyFsPath,
   OUTSIDE_WORKSPACE_OPTIONS,
+  TERMINAL_GUARD_OPTIONS,
   readAbsoluteTextFile,
   writeAbsoluteTextFile,
 } from "../permissions/guard.js";
@@ -36,6 +38,7 @@ import {
 } from "../runs/lifecycle.js";
 import type { Store } from "../store/store.js";
 import { assertWorkspaceAvailable } from "../workspace/availability.js";
+import { createCommandRunner, type CommandRunner } from "../workspace/commands.js";
 import { readWorkspaceTextFile, writeWorkspaceTextFile } from "../workspace/files.js";
 import { createSnapshotStore } from "../workspace/snapshots.js";
 import {
@@ -116,6 +119,7 @@ interface LiveSession {
   promptInFlight: boolean;
   cancelRequested: boolean;
   currentRunId?: string;
+  commands?: CommandRunner | undefined;
 }
 
 interface SessionPayload {
@@ -266,9 +270,53 @@ export function createSessionService(options: CreateSessionServiceOptions): Sess
     },
   });
 
+  const ensureCommands = (entry: LiveSession): CommandRunner => {
+    if (entry.commands) {
+      return entry.commands;
+    }
+    const runner = createCommandRunner({
+      sessionId: entry.session.id,
+      environment: options.environment,
+      onOutput: (run, chunk) => {
+        options.events.publish({
+          type: "command.output",
+          sessionId: entry.session.id,
+          commandRunId: run.id,
+          data: chunk,
+        });
+      },
+      onExit: (run) => {
+        const payload: {
+          type: "command.exited";
+          sessionId: string;
+          commandRunId: string;
+          exit?: { code?: number | null; signal?: string | null };
+        } = {
+          type: "command.exited",
+          sessionId: entry.session.id,
+          commandRunId: run.id,
+        };
+        if (run.exit) {
+          payload.exit = run.exit;
+        }
+        options.events.publish(payload);
+      },
+    });
+    entry.commands = runner;
+    return runner;
+  };
+
+  const cleanupCommands = async (entry: LiveSession): Promise<void> => {
+    if (entry.commands) {
+      await entry.commands.killAll();
+      entry.commands = undefined;
+    }
+  };
+
   const failSession = async (entry: LiveSession, reason: string): Promise<void> => {
     approvals.cancelSession(entry.session.id);
     snapshots.clearSession(entry.session.id);
+    await cleanupCommands(entry);
     entry.session.failureReason = reason;
     try {
       if (entry.session.status !== "failed" && entry.session.status !== "ended") {
@@ -448,6 +496,56 @@ export function createSessionService(options: CreateSessionServiceOptions): Sess
       snapshots.record(entry.session.id, resolvedPath, params.content);
       return {};
     },
+
+    ...(() => {
+      const terminals = createTerminalHandlers({
+        resolveSessionId: (agentSessionId) => findByAgentSession(agentSessionId)?.session.id,
+        getSessionCwd: (sessionId) =>
+          live.get(sessionId)?.session.cwd ?? options.store.getSession(sessionId)?.cwd,
+        getCurrentRunId: (sessionId) => live.get(sessionId)?.currentRunId,
+        executeAllows: approvals.executeAllows,
+        async requestGuardApproval(input) {
+          const outcome = await approvals.request({
+            sessionId: input.sessionId,
+            source: "client-guard",
+            subject: {
+              reason: "terminal-create",
+              command: input.command,
+              args: input.args,
+              cwd: input.cwd,
+              commandLine: [input.command, ...input.args].join(" "),
+            },
+            options: TERMINAL_GUARD_OPTIONS,
+          });
+          return isSelectedAllow(outcome);
+        },
+        getRunner: (sessionId) => live.get(sessionId)?.commands,
+        ensureRunner: (sessionId) => {
+          const entry = live.get(sessionId);
+          if (!entry) {
+            throw new SterError("not-found", `Session ${sessionId} is not running`);
+          }
+          return ensureCommands(entry);
+        },
+        onStarted: (sessionId, commandRunId, meta) => {
+          options.events.publish({
+            type: "command.started",
+            sessionId,
+            commandRunId,
+            command: meta.command,
+            args: meta.args,
+            cwd: meta.cwd,
+          });
+        },
+      });
+      return {
+        createTerminal: (params) => terminals.create(params),
+        terminalOutput: (params) => terminals.output(params),
+        waitForTerminalExit: (params) => terminals.waitForExit(params),
+        killTerminal: (params) => terminals.kill(params),
+        releaseTerminal: (params) => terminals.release(params),
+      };
+    })(),
   });
 
   const startAgent = async (input: {
@@ -795,7 +893,17 @@ export function createSessionService(options: CreateSessionServiceOptions): Sess
       approvals.revokeRule(ruleId);
       return Promise.resolve();
     },
-    killCommand: () => Promise.reject(new SterError("invalid-argument", "Commands arrive in US5")),
+    async killCommand(commandRunId) {
+      for (const entry of live.values()) {
+        const run = entry.commands?.get(commandRunId);
+        if (!run) {
+          continue;
+        }
+        await entry.commands?.kill(commandRunId);
+        return;
+      }
+      throw new SterError("not-found", `Unknown command ${commandRunId}`);
+    },
     authMethods: (sessionId) => {
       const entry = live.get(sessionId);
       if (entry) {
@@ -866,6 +974,7 @@ export function createSessionService(options: CreateSessionServiceOptions): Sess
       }
       const existing = live.get(sessionId);
       if (existing) {
+        await cleanupCommands(existing);
         existing.connection.close();
         await existing.process.kill();
         live.delete(sessionId);
@@ -901,6 +1010,9 @@ export function createSessionService(options: CreateSessionServiceOptions): Sess
       approvals.cancelSession(sessionId);
       rules.clearSession(sessionId);
       snapshots.clearSession(sessionId);
+      if (entry) {
+        await cleanupCommands(entry);
+      }
       if (session.status !== "ended") {
         try {
           setStatus(session, "ended");

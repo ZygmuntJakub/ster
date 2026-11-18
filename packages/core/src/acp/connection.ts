@@ -6,12 +6,22 @@ import {
   type AgentCapabilities,
   type AuthMethod,
   type ClientConnection,
+  type CreateTerminalRequest,
+  type CreateTerminalResponse,
   type Implementation,
   type InitializeResponse,
+  type KillTerminalRequest,
+  type KillTerminalResponse,
   type ReadTextFileRequest,
+  type ReleaseTerminalRequest,
+  type ReleaseTerminalResponse,
   type RequestPermissionRequest,
   type RequestPermissionResponse,
   type SessionNotification,
+  type TerminalOutputRequest,
+  type TerminalOutputResponse,
+  type WaitForTerminalExitRequest,
+  type WaitForTerminalExitResponse,
   type WriteTextFileRequest,
 } from "@agentclientprotocol/sdk";
 import { Readable, Writable } from "node:stream";
@@ -46,6 +56,11 @@ export interface ConnectAgentClientHandlers {
   requestPermission: (params: RequestPermissionRequest) => Promise<RequestPermissionResponse>;
   readTextFile: (params: ReadTextFileRequest) => Promise<{ content: string }>;
   writeTextFile: (params: WriteTextFileRequest) => Promise<Record<string, never>>;
+  createTerminal: (params: CreateTerminalRequest) => Promise<CreateTerminalResponse>;
+  terminalOutput: (params: TerminalOutputRequest) => Promise<TerminalOutputResponse>;
+  waitForTerminalExit: (params: WaitForTerminalExitRequest) => Promise<WaitForTerminalExitResponse>;
+  killTerminal: (params: KillTerminalRequest) => Promise<KillTerminalResponse>;
+  releaseTerminal: (params: ReleaseTerminalRequest) => Promise<ReleaseTerminalResponse>;
 }
 
 export interface ConnectAgentOptions {
@@ -131,7 +146,20 @@ export async function connectAgent(options: ConnectAgentOptions): Promise<AcpCon
       .onRequest(methods.client.fs.writeTextFile, async ({ params }) => {
         await clientHandlers.writeTextFile(params);
         return {};
-      });
+      })
+      .onRequest(methods.client.terminal.create, ({ params }) =>
+        clientHandlers.createTerminal(params),
+      )
+      .onRequest(methods.client.terminal.output, ({ params }) =>
+        clientHandlers.terminalOutput(params),
+      )
+      .onRequest(methods.client.terminal.waitForExit, ({ params }) =>
+        clientHandlers.waitForTerminalExit(params),
+      )
+      .onRequest(methods.client.terminal.kill, ({ params }) => clientHandlers.killTerminal(params))
+      .onRequest(methods.client.terminal.release, ({ params }) =>
+        clientHandlers.releaseTerminal(params),
+      );
   }
 
   const connection = app.connect(stream);

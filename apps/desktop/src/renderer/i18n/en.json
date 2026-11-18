@@ -64,6 +64,13 @@
   "action": {
     "label": "Action"
   },
+  "command": {
+    "label": "Command",
+    "stop": "Stop",
+    "waiting": "Waiting for output…",
+    "truncated": "Output truncated to the size limit.",
+    "exit": "Exit code {{code}} · signal {{signal}}"
+  },
   "diff": {
     "label": "Diff"
   },

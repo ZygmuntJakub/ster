@@ -64,6 +64,13 @@
   "action": {
     "label": "Akcja"
   },
+  "command": {
+    "label": "Polecenie",
+    "stop": "Zatrzymaj",
+    "waiting": "Oczekiwanie na wynik…",
+    "truncated": "Wynik skrócono do limitu rozmiaru.",
+    "exit": "Kod wyjścia {{code}} · sygnał {{signal}}"
+  },
   "diff": {
     "label": "Różnice"
   },

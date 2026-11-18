@@ -35,6 +35,10 @@ export type CoreEventPayload =
       commandRunId: string;
       data?: string;
       exit?: CommandExit;
+      command?: string;
+      args?: string[];
+      cwd?: string;
+      truncated?: boolean;
     }
   | { type: "run.started" | "run.finished"; sessionId: string; run: RunSummary }
   | { type: "score.recorded"; runId: string; score: Score }

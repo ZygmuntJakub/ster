@@ -145,8 +145,16 @@ function asContent(value: unknown): ActionContent[] {
       out.push(diff);
       continue;
     }
-    if (record["type"] === "terminal" && typeof record["commandRunId"] === "string") {
-      out.push({ type: "terminal", commandRunId: record["commandRunId"] });
+    if (record["type"] === "terminal") {
+      const commandRunId =
+        typeof record["commandRunId"] === "string"
+          ? record["commandRunId"]
+          : typeof record["terminalId"] === "string"
+            ? record["terminalId"]
+            : undefined;
+      if (commandRunId) {
+        out.push({ type: "terminal", commandRunId });
+      }
     }
   }
   return out;

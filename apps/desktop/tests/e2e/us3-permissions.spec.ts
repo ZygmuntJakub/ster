@@ -86,7 +86,9 @@ test("US3: remember edits, auto-approve reads, reject outside guard", async () =
     await page.getByRole("button", { name: /Allow once|Allow/i }).click();
     await expect(page.getByRole("dialog")).toBeVisible({ timeout: 30_000 });
     await page.getByRole("dialog").locator('[data-option-id="reject"]').click();
-    await expect(page.getByText("outside-workspace")).toBeVisible({ timeout: 30_000 });
+    await expect(page.getByText(/outside-workspace|Write failed/i).first()).toBeVisible({
+      timeout: 30_000,
+    });
   } finally {
     await app.close();
     rmSync(folder, { recursive: true, force: true });

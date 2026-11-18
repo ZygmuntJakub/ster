@@ -20,3 +20,11 @@ export async function revokeRule(core: Core, ruleId: string): Promise<{ revoked:
   await core.sessions.revokeRule(ruleId);
   return { revoked: true };
 }
+
+/**
+ * Stop a running agent-requested command (US5).
+ */
+export async function killCommand(core: Core, commandRunId: string): Promise<{ killed: true }> {
+  await core.sessions.killCommand(commandRunId);
+  return { killed: true };
+}
