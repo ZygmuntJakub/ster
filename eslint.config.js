@@ -30,7 +30,8 @@ export default tseslint.config(
     languageOptions: {
       parserOptions: {
         projectService: {
-          allowDefaultProject: ["*.mjs", "*.js", "eslint.config.js"],
+          // Typed lint uses each package/examples tsconfig. Untyped JS/MJS is allowlisted.
+          allowDefaultProject: ["eslint.config.js", "*.mjs", "*.js"],
           defaultProject: "tsconfig.eslint.json",
         },
         tsconfigRootDir: rootDir,
