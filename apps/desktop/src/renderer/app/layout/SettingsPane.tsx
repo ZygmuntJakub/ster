@@ -1,5 +1,6 @@
 import type { JSX } from "react";
 import { useTranslation } from "react-i18next";
+import { PermissionSettings } from "../../features/settings/PermissionSettings.js";
 import { applyTheme, getSettings, setSettings, type ThemePreference } from "../stores/settings.js";
 
 export interface SettingsPaneProps {
@@ -7,7 +8,7 @@ export interface SettingsPaneProps {
 }
 
 /**
- * Settings entry: language and theme from SettingsService via the bridge.
+ * Settings entry: language, theme, and default permission mode.
  */
 export function SettingsPane({ onLanguageChange }: SettingsPaneProps): JSX.Element {
   const { t, i18n } = useTranslation();
@@ -48,6 +49,7 @@ export function SettingsPane({ onLanguageChange }: SettingsPaneProps): JSX.Eleme
             <option value="dark">{t("settings.themeDark")}</option>
           </select>
         </label>
+        <PermissionSettings />
         <p className="faint text-xs mono">i18n: {i18n.language}</p>
       </div>
     </section>

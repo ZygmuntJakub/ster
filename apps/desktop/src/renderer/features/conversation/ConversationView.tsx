@@ -27,6 +27,23 @@ function payloadText(payload: unknown): string {
   return JSON.stringify(payload);
 }
 
+function noticeLabel(payload: unknown, t: (key: string) => string): string {
+  if (!payload || typeof payload !== "object") {
+    return payloadText(payload);
+  }
+  const notice = (payload as { notice?: string }).notice;
+  if (notice === "approval-by-rule") {
+    return t("permission.noticeByRule");
+  }
+  if (notice === "approval-by-mode") {
+    return t("permission.noticeByMode");
+  }
+  if (notice === "rule-created") {
+    return t("permission.noticeRuleCreated");
+  }
+  return payloadText(payload);
+}
+
 function asAction(payload: unknown): ActionPayload | null {
   if (!payload || typeof payload !== "object") {
     return null;
@@ -128,7 +145,19 @@ export function ConversationView({ sessionId, items }: ConversationViewProps): J
         if (item.kind === "plan") {
           return <PlanView key={item.seq} entries={asPlanEntries(item.payload)} />;
         }
-        if (item.kind === "notice" || item.kind === "approval") {
+        if (item.kind === "notice") {
+          return (
+            <article
+              key={item.seq}
+              className="msg notice rounded-[var(--r-md)] bg-[var(--surface)] px-3 py-2 text-sm text-[var(--ink2)]"
+              data-testid="permission-notice"
+            >
+              <p className="lbl">{t("conversation.notice")}</p>
+              <p>{noticeLabel(item.payload, t)}</p>
+            </article>
+          );
+        }
+        if (item.kind === "approval") {
           return (
             <article
               key={item.seq}

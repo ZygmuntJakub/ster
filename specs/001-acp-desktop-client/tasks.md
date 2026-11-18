@@ -153,19 +153,19 @@ description: "Task list for Ster — ACP Desktop Client"
 
 ### Tests for User Story 3
 
-- [ ] T070 [P] [US3] Table-driven unit tests for the permission engine (every mode × tool kind × option set) in `packages/core/tests/unit/permission-engine.test.ts`, including requests that offer only standing-permission options and requests without an `allow_once` option
-- [ ] T071 [P] [US3] Integration tests for rules, automatic approvals recorded as notices, and the guard for paths outside the folder in `packages/core/tests/integration/permissions.test.ts`
-- [ ] T072 [P] [US3] End-to-end flow for US3 in `apps/desktop/tests/e2e/us3-permissions.spec.ts`
+- [x] T070 [P] [US3] Table-driven unit tests for the permission engine (every mode × tool kind × option set) in `packages/core/tests/unit/permission-engine.test.ts`, including requests that offer only standing-permission options and requests without an `allow_once` option
+- [x] T071 [P] [US3] Integration tests for rules, automatic approvals recorded as notices, and the guard for paths outside the folder in `packages/core/tests/integration/permissions.test.ts`
+- [x] T072 [P] [US3] End-to-end flow for US3 in `apps/desktop/tests/e2e/us3-permissions.spec.ts`
 
 ### Implementation for User Story 3
 
-- [ ] T073 [US3] Implement the permission engine as a pure function and the three built-in modes in `packages/core/src/permissions/engine.ts` and `packages/core/src/permissions/modes.ts` (research.md R13), registered through `PermissionModeDefinition`; the engine never returns an option of kind `allow_always` or `reject_always` and offers the application's own remember choice only in `ask-with-rules`
-- [ ] T074 [US3] Implement session rules in `packages/core/src/permissions/rules.ts` per data-model.md `PermissionRule.match`, including list and revoke
-- [ ] T075 [US3] Implement the client-side guard in `packages/core/src/permissions/guard.ts`: prompt for `fs/*` paths outside `Session.cwd` (replacing the hard rejection from US1) and expose the hook for `terminal/create` used in US5; guard requests never create rules; implement the one-approval-per-command matching rule and stale-write prompts exactly as defined in research.md R13
-- [ ] T076 [US3] Wire the engine into `packages/core/src/permissions/approvals.ts`, recording outcomes decided by rule or mode as notices (FR-014), and implement `setPermissionMode`, `rules`, `revokeRule` in `packages/core/src/sessions/service.ts` with `Session.permissionMode` defaulting to `Settings.defaultPermissionMode`
-- [ ] T077 [US3] Add bridge functions `sessions.setPermissionMode`, `sessions.rules`, `sessions.revokeRule` in `apps/desktop/src/main/handlers/sessions.ts`
-- [ ] T078 [P] [US3] Build the permission mode selector in `apps/desktop/src/renderer/features/approvals/PermissionModeSelect.tsx` and the default-mode setting in `apps/desktop/src/renderer/features/settings/PermissionSettings.tsx`, repeating the confinement statement from FR-015 in the settings screen
-- [ ] T079 [P] [US3] Build the remembered-decisions panel with revoke in `apps/desktop/src/renderer/features/approvals/RulesPanel.tsx`, and add EN/PL strings
+- [x] T073 [US3] Implement the permission engine as a pure function and the three built-in modes in `packages/core/src/permissions/engine.ts` and `packages/core/src/permissions/modes.ts` (research.md R13), registered through `PermissionModeDefinition`; the engine never returns an option of kind `allow_always` or `reject_always` and offers the application's own remember choice only in `ask-with-rules`
+- [x] T074 [US3] Implement session rules in `packages/core/src/permissions/rules.ts` per data-model.md `PermissionRule.match`, including list and revoke
+- [x] T075 [US3] Implement the client-side guard in `packages/core/src/permissions/guard.ts`: prompt for `fs/*` paths outside `Session.cwd` (replacing the hard rejection from US1) and expose the hook for `terminal/create` used in US5; guard requests never create rules; implement the one-approval-per-command matching rule and stale-write prompts exactly as defined in research.md R13
+- [x] T076 [US3] Wire the engine into `packages/core/src/permissions/approvals.ts`, recording outcomes decided by rule or mode as notices (FR-014), and implement `setPermissionMode`, `rules`, `revokeRule` in `packages/core/src/sessions/service.ts` with `Session.permissionMode` defaulting to `Settings.defaultPermissionMode`
+- [x] T077 [US3] Add bridge functions `sessions.setPermissionMode`, `sessions.rules`, `sessions.revokeRule` in `apps/desktop/src/main/handlers/sessions.ts`
+- [x] T078 [P] [US3] Build the permission mode selector in `apps/desktop/src/renderer/features/approvals/PermissionModeSelect.tsx` and the default-mode setting in `apps/desktop/src/renderer/features/settings/PermissionSettings.tsx`, repeating the confinement statement from FR-015 in the settings screen
+- [x] T079 [P] [US3] Build the remembered-decisions panel with revoke in `apps/desktop/src/renderer/features/approvals/RulesPanel.tsx`, and add EN/PL strings
 
 **Checkpoint**: First usable version (increment 1): conversation, visibility, and consent control
 

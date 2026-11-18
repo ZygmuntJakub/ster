@@ -1,10 +1,19 @@
 import { describe, expect, it } from "vitest";
 import { createEventStream } from "../../src/events/stream.js";
 import { filterOneTimeOptions, createApprovalBroker } from "../../src/permissions/approvals.js";
+import { createRuleStore } from "../../src/permissions/rules.js";
 import type { Store } from "../../src/store/store.js";
 
 function fakeStore(): Store {
   let seq = 0;
+  const items: Array<{
+    sessionId: string;
+    seq: number;
+    kind: string;
+    runId: string;
+    createdAt: string;
+    payloadJson: string;
+  }> = [];
   return {
     dataDir: "/tmp",
     dbPath: "/tmp/ster.db",
@@ -16,7 +25,7 @@ function fakeStore(): Store {
     deleteSession: () => undefined,
     appendItem: (item) => {
       seq += 1;
-      return {
+      const row = {
         sessionId: item.sessionId,
         seq,
         kind: item.kind,
@@ -24,6 +33,8 @@ function fakeStore(): Store {
         createdAt: item.createdAt,
         payloadJson: item.payloadJson,
       };
+      items.push(row);
+      return row;
     },
     updateItemPayload: (sessionId, itemSeq, payloadJson) => ({
       sessionId,
@@ -33,11 +44,22 @@ function fakeStore(): Store {
       createdAt: new Date().toISOString(),
       payloadJson,
     }),
-    listItems: () => [],
+    listItems: (sessionId) => items.filter((item) => item.sessionId === sessionId),
     getSetting: () => null,
     setSetting: () => undefined,
     close: () => undefined,
   };
+}
+
+function broker(mode = "always-ask") {
+  return createApprovalBroker({
+    store: fakeStore(),
+    events: createEventStream(),
+    currentRunId: () => "run-1",
+    getPermissionMode: () => mode,
+    getSessionCwd: () => "/tmp/project",
+    rules: createRuleStore(),
+  });
 }
 
 describe("approval broker", () => {
@@ -56,12 +78,7 @@ describe("approval broker", () => {
   });
 
   it("cancels immediately when no one-time options remain", async () => {
-    const broker = createApprovalBroker({
-      store: fakeStore(),
-      events: createEventStream(),
-      currentRunId: () => "run-1",
-    });
-    const outcome = await broker.request({
+    const outcome = await broker().request({
       sessionId: "s1",
       source: "agent",
       subject: {},
@@ -72,33 +89,37 @@ describe("approval broker", () => {
 
   it("resolves a pending approval and cancels on session cancel", async () => {
     const events = createEventStream();
-    const broker = createApprovalBroker({
+    const rules = createRuleStore();
+    const instance = createApprovalBroker({
       store: fakeStore(),
       events,
       currentRunId: () => "run-1",
+      getPermissionMode: () => "always-ask",
+      getSessionCwd: () => "/tmp/project",
+      rules,
     });
 
-    const pending = broker.request({
+    const pending = instance.request({
       sessionId: "s1",
       source: "agent",
-      subject: { tool: "edit" },
+      subject: { kind: "edit" },
       options: [
         { optionId: "allow", name: "Allow once", kind: "allow_once" },
         { optionId: "reject", name: "Reject once", kind: "reject_once" },
       ],
     });
 
-    const listed = broker.pendingFor("s1");
+    const listed = instance.pendingFor("s1");
     expect(listed).toHaveLength(1);
     const first = listed[0];
     expect(first).toBeDefined();
     if (!first) {
       throw new Error("expected pending approval");
     }
-    broker.resolve(first.id, { optionId: "allow" });
+    instance.resolve(first.id, { optionId: "allow" });
     await expect(pending).resolves.toEqual({ by: "user", optionId: "allow" });
 
-    const cancelled = broker.request({
+    const cancelled = instance.request({
       sessionId: "s1",
       source: "client-guard",
       subject: { reason: "stale-write" },
@@ -107,7 +128,30 @@ describe("approval broker", () => {
         { optionId: "reject", name: "Cancel", kind: "reject_once" },
       ],
     });
-    broker.cancelSession("s1");
+    instance.cancelSession("s1");
     await expect(cancelled).resolves.toEqual({ by: "cancelled" });
+  });
+
+  it("auto-approves reads in auto-approve-reads mode and records a notice", async () => {
+    const store = fakeStore();
+    const instance = createApprovalBroker({
+      store,
+      events: createEventStream(),
+      currentRunId: () => "run-1",
+      getPermissionMode: () => "auto-approve-reads",
+      getSessionCwd: () => "/tmp/project",
+      rules: createRuleStore(),
+    });
+    const outcome = await instance.request({
+      sessionId: "s1",
+      source: "agent",
+      subject: { kind: "read", title: "Read file" },
+      options: [
+        { optionId: "allow", name: "Allow once", kind: "allow_once" },
+        { optionId: "reject", name: "Reject once", kind: "reject_once" },
+      ],
+    });
+    expect(outcome).toEqual({ by: "mode", optionId: "allow" });
+    expect(store.listItems("s1", { limit: 10 }).some((row) => row.kind === "notice")).toBe(true);
   });
 });

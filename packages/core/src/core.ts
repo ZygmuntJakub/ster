@@ -218,6 +218,7 @@ export async function createCore(options: CreateCoreOptions): Promise<Core> {
     environment,
     log,
     defaultPermissionMode: settings.get().defaultPermissionMode,
+    permissionModes: [...(extensions.permissionModes ?? [])],
   });
 
   const factory = createFactoryServiceStub();

@@ -16,7 +16,16 @@ import { SterError } from "../errors.js";
 import type { EventStream, CoreEvent } from "../events/stream.js";
 import type { Logger } from "../log.js";
 import type { ConversationItem, SessionSummary } from "../model/events.js";
+import type { PermissionModeDefinition } from "../extensions/index.js";
 import { createApprovalBroker } from "../permissions/approvals.js";
+import {
+  classifyFsPath,
+  OUTSIDE_WORKSPACE_OPTIONS,
+  readAbsoluteTextFile,
+  writeAbsoluteTextFile,
+} from "../permissions/guard.js";
+import { isBuiltinPermissionMode, BUILTIN_PERMISSION_MODES } from "../permissions/modes.js";
+import { createRuleStore, type PermissionRule } from "../permissions/rules.js";
 import type { ResolvedEnv } from "../platform/shell-env.js";
 import {
   finalizeRun,
@@ -27,11 +36,7 @@ import {
 } from "../runs/lifecycle.js";
 import type { Store } from "../store/store.js";
 import { assertWorkspaceAvailable } from "../workspace/availability.js";
-import {
-  readWorkspaceTextFile,
-  resolveWorkspacePath,
-  writeWorkspaceTextFile,
-} from "../workspace/files.js";
+import { readWorkspaceTextFile, writeWorkspaceTextFile } from "../workspace/files.js";
 import { createSnapshotStore } from "../workspace/snapshots.js";
 import {
   describeTerminalLogin as buildTerminalLoginPlan,
@@ -52,14 +57,19 @@ import { applySessionUpdate, type UpdateHandlerContext } from "./updates.js";
 export type PromptContent =
   { type: "text"; text: string } | { type: string; [key: string]: unknown };
 
-export interface PermissionRule {
-  id: string;
-  sessionId: string;
-  pattern: string;
-}
-
+export type { PermissionRule };
 export type AuthMethod = AuthMethodInfo;
 export type { TerminalLoginPlan };
+
+function isSelectedAllow(
+  outcome: { by: string; optionId?: string },
+  allowOptionId = "allow",
+): boolean {
+  return (
+    (outcome.by === "user" || outcome.by === "rule" || outcome.by === "mode") &&
+    outcome.optionId === allowOptionId
+  );
+}
 
 export interface SessionService {
   create(input: { agentId: string; cwd: string; permissionMode?: string }): Promise<Session>;
@@ -95,6 +105,7 @@ export interface CreateSessionServiceOptions {
   environment: ResolvedEnv;
   log: Logger;
   defaultPermissionMode?: string;
+  permissionModes?: ReadonlyArray<PermissionModeDefinition>;
 }
 
 interface LiveSession {
@@ -229,10 +240,19 @@ export function createSessionService(options: CreateSessionServiceOptions): Sess
     });
   };
 
+  const rules = createRuleStore();
   const approvals = createApprovalBroker({
     store: options.store,
     events: options.events,
     currentRunId: (sessionId) => live.get(sessionId)?.currentRunId,
+    getPermissionMode: (sessionId) =>
+      live.get(sessionId)?.session.permissionMode ??
+      options.store.getSession(sessionId)?.permissionMode ??
+      defaultMode,
+    getSessionCwd: (sessionId) =>
+      live.get(sessionId)?.session.cwd ?? options.store.getSession(sessionId)?.cwd,
+    rules,
+    permissionModes: options.permissionModes ?? BUILTIN_PERMISSION_MODES,
     onStatusChange: (sessionId, status) => {
       const entry = live.get(sessionId);
       if (!entry || entry.session.status === status) {
@@ -320,7 +340,7 @@ export function createSessionService(options: CreateSessionServiceOptions): Sess
         options: params.options,
         toolCallId: params.toolCall.toolCallId,
       });
-      if (outcome.by === "user") {
+      if (outcome.by === "user" || outcome.by === "rule" || outcome.by === "mode") {
         return { outcome: { outcome: "selected", optionId: outcome.optionId } };
       }
       return { outcome: { outcome: "cancelled" } };
@@ -340,6 +360,29 @@ export function createSessionService(options: CreateSessionServiceOptions): Sess
       if (params.limit !== undefined) {
         readOpts.limit = params.limit;
       }
+
+      const classified = classifyFsPath(entry.session.cwd, params.path);
+      if (classified.status === "outside") {
+        const outcome = await approvals.request({
+          sessionId: entry.session.id,
+          source: "client-guard",
+          subject: {
+            reason: "outside-workspace",
+            path: params.path,
+            absolutePath: classified.absolutePath,
+          },
+          options: OUTSIDE_WORKSPACE_OPTIONS,
+        });
+        if (!isSelectedAllow(outcome)) {
+          throw new SterError("outside-workspace", "Path is outside the working folder", {
+            path: params.path,
+          });
+        }
+        const { content, resolvedPath } = readAbsoluteTextFile(classified.absolutePath, readOpts);
+        snapshots.record(entry.session.id, resolvedPath, content);
+        return { content };
+      }
+
       const { content, resolvedPath } = readWorkspaceTextFile(
         entry.session.cwd,
         params.path,
@@ -355,8 +398,30 @@ export function createSessionService(options: CreateSessionServiceOptions): Sess
         throw new SterError("not-found", "No live session for file write");
       }
       ensureWorkspaceOrFail(entry);
-      const resolvedForCheck = resolveWorkspacePath(entry.session.cwd, params.path);
 
+      const classified = classifyFsPath(entry.session.cwd, params.path);
+      if (classified.status === "outside") {
+        const outcome = await approvals.request({
+          sessionId: entry.session.id,
+          source: "client-guard",
+          subject: {
+            reason: "outside-workspace",
+            path: params.path,
+            absolutePath: classified.absolutePath,
+          },
+          options: OUTSIDE_WORKSPACE_OPTIONS,
+        });
+        if (!isSelectedAllow(outcome)) {
+          throw new SterError("outside-workspace", "Path is outside the working folder", {
+            path: params.path,
+          });
+        }
+        const { resolvedPath } = writeAbsoluteTextFile(classified.absolutePath, params.content);
+        snapshots.record(entry.session.id, resolvedPath, params.content);
+        return {};
+      }
+
+      const resolvedForCheck = classified.resolvedPath;
       if (snapshots.isStale(entry.session.id, resolvedForCheck)) {
         const outcome = await approvals.request({
           sessionId: entry.session.id,
@@ -368,7 +433,7 @@ export function createSessionService(options: CreateSessionServiceOptions): Sess
           },
           options: STALE_WRITE_OPTIONS,
         });
-        if (!(outcome.by === "user" && outcome.optionId === "allow")) {
+        if (!isSelectedAllow(outcome)) {
           throw new SterError("invalid-argument", "Stale write rejected", {
             path: params.path,
           });
@@ -696,12 +761,34 @@ export function createSessionService(options: CreateSessionServiceOptions): Sess
       approvals.resolve(approvalId, outcome);
       return Promise.resolve();
     },
-    setPermissionMode: () =>
-      Promise.reject(new SterError("invalid-argument", "Permission modes arrive in US3")),
+    setPermissionMode: (sessionId, mode) => {
+      const known =
+        isBuiltinPermissionMode(mode) ||
+        (options.permissionModes ?? []).some((definition) => definition.id === mode);
+      if (!known) {
+        throw new SterError("invalid-argument", `Unknown permission mode ${mode}`, { mode });
+      }
+      const session = live.get(sessionId)?.session ?? loadOrThrow(sessionId);
+      session.permissionMode = mode;
+      session.lastActivityAt = new Date().toISOString();
+      persist(options.store, session);
+      options.events.publish({
+        type: "session.updated",
+        sessionId,
+        session: toSummary(session),
+      });
+      return Promise.resolve();
+    },
     setConfigOption: () =>
       Promise.reject(new SterError("invalid-argument", "Config options arrive later in US1/US6")),
-    rules: () => Promise.resolve([]),
-    revokeRule: () => Promise.reject(new SterError("invalid-argument", "Rules arrive in US3")),
+    rules: (sessionId) => {
+      loadOrThrow(sessionId);
+      return Promise.resolve(approvals.listRules(sessionId));
+    },
+    revokeRule: (ruleId) => {
+      approvals.revokeRule(ruleId);
+      return Promise.resolve();
+    },
     killCommand: () => Promise.reject(new SterError("invalid-argument", "Commands arrive in US5")),
     authMethods: (sessionId) => {
       const entry = live.get(sessionId);
@@ -806,6 +893,7 @@ export function createSessionService(options: CreateSessionServiceOptions): Sess
       const entry = live.get(sessionId);
       const session = entry?.session ?? loadOrThrow(sessionId);
       approvals.cancelSession(sessionId);
+      rules.clearSession(sessionId);
       snapshots.clearSession(sessionId);
       if (session.status !== "ended") {
         try {

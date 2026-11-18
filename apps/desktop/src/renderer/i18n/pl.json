@@ -44,6 +44,23 @@
     "guardTitle": "Potwierdź chronioną akcję",
     "cancel": "Anuluj"
   },
+  "permission": {
+    "modeLabel": "Tryb uprawnień",
+    "defaultMode": "Domyślny tryb uprawnień",
+    "remember": "Zezwól i zapamiętaj w tej sesji",
+    "rulesTitle": "Zapamiętane decyzje",
+    "revoke": "Cofnij",
+    "confinementTitle": "Co obejmuje ograniczenie dostępu",
+    "confinementBody": "Dostęp do plików przez Ster jest ograniczony do folderu sesji po rozwinięciu dowiązań symbolicznych, chyba że zatwierdzisz wyjątek dla konkretnego żądania. Nie izoluje to procesu agenta, sieci ani narzędzi, które agent uruchamia samodzielnie.",
+    "modes": {
+      "always-ask": "Zawsze pytaj",
+      "ask-with-rules": "Pytaj z zapamiętywaniem decyzji",
+      "auto-approve-reads": "Automatycznie zatwierdzaj odczyty"
+    },
+    "noticeByRule": "Zatwierdzono automatycznie na podstawie zapamiętanej decyzji",
+    "noticeByMode": "Zatwierdzono automatycznie przez tryb uprawnień",
+    "noticeRuleCreated": "Zapamiętano tę decyzję w sesji"
+  },
   "action": {
     "label": "Akcja"
   },

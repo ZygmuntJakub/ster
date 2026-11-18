@@ -52,11 +52,12 @@ export function ApprovalPrompt({ approval, onResolved }: ApprovalPromptProps): J
             key={option.optionId}
             type="button"
             className={option.kind === "allow_once" ? "btn primary" : "btn"}
+            data-option-id={option.optionId}
             onClick={() => {
               resolve({ optionId: option.optionId });
             }}
           >
-            {option.name}
+            {option.optionId === "ster.remember" ? t("permission.remember") : option.name}
           </button>
         ))}
         <button

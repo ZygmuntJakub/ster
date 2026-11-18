@@ -1,6 +1,8 @@
 import { useEffect, useState, type JSX } from "react";
 import { useTranslation } from "react-i18next";
 import { ApprovalPrompt } from "../../features/approvals/ApprovalPrompt.js";
+import { PermissionModeSelect } from "../../features/approvals/PermissionModeSelect.js";
+import { RulesPanel } from "../../features/approvals/RulesPanel.js";
 import { Composer } from "../../features/conversation/Composer.js";
 import { ConversationView } from "../../features/conversation/ConversationView.js";
 import { LoginPanel, type AuthMethodView } from "../../features/sessions/LoginPanel.js";
@@ -29,6 +31,8 @@ export function ConversationPane(): JSX.Element {
   const { t } = useTranslation();
   const [, setTick] = useState(0);
   const [authMethods, setAuthMethods] = useState<AuthMethodView[]>([]);
+  const [permissionMode, setPermissionMode] = useState("always-ask");
+  const [rulesRefresh, setRulesRefresh] = useState(0);
 
   useEffect(
     () =>
@@ -49,6 +53,12 @@ export function ConversationPane(): JSX.Element {
     }
     void window.ster.sessions.items({ sessionId, limit: 100 }).then((list) => {
       setItems(sessionId, list as ConversationItemView[]);
+    });
+    void window.ster.sessions.get({ sessionId }).then((full) => {
+      const record = full as { permissionMode?: string };
+      if (typeof record.permissionMode === "string") {
+        setPermissionMode(record.permissionMode);
+      }
     });
     if (session?.status === "needs-login") {
       void window.ster.sessions.authMethods({ sessionId }).then((methods) => {
@@ -102,6 +112,10 @@ export function ConversationPane(): JSX.Element {
       }
       if (typed.type === "approval.resolved") {
         setPendingApproval(null);
+        setRulesRefresh((n) => n + 1);
+      }
+      if (typed.type === "item.appended" && typed.item?.kind === "notice") {
+        setRulesRefresh((n) => n + 1);
       }
     });
   }, []);
@@ -129,11 +143,21 @@ export function ConversationPane(): JSX.Element {
 
   return (
     <section className="conv col" aria-label={t("conversation.title")}>
-      <header className="chead">
-        <h1 className="title" data-testid="session-title">
-          {session.title}
-        </h1>
-        <p className="muted text-sm">{session.status}</p>
+      <header className="chead flex flex-wrap items-start justify-between gap-2">
+        <div>
+          <h1 className="title" data-testid="session-title">
+            {session.title}
+          </h1>
+          <p className="muted text-sm">{session.status}</p>
+        </div>
+        <PermissionModeSelect
+          sessionId={sessionId}
+          mode={permissionMode}
+          disabled={needsLogin || failed || session.status === "ended"}
+          onChanged={(mode) => {
+            setPermissionMode(mode);
+          }}
+        />
       </header>
       <SessionStatus
         status={session.status}
@@ -143,6 +167,7 @@ export function ConversationPane(): JSX.Element {
           });
         }}
       />
+      <RulesPanel sessionId={sessionId} refreshKey={rulesRefresh} />
       {needsLogin ? (
         <LoginPanel
           sessionId={sessionId}

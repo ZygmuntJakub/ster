@@ -44,6 +44,23 @@
     "guardTitle": "Confirm this guarded action",
     "cancel": "Cancel"
   },
+  "permission": {
+    "modeLabel": "Permission mode",
+    "defaultMode": "Default permission mode",
+    "remember": "Allow and remember for this session",
+    "rulesTitle": "Remembered decisions",
+    "revoke": "Revoke",
+    "confinementTitle": "What confinement covers",
+    "confinementBody": "File access through Ster is limited to the session folder after resolving symlinks, unless you approve an exception for a request. This does not sandbox the agent process, network access, or tools the agent runs on its own.",
+    "modes": {
+      "always-ask": "Always ask",
+      "ask-with-rules": "Ask with remembered decisions",
+      "auto-approve-reads": "Auto-approve reads"
+    },
+    "noticeByRule": "Approved automatically by a remembered decision",
+    "noticeByMode": "Approved automatically by the permission mode",
+    "noticeRuleCreated": "Remembered this decision for the session"
+  },
   "action": {
     "label": "Action"
   },

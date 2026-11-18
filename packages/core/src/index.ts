@@ -159,6 +159,44 @@ export {
 } from "./workspace/files.js";
 
 export {
+  decidePermission,
+  STER_REMEMBER_OPTION_ID,
+  withRememberOption,
+  type EngineDecision,
+} from "./permissions/engine.js";
+
+export {
+  ALWAYS_ASK_MODE,
+  ALWAYS_ASK_MODE_ID,
+  ASK_WITH_RULES_MODE,
+  ASK_WITH_RULES_MODE_ID,
+  AUTO_APPROVE_READS_MODE,
+  AUTO_APPROVE_READS_MODE_ID,
+  BUILTIN_PERMISSION_MODES,
+  isBuiltinPermissionMode,
+} from "./permissions/modes.js";
+
+export {
+  createRuleStore,
+  findMatchingRule,
+  ruleMatches,
+  type PermissionRule as SessionPermissionRule,
+  type RuleStore,
+} from "./permissions/rules.js";
+
+export {
+  classifyFsPath,
+  createExecuteApprovalTracker,
+  isExecuteToolSubject,
+  OUTSIDE_WORKSPACE_OPTIONS,
+  TERMINAL_GUARD_OPTIONS,
+  readAbsoluteTextFile,
+  writeAbsoluteTextFile,
+} from "./permissions/guard.js";
+
+export { filterOneTimeOptions, createApprovalBroker } from "./permissions/approvals.js";
+
+export {
   actionFromUpdate,
   canAdvanceActionStatus,
   mergeActionUpdate,

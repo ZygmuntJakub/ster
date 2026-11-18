@@ -9,6 +9,7 @@ import {
 import type { CoreHost } from "./core-host.js";
 import { createEventForwarder } from "./event-forwarder.js";
 import { openLocation } from "./handlers/files.js";
+import { listRules, revokeRule, setPermissionMode } from "./handlers/sessions.js";
 import { createLinkIndex } from "./link-index.js";
 import { createLocationIndex } from "./location-index.js";
 import { createLoginTerminalManager } from "./login-terminal.js";
@@ -200,6 +201,18 @@ async function handleMethod(
       };
       await core.sessions.resolveApproval(approvalId, outcome);
       return ok({ resolved: true });
+    }
+    case "sessions.setPermissionMode": {
+      const { sessionId, mode } = payload as { sessionId: string; mode: string };
+      return ok(await setPermissionMode(core, sessionId, mode));
+    }
+    case "sessions.rules": {
+      const { sessionId } = payload as { sessionId: string };
+      return ok(await listRules(core, sessionId));
+    }
+    case "sessions.revokeRule": {
+      const { ruleId } = payload as { ruleId: string };
+      return ok(await revokeRule(core, ruleId));
     }
     case "sessions.authMethods": {
       const { sessionId } = payload as { sessionId: string };

@@ -49,6 +49,9 @@ type SterApi = {
       approvalId: string;
       outcome: { optionId: string } | { cancelled: true };
     }) => Promise<unknown>;
+    setPermissionMode: (payload: { sessionId: string; mode: string }) => Promise<unknown>;
+    rules: (payload: { sessionId: string }) => Promise<unknown>;
+    revokeRule: (payload: { ruleId: string }) => Promise<unknown>;
     authMethods: (payload: { sessionId: string }) => Promise<unknown>;
     authenticate: (payload: { sessionId: string; methodId: string }) => Promise<unknown>;
     restart: (payload: { sessionId: string }) => Promise<unknown>;

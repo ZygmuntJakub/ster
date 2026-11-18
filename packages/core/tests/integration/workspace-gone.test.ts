@@ -89,12 +89,16 @@ describe("workspace availability", () => {
     expect(after.failureReason).toMatch(/Working folder/i);
   });
 
-  it("rejects outside-workspace writes during a turn", async () => {
+  it("rejects outside-workspace writes when the client guard is denied", async () => {
     const { core, cwd } = await boot();
     const session = await core.sessions.create({ agentId: MOCK_AGENT_ID, cwd });
 
     const unsubscribe = core.events.subscribe((event: CoreEvent) => {
       if (event.type !== "approval.requested" || event.sessionId !== session.id) {
+        return;
+      }
+      if (event.approval.source === "client-guard") {
+        void core.sessions.resolveApproval(event.approval.id, { optionId: "reject" });
         return;
       }
       void core.sessions.resolveApproval(event.approval.id, { optionId: "allow" });
