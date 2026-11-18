@@ -365,8 +365,18 @@ export async function runScenario(
           "<script>alert('xss')</script>",
           "![remote](https://evil.example/img.png)",
           "[click me](https://evil.example/phish)",
+          `Control seq:\u001b[31mRED\u001b[0m plain`,
         ].join("\n"),
       );
+      // Oversized chunk (trimmed by the client) plus a malformed update variant.
+      await emitMessage(client, session.id, `OVERSIZE:${"x".repeat(1_100_000)}`);
+      await client.notify("session/update", {
+        sessionId: session.id,
+        update: {
+          sessionUpdate: "ster_mock_malformed",
+          notAnObject: true,
+        } as never,
+      });
       return { stopReason: "end_turn" };
     }
     case "run-command": {

@@ -22,7 +22,8 @@ function resolvePreloadPath(): string {
 }
 
 /**
- * Apply session-level hardening once (CSP headers, permission denial).
+ * Apply session-level hardening once (CSP headers, permission denial, network filter).
+ * Renderer traffic is limited to the app origin; registry/download HTTPS runs in main.
  */
 export function applySessionHardening(): void {
   const ses = session.defaultSession;
@@ -31,6 +32,24 @@ export function applySessionHardening(): void {
     const headers = { ...details.responseHeaders };
     headers["Content-Security-Policy"] = [CSP];
     callback({ responseHeaders: headers });
+  });
+
+  ses.webRequest.onBeforeRequest((details, callback) => {
+    try {
+      const url = new URL(details.url);
+      if (url.protocol === "file:" || url.protocol === "devtools:" || url.protocol === "data:") {
+        callback({});
+        return;
+      }
+      if (url.protocol === "http:" || url.protocol === "https:") {
+        // Renderer must not reach the network; main-process Node fetch is separate.
+        callback({ cancel: true });
+        return;
+      }
+      callback({});
+    } catch {
+      callback({ cancel: true });
+    }
   });
 
   ses.setPermissionRequestHandler((_webContents, _permission, callback) => {

@@ -10,6 +10,7 @@ import {
   type AvailableCommandInfo,
   type ConfigOption,
 } from "./config-options.js";
+import { asSafeUpdateRecord, sanitizeAgentText } from "./content-safety.js";
 import {
   appendConversationItem,
   updateConversationItemPayload,
@@ -51,7 +52,7 @@ function textFromContent(content: unknown): string {
     "text" in content &&
     typeof (content as { text: unknown }).text === "string"
   ) {
-    return (content as { text: string }).text;
+    return sanitizeAgentText((content as { text: string }).text).text;
   }
   return "";
 }
@@ -144,7 +145,7 @@ export function applySessionUpdate(
   }
 
   if (kind === "tool_call" || kind === "tool_call_update") {
-    const record = asRecord(update);
+    const record = asSafeUpdateRecord(update) ?? asRecord(update);
     const incoming = actionFromUpdate(record);
     if (!incoming) {
       return { ...ctx, streaming: null };

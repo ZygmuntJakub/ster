@@ -60,6 +60,22 @@ export function ConversationPane(): JSX.Element {
     [],
   );
 
+  useEffect(() => {
+    const onSeed = (event: Event): void => {
+      const detail = (event as CustomEvent).detail as {
+        sessionId?: string;
+        items?: ConversationItemView[];
+      };
+      if (typeof detail.sessionId === "string" && Array.isArray(detail.items)) {
+        setItems(detail.sessionId, detail.items);
+      }
+    };
+    window.addEventListener("ster:test-seed-items", onSeed);
+    return () => {
+      window.removeEventListener("ster:test-seed-items", onSeed);
+    };
+  }, []);
+
   const sessionId = getSelectedSessionId();
   const session = getSessions().find((s) => s.id === sessionId) ?? null;
   const items = sessionId ? getItems(sessionId) : [];
@@ -219,7 +235,7 @@ export function ConversationPane(): JSX.Element {
     <section className="conv col" aria-label={t("conversation.title")}>
       <header className="chead flex flex-wrap items-start justify-between gap-2">
         <div>
-          <h1 className="title" data-testid="session-title">
+          <h1 className="title" data-testid="session-title" data-session-id={sessionId}>
             {session.title}
           </h1>
           <p className="muted text-sm">{session.status}</p>
@@ -301,7 +317,7 @@ export function ConversationPane(): JSX.Element {
               }}
             />
           ) : null}
-          <div className="msgs grow scroll px-3 py-2">
+          <div className="msgs grow scroll flex min-h-0 flex-col px-3 py-2">
             <ConversationView sessionId={sessionId} items={items} />
           </div>
           {approval && approval.sessionId === sessionId ? (

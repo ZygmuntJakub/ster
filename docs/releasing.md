@@ -28,3 +28,16 @@ Use this list for every tagged release (`vMAJOR.MINOR.PATCH`).
 
 - File follow-ups for any skipped smoke coverage (for example Linux display flakiness).
 - Bump the Unreleased section in the changelog for the next cycle.
+
+## Quickstart validation log (T182)
+
+Automated gates from `specs/001-acp-desktop-client/quickstart.md` recorded for this feature branch:
+
+| Gate                    | macOS (agent host)            | Windows                 | Linux                   |
+| ----------------------- | ----------------------------- | ----------------------- | ----------------------- |
+| `pnpm check`            | Pass (recorded with Phase 15) | Via CI Release workflow | Via CI Release workflow |
+| `pnpm test:e2e`         | Pass (recorded with Phase 15) | Via CI packaged smoke   | Via CI packaged smoke   |
+| `pnpm test:security`    | Pass (recorded with Phase 15) | Via CI                  | Via CI                  |
+| `pnpm example:headless` | Pass (recorded with Phase 15) | Via CI                  | Via CI                  |
+
+Manual increment tables were covered earlier by story e2e/integration suites on macOS; full interactive walks on Windows/Linux desktop remain CI/release-spot-check territory.

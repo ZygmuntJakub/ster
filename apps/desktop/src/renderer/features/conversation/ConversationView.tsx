@@ -1,5 +1,6 @@
-import type { JSX } from "react";
+import { useRef, type JSX } from "react";
 import { useTranslation } from "react-i18next";
+import { useVirtualizer } from "@tanstack/react-virtual";
 import type { ConversationItemView } from "../../app/stores/sessions.js";
 import { ActionCard, type ActionPayload } from "../actions/ActionCard.js";
 import { PlanView, type PlanEntryView } from "../plan/PlanView.js";
@@ -9,6 +10,8 @@ export interface ConversationViewProps {
   sessionId: string;
   items: ConversationItemView[];
 }
+
+const VIRTUALIZE_AFTER = 40;
 
 function payloadText(payload: unknown): string {
   if (typeof payload === "string") {
@@ -83,11 +86,89 @@ function asPlanEntries(payload: unknown): PlanEntryView[] {
   );
 }
 
+function ItemBody({
+  sessionId,
+  item,
+}: {
+  sessionId: string;
+  item: ConversationItemView;
+}): JSX.Element | null {
+  const { t } = useTranslation();
+  if (item.kind === "user-message") {
+    return (
+      <article className="msg user ml-8 rounded-[var(--r-md)] bg-[var(--surface-2)] px-3 py-2">
+        <p className="lbl">{t("conversation.you")}</p>
+        <Markdown text={payloadText(item.payload)} sessionId={sessionId} itemSeq={item.seq} />
+      </article>
+    );
+  }
+  if (item.kind === "agent-message") {
+    return (
+      <article className="msg agent mr-8 rounded-[var(--r-md)] border border-[var(--line)] bg-[var(--surface)] px-3 py-2">
+        <p className="lbl">{t("conversation.agent")}</p>
+        <Markdown text={payloadText(item.payload)} sessionId={sessionId} itemSeq={item.seq} />
+      </article>
+    );
+  }
+  if (item.kind === "agent-thought") {
+    return (
+      <article className="msg thought mr-8 border-l-2 border-[var(--line-strong)] pl-3 text-sm italic text-[var(--ink2)]">
+        <p className="lbl not-italic">{t("conversation.thought")}</p>
+        <p>{payloadText(item.payload)}</p>
+      </article>
+    );
+  }
+  if (item.kind === "action") {
+    const action = asAction(item.payload);
+    if (!action) {
+      return null;
+    }
+    return <ActionCard sessionId={sessionId} itemSeq={item.seq} action={action} />;
+  }
+  if (item.kind === "plan") {
+    return <PlanView entries={asPlanEntries(item.payload)} />;
+  }
+  if (item.kind === "notice") {
+    return (
+      <article
+        className="msg notice rounded-[var(--r-md)] bg-[var(--surface)] px-3 py-2 text-sm text-[var(--ink2)]"
+        data-testid="permission-notice"
+      >
+        <p className="lbl">{t("conversation.notice")}</p>
+        <p>{noticeLabel(item.payload, t)}</p>
+      </article>
+    );
+  }
+  if (item.kind === "approval") {
+    return (
+      <article className="msg notice rounded-[var(--r-md)] bg-[var(--surface)] px-3 py-2 text-sm text-[var(--ink2)]">
+        <p className="lbl">{t("conversation.notice")}</p>
+        <p>{payloadText(item.payload)}</p>
+      </article>
+    );
+  }
+  return (
+    <article className="msg unknown rounded-[var(--r-md)] border border-dashed border-[var(--line)] px-3 py-2 text-sm text-[var(--ink2)]">
+      <p className="lbl">{t("conversation.unknown")}</p>
+      <p>{t("conversation.unknownHint", { kind: item.kind })}</p>
+    </article>
+  );
+}
+
 /**
- * Conversation transcript: messages, thoughts, actions, plans, notices.
+ * Conversation transcript with TanStack Virtual for long histories (SC-008).
+ * Short conversations render without a virtual window so layout height stays natural.
  */
 export function ConversationView({ sessionId, items }: ConversationViewProps): JSX.Element {
   const { t } = useTranslation();
+  const parentRef = useRef<HTMLDivElement | null>(null);
+  const virtualize = items.length >= VIRTUALIZE_AFTER;
+  const virtualizer = useVirtualizer({
+    count: virtualize ? items.length : 0,
+    getScrollElement: () => parentRef.current,
+    estimateSize: () => 96,
+    overscan: 8,
+  });
 
   if (items.length === 0) {
     return (
@@ -97,87 +178,57 @@ export function ConversationView({ sessionId, items }: ConversationViewProps): J
     );
   }
 
+  if (!virtualize) {
+    return (
+      <div
+        className="flex flex-col gap-3"
+        data-testid="conversation-scroll"
+        role="log"
+        aria-live="polite"
+        aria-relevant="additions"
+        aria-label={t("conversation.title")}
+      >
+        {items.map((item) => (
+          <div key={item.seq} data-index={item.seq}>
+            <ItemBody sessionId={sessionId} item={item} />
+          </div>
+        ))}
+      </div>
+    );
+  }
+
   return (
-    <div className="flex flex-col gap-3">
-      {items.map((item) => {
-        if (item.kind === "user-message") {
-          return (
-            <article
-              key={item.seq}
-              className="msg user ml-8 rounded-[var(--r-md)] bg-[var(--surface-2)] px-3 py-2"
-            >
-              <p className="lbl">{t("conversation.you")}</p>
-              <Markdown text={payloadText(item.payload)} sessionId={sessionId} itemSeq={item.seq} />
-            </article>
-          );
-        }
-        if (item.kind === "agent-message") {
-          return (
-            <article
-              key={item.seq}
-              className="msg agent mr-8 rounded-[var(--r-md)] border border-[var(--line)] bg-[var(--surface)] px-3 py-2"
-            >
-              <p className="lbl">{t("conversation.agent")}</p>
-              <Markdown text={payloadText(item.payload)} sessionId={sessionId} itemSeq={item.seq} />
-            </article>
-          );
-        }
-        if (item.kind === "agent-thought") {
-          return (
-            <article
-              key={item.seq}
-              className="msg thought mr-8 border-l-2 border-[var(--line-strong)] pl-3 text-sm italic text-[var(--ink2)]"
-            >
-              <p className="lbl not-italic">{t("conversation.thought")}</p>
-              <p>{payloadText(item.payload)}</p>
-            </article>
-          );
-        }
-        if (item.kind === "action") {
-          const action = asAction(item.payload);
-          if (!action) {
+    <div
+      ref={parentRef}
+      className="h-full min-h-[320px] flex-1 overflow-y-auto"
+      data-testid="conversation-scroll"
+      role="log"
+      aria-live="polite"
+      aria-relevant="additions"
+      aria-label={t("conversation.title")}
+    >
+      <div
+        className="relative w-full"
+        style={{ height: `${String(virtualizer.getTotalSize())}px` }}
+      >
+        {virtualizer.getVirtualItems().map((row) => {
+          const item = items[row.index];
+          if (!item) {
             return null;
           }
           return (
-            <ActionCard key={item.seq} sessionId={sessionId} itemSeq={item.seq} action={action} />
-          );
-        }
-        if (item.kind === "plan") {
-          return <PlanView key={item.seq} entries={asPlanEntries(item.payload)} />;
-        }
-        if (item.kind === "notice") {
-          return (
-            <article
+            <div
               key={item.seq}
-              className="msg notice rounded-[var(--r-md)] bg-[var(--surface)] px-3 py-2 text-sm text-[var(--ink2)]"
-              data-testid="permission-notice"
+              data-index={row.index}
+              ref={virtualizer.measureElement}
+              className="absolute left-0 top-0 w-full pb-3"
+              style={{ transform: `translateY(${String(row.start)}px)` }}
             >
-              <p className="lbl">{t("conversation.notice")}</p>
-              <p>{noticeLabel(item.payload, t)}</p>
-            </article>
+              <ItemBody sessionId={sessionId} item={item} />
+            </div>
           );
-        }
-        if (item.kind === "approval") {
-          return (
-            <article
-              key={item.seq}
-              className="msg notice rounded-[var(--r-md)] bg-[var(--surface)] px-3 py-2 text-sm text-[var(--ink2)]"
-            >
-              <p className="lbl">{t("conversation.notice")}</p>
-              <p>{payloadText(item.payload)}</p>
-            </article>
-          );
-        }
-        return (
-          <article
-            key={item.seq}
-            className="msg unknown rounded-[var(--r-md)] border border-dashed border-[var(--line)] px-3 py-2 text-sm text-[var(--ink2)]"
-          >
-            <p className="lbl">{t("conversation.unknown")}</p>
-            <p>{t("conversation.unknownHint", { kind: item.kind })}</p>
-          </article>
-        );
-      })}
+        })}
+      </div>
     </div>
   );
 }

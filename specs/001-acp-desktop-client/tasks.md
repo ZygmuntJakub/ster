@@ -414,15 +414,15 @@ description: "Task list for Ster — ACP Desktop Client"
 
 **Purpose**: Qualities that span stories
 
-- [ ] T175 [P] Complete the hostile-content suite for agent output (script injection, remote resources, oversized and malformed updates, control sequences) in `packages/core/tests/security/agent-content.test.ts` and `apps/desktop/tests/e2e/hostile-content.spec.ts` (SC-016)
-- [ ] T176 [P] Add hostile-renderer tests for every bridge function added since phase 2 in `apps/desktop/tests/bridge.test.ts`
-- [ ] T177 [P] Add a network allow-list test in `apps/desktop/tests/e2e/network.spec.ts`: across the US1, US4, and US10 flows the application contacts only the registry in effect and confirmed download hosts, and nothing when the registry is disabled (FR-042, FR-046, SC-012)
-- [ ] T178 Virtualise the conversation list with TanStack Virtual and add a performance test with 1,000 items and 5 concurrent sessions in `apps/desktop/src/renderer/features/conversation/ConversationView.tsx` and `apps/desktop/tests/e2e/performance.spec.ts` (SC-002, SC-006, SC-008)
-- [ ] T179 [P] Keyboard and contrast pass over all main flows, with fixes, recorded in `docs/accessibility.md`
-- [ ] T180 [P] Review every public function and extension contract in `packages/core/src/` for documentation comments (Constitution VII)
-- [ ] T181 Remove dead code and unexplained TODOs, confirm coverage of `packages/core` is at least 80%, and confirm `pnpm audit --audit-level high` is clean
-- [ ] T182 Run all manual validation tables in `specs/001-acp-desktop-client/quickstart.md` on macOS, Windows, and Linux and record results in `docs/releasing.md`
-- [ ] T183 Run the reference task with three real registry agents of different distribution types and record results in the release notes in `CHANGELOG.md` (SC-003)
+- [x] T175 [P] Complete the hostile-content suite for agent output (script injection, remote resources, oversized and malformed updates, control sequences) in `packages/core/tests/security/agent-content.test.ts` and `apps/desktop/tests/e2e/hostile-content.spec.ts` (SC-016)
+- [x] T176 [P] Add hostile-renderer tests for every bridge function added since phase 2 in `apps/desktop/tests/bridge.test.ts`
+- [x] T177 [P] Add a network allow-list test in `apps/desktop/tests/e2e/network.spec.ts`: across the US1, US4, and US10 flows the application contacts only the registry in effect and confirmed download hosts, and nothing when the registry is disabled (FR-042, FR-046, SC-012)
+- [x] T178 Virtualise the conversation list with TanStack Virtual and add a performance test with 1,000 items and 5 concurrent sessions in `apps/desktop/src/renderer/features/conversation/ConversationView.tsx` and `apps/desktop/tests/e2e/performance.spec.ts` (SC-002, SC-006, SC-008)
+- [x] T179 [P] Keyboard and contrast pass over all main flows, with fixes, recorded in `docs/accessibility.md`
+- [x] T180 [P] Review every public function and extension contract in `packages/core/src/` for documentation comments (Constitution VII)
+- [x] T181 Remove dead code and unexplained TODOs, confirm coverage of `packages/core` is at least 80%, and confirm `pnpm audit --audit-level high` is clean
+- [x] T182 Run all manual validation tables in `specs/001-acp-desktop-client/quickstart.md` on macOS, Windows, and Linux and record results in `docs/releasing.md`
+- [x] T183 Run the reference task with three real registry agents of different distribution types and record results in the release notes in `CHANGELOG.md` (SC-003)
 
 ---
 

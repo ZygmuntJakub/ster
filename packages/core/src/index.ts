@@ -283,6 +283,26 @@ export {
 
 export { planFromUpdate, type PlanEntry, type PlanPayload } from "./sessions/plan.js";
 
+/**
+ * Sanitize agent-authored text and reject malformed update objects (SC-016).
+ */
+export {
+  asSafeUpdateRecord,
+  MAX_AGENT_TEXT_CHARS,
+  sanitizeAgentText,
+  stripControlSequences,
+} from "./sessions/content-safety.js";
+
+/**
+ * HTTPS allow-list helpers for registry and confirmed download hosts (FR-042, FR-046).
+ */
+export {
+  assertAllowedHttpsUrl,
+  createNetworkAllowlist,
+  PUBLIC_REGISTRY_HOST,
+  type NetworkAllowlist,
+} from "./net/allowlist.js";
+
 export {
   LEGACY_MODE_OPTION_ID,
   applyCurrentModeUpdate,

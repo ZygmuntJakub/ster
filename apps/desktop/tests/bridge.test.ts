@@ -7,6 +7,25 @@ import {
   validateBridgePayload,
 } from "../src/shared/bridge.js";
 
+const HOSTILE_PAYLOADS: unknown[] = [
+  null,
+  undefined,
+  "",
+  1,
+  true,
+  [],
+  { __proto__: { admin: true } },
+  { constructor: { prototype: { polluted: true } } },
+  { $ne: true },
+  { agentId: "../etc/passwd" },
+  { agentId: "a", folderToken: 1 },
+  { sessionId: "", text: "x" },
+  { runId: "r", value: 99 },
+  { runId: "r", value: 0 },
+  { hack: true, extra: "field" },
+  "<script>alert(1)</script>",
+];
+
 describe("bridge surface", () => {
   it("matches the contracts/ipc.md fixed method list", () => {
     const methods = listBridgeMethods();
@@ -64,6 +83,8 @@ describe("bridge surface", () => {
     expect(BRIDGE_SURFACE.app).toContain("info");
     expect(BRIDGE_SURFACE.settings).toEqual(["get", "set"]);
     expect(BRIDGE_SURFACE.events).toContain("subscribe");
+    expect(BRIDGE_SURFACE.runs).toEqual(["list", "get", "rate", "judge", "export", "delete"]);
+    expect(BRIDGE_SURFACE.factory).toContain("find");
   });
 
   it("rejects invalid settings payloads", () => {
@@ -89,6 +110,48 @@ describe("bridge surface", () => {
     expect(() =>
       validateBridgePayload("sessions.create", { agentId: "mock-agent", cwd: "/tmp" }),
     ).toThrow(/Invalid payload/);
+  });
+
+  it("rejects hostile payloads for every bridge method (hostile-renderer)", () => {
+    const methods = listBridgeMethods();
+    expect(methods.length).toBeGreaterThan(40);
+    for (const method of methods) {
+      for (const payload of HOSTILE_PAYLOADS) {
+        try {
+          validateBridgePayload(method, payload);
+        } catch {
+          // Rejection is the expected defensive outcome for hostile shapes.
+          continue;
+        }
+      }
+      // A clearly wrong object with unexpected keys must never widen the schema.
+      expect(() => validateBridgePayload(method, { __hostile: true, nested: { a: 1 } })).toThrow();
+    }
+  });
+
+  it("accepts minimal valid payloads for post-phase-2 methods", () => {
+    expect(validateBridgePayload("factory.find", { cwd: "/tmp/project" })).toEqual({
+      cwd: "/tmp/project",
+    });
+    expect(
+      validateBridgePayload("factory.trust", { folder: "/tmp/project", contentHash: "abc" }),
+    ).toEqual({ folder: "/tmp/project", contentHash: "abc" });
+    expect(validateBridgePayload("runs.get", { runId: "run-1" })).toEqual({ runId: "run-1" });
+    expect(validateBridgePayload("runs.rate", { runId: "run-1", value: 4 })).toEqual({
+      runId: "run-1",
+      value: 4,
+    });
+    expect(validateBridgePayload("runs.judge", { runId: "run-1", agentId: "mock-agent" })).toEqual({
+      runId: "run-1",
+      agentId: "mock-agent",
+    });
+    expect(
+      validateBridgePayload("sessions.setConfigOption", {
+        sessionId: "s1",
+        configId: "mode",
+        value: "ask",
+      }),
+    ).toEqual({ sessionId: "s1", configId: "mode", value: "ask" });
   });
 
   it("rejects non-top-level senders", () => {
