@@ -528,3 +528,19 @@ Each increment is tagged and can be released as installers once US9's release wo
 - Every task that adds an untrusted input (agent message type, registry field, policy item, definition item, bridge function) adds a security test in the same change (Constitution VI)
 - Core code never imports from `apps/desktop`; the lint rule from Phase 1 enforces it
 - Commit after each task or logical group; stop at any checkpoint to validate the story on its own
+
+---
+
+## Phase 16: Convergence
+
+**Purpose**: Close remaining gaps found by `/speckit-converge` against the current codebase (checkboxes are not evidence).
+
+- [ ] T184 CRITICAL: Reject raw `cwd`/`folder` on `factory.find`/`trust`/`revoke` (token-only) and make hostile-renderer tests fail closed on path payloads per Constitution VI / contracts/ipc.md rule 3 (contradicts)
+- [ ] T185 CRITICAL: Implement real managed-Node download with non-zero checksums and archive extract; stop default-seeding npm installs from system/`process.execPath`; align install-plan copy with what is installed per plan:R7 / Constitution VI / FR-020 (contradicts)
+- [ ] T186 Wire attachment tokens into ACP prompt content (files/images), gate Attach on agent prompt capabilities, and confine picks to the session working folder per FR-004 / FR-023 / T057 (partial)
+- [ ] T187 Enforce `install.requireChecksum` for npx/uvx (and any unverified) plans, not only binary archives lacking `sha256`, per FR-078 (partial)
+- [ ] T188 Call `assertAllowedHttpsUrl` on every main-process registry/download fetch using the registry-in-effect plus confirmed install hosts per FR-042 / Constitution VI / T177 (partial)
+- [ ] T189 Expose run filters for model, date range, user rating, and agent score in `apps/desktop/src/renderer/features/runs/RunsView.tsx` per FR-071 / US12/AC3 (partial)
+- [ ] T190 Include filtered-set totals for duration and reported cost alongside count and score averages in `packages/core/src/runs/service.ts` and the runs UI per FR-071 / US12/AC3 (partial)
+- [ ] T191 Signal attention when a non-viewed session finishes or fails, not only waiting-approval/needs-login, in `packages/core/src/sessions/service.ts` per FR-029 (partial)
+- [ ] T192 Translate the export save-dialog title (and other main-process user-visible strings) via i18n in `apps/desktop/src/main/handlers/runs.ts` per FR-036 / Constitution IV (partial)
