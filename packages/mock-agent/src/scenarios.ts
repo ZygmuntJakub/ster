@@ -521,17 +521,35 @@ export async function runScenario(
           sessionUpdate: "config_option_update",
           configOptions: [
             {
+              id: "mode",
+              name: "Mode",
+              category: "mode",
+              type: "select",
+              currentValue: "ask",
+              options: [
+                { value: "code", name: "Code" },
+                { value: "ask", name: "Ask" },
+              ],
+            },
+            {
               id: "model",
               name: "Model",
               category: "model",
               type: "select",
-              currentValue: "mock-small",
+              currentValue: "mock-large",
               options: [
                 { value: "mock-small", name: "Mock Small" },
                 { value: "mock-large", name: "Mock Large" },
               ],
             },
           ],
+        },
+      });
+      await client.notify("session/update", {
+        sessionId: session.id,
+        update: {
+          sessionUpdate: "current_mode_update",
+          currentModeId: "code",
         },
       });
       await emitMessage(client, session.id, "Config options advertised.");

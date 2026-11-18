@@ -1,25 +1,35 @@
 import { useState, type JSX, type SyntheticEvent } from "react";
 import { useTranslation } from "react-i18next";
+import { CommandMenu, type AvailableCommandView } from "./CommandMenu.js";
 
 export interface ComposerProps {
   sessionId: string;
   disabled?: boolean;
   working?: boolean;
+  commands?: AvailableCommandView[];
   onSent?: () => void;
 }
 
 /**
- * Composer with send/stop. Attachments are picked via native dialog tokens.
+ * Composer with send/stop and optional slash-command menu.
  */
-export function Composer({ sessionId, disabled, working, onSent }: ComposerProps): JSX.Element {
+export function Composer({
+  sessionId,
+  disabled,
+  working,
+  commands = [],
+  onSent,
+}: ComposerProps): JSX.Element {
   const { t } = useTranslation();
   const [text, setText] = useState("");
   const [attachments, setAttachments] = useState<Array<{ token: string; name: string }>>([]);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const send = async (): Promise<void> => {
-    const trimmed = text.trim();
+  const slashOpen = text.startsWith("/") && !text.includes(" ") && commands.length > 0;
+
+  const send = async (override?: string): Promise<void> => {
+    const trimmed = (override ?? text).trim();
     if (!trimmed || disabled || busy) {
       return;
     }
@@ -50,9 +60,21 @@ export function Composer({ sessionId, disabled, working, onSent }: ComposerProps
 
   return (
     <form
-      className="composer border-t border-[var(--line)] bg-[var(--panel)] p-3"
+      className="composer relative border-t border-[var(--line)] bg-[var(--panel)] p-3"
       onSubmit={onSubmit}
     >
+      <CommandMenu
+        commands={commands}
+        query={text}
+        open={slashOpen && !disabled && !busy}
+        onPick={(command) => {
+          const next = command.inputHint ? `/${command.name} ` : `/${command.name}`;
+          setText(next);
+          if (!command.inputHint) {
+            void send(next);
+          }
+        }}
+      />
       {error ? <p className="mb-2 text-sm text-[var(--danger)]">{error}</p> : null}
       {attachments.length > 0 ? (
         <ul className="mb-2 flex flex-wrap gap-2 text-xs text-[var(--ink2)]">

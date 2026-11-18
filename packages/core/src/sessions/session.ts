@@ -2,6 +2,8 @@
  * Session model and status state machine (data-model.md `Session`).
  */
 
+import type { AvailableCommandInfo, ConfigOption } from "./config-options.js";
+
 export type SessionStatus =
   "starting" | "idle" | "working" | "waiting-approval" | "needs-login" | "failed" | "ended";
 
@@ -23,6 +25,10 @@ export interface Session {
   supportsResume?: boolean;
   supportsLoad?: boolean;
   openRunId?: string;
+  /** Modes/models/thought level from the agent (FR-033/FR-034). */
+  configOptions?: ConfigOption[];
+  /** Slash commands from `available_commands_update`. */
+  availableCommands?: AvailableCommandInfo[];
 }
 
 export interface SessionFilter {

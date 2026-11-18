@@ -63,6 +63,11 @@ type SterApi = {
       outcome: { optionId: string } | { cancelled: true };
     }) => Promise<unknown>;
     setPermissionMode: (payload: { sessionId: string; mode: string }) => Promise<unknown>;
+    setConfigOption: (payload: {
+      sessionId: string;
+      configId: string;
+      value: string;
+    }) => Promise<unknown>;
     rules: (payload: { sessionId: string }) => Promise<unknown>;
     revokeRule: (payload: { ruleId: string }) => Promise<unknown>;
     killCommand: (payload: { commandRunId: string }) => Promise<unknown>;

@@ -45,7 +45,14 @@
     "placeholder": "Message the agent…",
     "send": "Send",
     "stop": "Stop",
-    "attach": "Attach"
+    "attach": "Attach",
+    "commands": "Agent commands",
+    "noCommands": "No matching commands"
+  },
+  "config": {
+    "modeLabel": "Mode",
+    "modelLabel": "Model",
+    "thoughtLabel": "Thought level"
   },
   "approval": {
     "title": "Approval needed",

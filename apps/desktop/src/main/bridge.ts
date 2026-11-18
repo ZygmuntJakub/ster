@@ -26,6 +26,7 @@ import {
   renameSession,
   resumeSession,
   revokeRule,
+  setConfigOption,
   setPermissionMode,
 } from "./handlers/sessions.js";
 import { createLinkIndex } from "./link-index.js";
@@ -262,6 +263,14 @@ async function handleMethod(
     case "sessions.setPermissionMode": {
       const { sessionId, mode } = payload as { sessionId: string; mode: string };
       return ok(await setPermissionMode(core, sessionId, mode));
+    }
+    case "sessions.setConfigOption": {
+      const { sessionId, configId, value } = payload as {
+        sessionId: string;
+        configId: string;
+        value: string;
+      };
+      return ok(await setConfigOption(core, sessionId, configId, value));
     }
     case "sessions.rules": {
       const { sessionId } = payload as { sessionId: string };

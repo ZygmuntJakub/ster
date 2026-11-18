@@ -3,6 +3,13 @@ import type { EventStream } from "../events/stream.js";
 import type { Store } from "../store/store.js";
 import { actionFromUpdate, mergeActionUpdate, type AgentAction } from "./actions.js";
 import {
+  applyCurrentModeUpdate,
+  normalizeAvailableCommands,
+  normalizeConfigOptions,
+  type AvailableCommandInfo,
+  type ConfigOption,
+} from "./config-options.js";
+import {
   appendConversationItem,
   updateConversationItemPayload,
   type ConversationItemKind,
@@ -28,6 +35,8 @@ export interface UpdateHandlerContext {
   /** Seq of the latest plan item for this turn (replaced in place). */
   planSeq: number | null;
   setTitle?: (title: string) => void;
+  setConfigOptions?: (options: ConfigOption[]) => void;
+  setAvailableCommands?: (commands: AvailableCommandInfo[]) => void;
 }
 
 function textFromContent(content: unknown): string {
@@ -184,6 +193,34 @@ export function applySessionUpdate(
     if (title !== undefined && ctx.setTitle) {
       ctx.setTitle(title);
     }
+    return { ...ctx, streaming: null };
+  }
+
+  if (kind === "config_option_update") {
+    const options = normalizeConfigOptions(
+      "configOptions" in update ? update.configOptions : undefined,
+    );
+    ctx.setConfigOptions?.(options);
+    return { ...ctx, streaming: null };
+  }
+
+  if (kind === "current_mode_update") {
+    const modeId =
+      "currentModeId" in update && typeof update.currentModeId === "string"
+        ? update.currentModeId
+        : undefined;
+    if (modeId !== undefined) {
+      const next = applyCurrentModeUpdate(ctx.session.configOptions ?? [], modeId);
+      ctx.setConfigOptions?.(next);
+    }
+    return { ...ctx, streaming: null };
+  }
+
+  if (kind === "available_commands_update") {
+    const commands = normalizeAvailableCommands(
+      "availableCommands" in update ? update.availableCommands : undefined,
+    );
+    ctx.setAvailableCommands?.(commands);
     return { ...ctx, streaming: null };
   }
 

@@ -4,6 +4,7 @@ import {
   agent,
   methods,
   type AgentApp,
+  type SessionConfigOption,
 } from "@agentclientprotocol/sdk";
 import { randomUUID } from "node:crypto";
 import { promptText, runScenario, selectScenario, type SessionState } from "./scenarios.js";
@@ -15,15 +16,60 @@ export interface MockAgentOptions {
   requireAuth?: boolean;
   /** When false, omit session resume capability (default true). */
   supportResume?: boolean;
+  /**
+   * When true, `session/new` returns legacy `modes` only (no `configOptions`)
+   * so clients exercise `session/set_mode` fallback (research.md R2).
+   */
+  legacyModesOnly?: boolean;
 }
+
+function defaultModelOption(currentValue = "mock-small"): SessionConfigOption {
+  return {
+    id: "model",
+    name: "Model",
+    category: "model",
+    type: "select",
+    currentValue,
+    options: [
+      { value: "mock-small", name: "Mock Small" },
+      { value: "mock-large", name: "Mock Large" },
+    ],
+  };
+}
+
+function defaultModeOption(currentValue = "code"): SessionConfigOption {
+  return {
+    id: "mode",
+    name: "Mode",
+    category: "mode",
+    type: "select",
+    currentValue,
+    options: [
+      { value: "code", name: "Code" },
+      { value: "ask", name: "Ask" },
+    ],
+  };
+}
+
+const LEGACY_MODES = {
+  currentModeId: "code",
+  availableModes: [
+    { id: "code", name: "Code" },
+    { id: "ask", name: "Ask" },
+  ],
+};
 
 /**
  * Build the scriptable mock ACP agent used by tests and development.
  */
 export function createMockAgent(options: MockAgentOptions = {}): AgentApp {
   const sessions = new Map<string, SessionState>();
+  const configBySession = new Map<string, SessionConfigOption[]>();
+  const modeBySession = new Map<string, string>();
   let authenticated = options.requireAuth !== true;
   const protocolVersion = options.protocolVersion ?? PROTOCOL_VERSION;
+  const legacyModesOnly =
+    options.legacyModesOnly === true || process.env["STER_MOCK_LEGACY_MODES"] === "1";
 
   return agent({ name: "ster-mock-agent" })
     .onRequest(methods.agent.initialize, ({ params }) => {
@@ -85,22 +131,16 @@ export function createMockAgent(options: MockAgentOptions = {}): AgentApp {
         cancelled: false,
         authenticated,
       });
-      return {
-        sessionId: id,
-        configOptions: [
-          {
-            id: "model",
-            name: "Model",
-            category: "model",
-            type: "select",
-            currentValue: "mock-small",
-            options: [
-              { value: "mock-small", name: "Mock Small" },
-              { value: "mock-large", name: "Mock Large" },
-            ],
-          },
-        ],
-      };
+      modeBySession.set(id, LEGACY_MODES.currentModeId);
+      if (legacyModesOnly) {
+        return {
+          sessionId: id,
+          modes: { ...LEGACY_MODES },
+        };
+      }
+      const configOptions = [defaultModeOption(), defaultModelOption()];
+      configBySession.set(id, configOptions);
+      return { sessionId: id, configOptions };
     })
     .onRequest(methods.agent.session.prompt, async ({ params, client }) => {
       const session = sessions.get(params.sessionId);
@@ -119,6 +159,8 @@ export function createMockAgent(options: MockAgentOptions = {}): AgentApp {
     })
     .onRequest(methods.agent.session.close, ({ params }) => {
       sessions.delete(params.sessionId);
+      configBySession.delete(params.sessionId);
+      modeBySession.delete(params.sessionId);
       return {};
     })
     .onRequest(methods.agent.session.resume, ({ params }) => {
@@ -136,22 +178,40 @@ export function createMockAgent(options: MockAgentOptions = {}): AgentApp {
       });
       return {};
     })
-    .onRequest(methods.agent.session.setConfigOption, () => {
-      return {
-        configOptions: [
-          {
-            id: "model",
-            name: "Model",
-            category: "model",
-            type: "select",
-            currentValue: "mock-small",
-            options: [
-              { value: "mock-small", name: "Mock Small" },
-              { value: "mock-large", name: "Mock Large" },
-            ],
-          },
-        ],
-      };
+    .onRequest(methods.agent.session.setConfigOption, ({ params }) => {
+      const current = configBySession.get(params.sessionId) ?? [
+        defaultModeOption(),
+        defaultModelOption(),
+      ];
+      const next = current.map((option) => {
+        if (option.id !== params.configId) {
+          return option;
+        }
+        if (option.type === "boolean" && typeof params.value === "boolean") {
+          return { ...option, currentValue: params.value };
+        }
+        if (option.type === "select" && typeof params.value === "string") {
+          return { ...option, currentValue: params.value };
+        }
+        return option;
+      });
+      configBySession.set(params.sessionId, next);
+      return { configOptions: next };
+    })
+    .onRequest(methods.agent.session.setMode, ({ params }) => {
+      modeBySession.set(params.sessionId, params.modeId);
+      const current = configBySession.get(params.sessionId);
+      if (current) {
+        configBySession.set(
+          params.sessionId,
+          current.map((option) =>
+            option.id === "mode" && option.type === "select"
+              ? { ...option, currentValue: params.modeId }
+              : option,
+          ),
+        );
+      }
+      return {};
     });
 }
 
@@ -161,6 +221,7 @@ export function mockAgentRequireAuthFromEnv(
   const options: MockAgentOptions = {
     requireAuth: env["STER_MOCK_AUTH_REQUIRED"] === "1",
     supportResume: env["STER_MOCK_NO_RESUME"] !== "1",
+    legacyModesOnly: env["STER_MOCK_LEGACY_MODES"] === "1",
   };
   if (env["STER_MOCK_PROTOCOL_VERSION"]) {
     options.protocolVersion = Number(env["STER_MOCK_PROTOCOL_VERSION"]);

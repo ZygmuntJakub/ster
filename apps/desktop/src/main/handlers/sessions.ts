@@ -12,6 +12,17 @@ export async function setPermissionMode(
   return core.sessions.get(sessionId);
 }
 
+/** US7: mode/model/thought_level selectors via ACP config options. */
+export async function setConfigOption(
+  core: Core,
+  sessionId: string,
+  configId: string,
+  value: string,
+): Promise<unknown> {
+  await core.sessions.setConfigOption(sessionId, configId, value);
+  return core.sessions.get(sessionId);
+}
+
 export async function listRules(core: Core, sessionId: string): Promise<unknown> {
   return core.sessions.rules(sessionId);
 }

@@ -4,7 +4,12 @@ import { ApprovalPrompt } from "../../features/approvals/ApprovalPrompt.js";
 import { PermissionModeSelect } from "../../features/approvals/PermissionModeSelect.js";
 import { RulesPanel } from "../../features/approvals/RulesPanel.js";
 import { Composer } from "../../features/conversation/Composer.js";
+import type { AvailableCommandView } from "../../features/conversation/CommandMenu.js";
 import { ConversationView } from "../../features/conversation/ConversationView.js";
+import {
+  ConfigOptionSelect,
+  type ConfigOptionView,
+} from "../../features/sessions/ConfigOptionSelect.js";
 import { HistoryView } from "../../features/sessions/HistoryView.js";
 import { LoginPanel, type AuthMethodView } from "../../features/sessions/LoginPanel.js";
 import { NewSessionDialog } from "../../features/sessions/NewSessionDialog.js";
@@ -41,6 +46,8 @@ export function ConversationPane(): JSX.Element {
   const [, setTick] = useState(0);
   const [authMethods, setAuthMethods] = useState<AuthMethodView[]>([]);
   const [permissionMode, setPermissionMode] = useState("always-ask");
+  const [configOptions, setConfigOptions] = useState<ConfigOptionView[]>([]);
+  const [availableCommands, setAvailableCommands] = useState<AvailableCommandView[]>([]);
   const [rulesRefresh, setRulesRefresh] = useState(0);
   const [continuing, setContinuing] = useState(false);
   const [newInFolderOpen, setNewInFolderOpen] = useState(false);
@@ -66,11 +73,17 @@ export function ConversationPane(): JSX.Element {
       setItems(sessionId, list as ConversationItemView[]);
     });
     void window.ster.sessions.get({ sessionId }).then((full) => {
-      const record = full as SessionCard & { permissionMode?: string };
+      const record = full as SessionCard & {
+        permissionMode?: string;
+        configOptions?: ConfigOptionView[];
+        availableCommands?: AvailableCommandView[];
+      };
       upsertSession(record);
       if (typeof record.permissionMode === "string") {
         setPermissionMode(record.permissionMode);
       }
+      setConfigOptions(Array.isArray(record.configOptions) ? record.configOptions : []);
+      setAvailableCommands(Array.isArray(record.availableCommands) ? record.availableCommands : []);
     });
     if (session?.status === "needs-login") {
       void window.ster.sessions.authMethods({ sessionId }).then((methods) => {
@@ -121,6 +134,22 @@ export function ConversationPane(): JSX.Element {
         typed.session
       ) {
         upsertSession(typed.session);
+        if (typed.type === "session.updated" && typed.sessionId) {
+          const id = typed.sessionId;
+          void window.ster.sessions.get({ sessionId: id }).then((full) => {
+            if (getSelectedSessionId() !== id) {
+              return;
+            }
+            const record = full as SessionCard & {
+              configOptions?: ConfigOptionView[];
+              availableCommands?: AvailableCommandView[];
+            };
+            setConfigOptions(Array.isArray(record.configOptions) ? record.configOptions : []);
+            setAvailableCommands(
+              Array.isArray(record.availableCommands) ? record.availableCommands : [],
+            );
+          });
+        }
       }
       if (typed.type === "session.deleted" && typed.sessionId) {
         removeSession(typed.sessionId);
@@ -196,14 +225,24 @@ export function ConversationPane(): JSX.Element {
           <p className="muted text-sm">{session.status}</p>
         </div>
         {!historyOnly ? (
-          <PermissionModeSelect
-            sessionId={sessionId}
-            mode={permissionMode}
-            disabled={needsLogin || failed}
-            onChanged={(mode) => {
-              setPermissionMode(mode);
-            }}
-          />
+          <div className="flex flex-wrap items-center gap-3">
+            <PermissionModeSelect
+              sessionId={sessionId}
+              mode={permissionMode}
+              disabled={needsLogin || failed}
+              onChanged={(mode) => {
+                setPermissionMode(mode);
+              }}
+            />
+            <ConfigOptionSelect
+              sessionId={sessionId}
+              options={configOptions}
+              disabled={needsLogin || failed || working}
+              onChanged={(next) => {
+                setConfigOptions(next);
+              }}
+            />
+          </div>
         ) : null}
       </header>
       {historyOnly ? (
@@ -273,7 +312,12 @@ export function ConversationPane(): JSX.Element {
               }}
             />
           ) : null}
-          <Composer sessionId={sessionId} disabled={needsLogin || failed} working={working} />
+          <Composer
+            sessionId={sessionId}
+            disabled={needsLogin || failed}
+            working={working}
+            commands={availableCommands}
+          />
         </>
       )}
     </section>

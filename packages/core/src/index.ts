@@ -216,3 +216,19 @@ export {
 } from "./sessions/actions.js";
 
 export { planFromUpdate, type PlanEntry, type PlanPayload } from "./sessions/plan.js";
+
+export {
+  LEGACY_MODE_OPTION_ID,
+  applyCurrentModeUpdate,
+  commandPromptText,
+  configOptionFromModes,
+  initialConfigOptions,
+  normalizeAvailableCommands,
+  normalizeConfigOption,
+  normalizeConfigOptions,
+  type AvailableCommandInfo,
+  type ConfigOption,
+  type ConfigOptionCategory,
+  type ConfigOptionChoice,
+  type SessionModeStateLike,
+} from "./sessions/config-options.js";

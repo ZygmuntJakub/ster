@@ -45,7 +45,14 @@
     "placeholder": "Napisz do agenta…",
     "send": "Wyślij",
     "stop": "Stop",
-    "attach": "Dołącz"
+    "attach": "Dołącz",
+    "commands": "Polecenia agenta",
+    "noCommands": "Brak pasujących poleceń"
+  },
+  "config": {
+    "modeLabel": "Tryb",
+    "modelLabel": "Model",
+    "thoughtLabel": "Poziom rozumowania"
   },
   "approval": {
     "title": "Wymagana zgoda",

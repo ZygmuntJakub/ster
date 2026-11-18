@@ -262,16 +262,16 @@ description: "Task list for Ster — ACP Desktop Client"
 
 ### Tests for User Story 7
 
-- [ ] T115 [P] [US7] Integration tests for config options, legacy modes fallback, agent-initiated changes, and available commands in `packages/core/tests/integration/config-options.test.ts`
-- [ ] T116 [P] [US7] End-to-end flow for US7 in `apps/desktop/tests/e2e/us7-modes-models.spec.ts`
+- [x] T115 [P] [US7] Integration tests for config options, legacy modes fallback, agent-initiated changes, and available commands in `packages/core/tests/integration/config-options.test.ts`
+- [x] T116 [P] [US7] End-to-end flow for US7 in `apps/desktop/tests/e2e/us7-modes-models.spec.ts`
 
 ### Implementation for User Story 7
 
-- [ ] T117 [US7] Implement config option handling (`configOptions`, `config_option_update`, `current_mode_update`, legacy `modes` mapped to one option) in `packages/core/src/sessions/config-options.ts` per data-model.md `Session.configOptions` (research.md R2)
-- [ ] T118 [US7] Implement `available_commands_update` handling and `setConfigOption` in `packages/core/src/sessions/service.ts` per data-model.md `Session.availableCommands`
-- [ ] T119 [US7] Add the bridge function `sessions.setConfigOption` in `apps/desktop/src/main/handlers/sessions.ts`
-- [ ] T120 [P] [US7] Build mode and model selectors that render only for offered categories in `apps/desktop/src/renderer/features/sessions/ConfigOptionSelect.tsx`
-- [ ] T121 [P] [US7] Build the slash-command menu in the composer in `apps/desktop/src/renderer/features/conversation/CommandMenu.tsx`, and add EN/PL strings
+- [x] T117 [US7] Implement config option handling (`configOptions`, `config_option_update`, `current_mode_update`, legacy `modes` mapped to one option) in `packages/core/src/sessions/config-options.ts` per data-model.md `Session.configOptions` (research.md R2)
+- [x] T118 [US7] Implement `available_commands_update` handling and `setConfigOption` in `packages/core/src/sessions/service.ts` per data-model.md `Session.availableCommands`
+- [x] T119 [US7] Add the bridge function `sessions.setConfigOption` in `apps/desktop/src/main/handlers/sessions.ts`
+- [x] T120 [P] [US7] Build mode and model selectors that render only for offered categories in `apps/desktop/src/renderer/features/sessions/ConfigOptionSelect.tsx`
+- [x] T121 [P] [US7] Build the slash-command menu in the composer in `apps/desktop/src/renderer/features/conversation/CommandMenu.tsx`, and add EN/PL strings
 
 **Checkpoint**: Agent-specific power features work without agent-specific code
 

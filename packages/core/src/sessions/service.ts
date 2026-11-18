@@ -48,6 +48,12 @@ import {
   type AuthMethodInfo,
   type TerminalLoginPlan,
 } from "./auth.js";
+import {
+  initialConfigOptions,
+  normalizeConfigOptions,
+  type AvailableCommandInfo,
+  type ConfigOption,
+} from "./config-options.js";
 import { appendConversationItem, listConversationItems } from "./items.js";
 import { recoverInterruptedSessions } from "./manager.js";
 import { reattachAgentSession, sessionIsResumable } from "./resume.js";
@@ -131,6 +137,8 @@ interface SessionPayload {
   supportsResume?: boolean;
   supportsLoad?: boolean;
   interruptedRunIds?: string[];
+  configOptions?: ConfigOption[];
+  availableCommands?: AvailableCommandInfo[];
 }
 
 function needsAttentionStatus(status: SessionStatus): boolean {
@@ -202,6 +210,12 @@ function persist(store: Store, session: Session): void {
   if (session.supportsLoad !== undefined) {
     payload.supportsLoad = session.supportsLoad;
   }
+  if (session.configOptions !== undefined) {
+    payload.configOptions = session.configOptions;
+  }
+  if (session.availableCommands !== undefined) {
+    payload.availableCommands = session.availableCommands;
+  }
   store.putSession({
     id: session.id,
     agentId: session.agentId,
@@ -251,6 +265,12 @@ function fromRow(row: ReturnType<Store["getSession"]>): Session | null {
   }
   if (payload.supportsLoad !== undefined) {
     session.supportsLoad = payload.supportsLoad;
+  }
+  if (payload.configOptions !== undefined) {
+    session.configOptions = payload.configOptions;
+  }
+  if (payload.availableCommands !== undefined) {
+    session.availableCommands = payload.availableCommands;
   }
   return session;
 }
@@ -695,6 +715,14 @@ export function createSessionService(options: CreateSessionServiceOptions): Sess
       const acpSession = await connection.client.buildSession(input.cwd).start();
       session.agentSessionId = acpSession.sessionId;
       entry.agentSessionId = acpSession.sessionId;
+      const created = acpSession.newSessionResponse;
+      const optionsList = initialConfigOptions({
+        configOptions: created.configOptions,
+        modes: created.modes ?? acpSession.modes ?? null,
+      });
+      if (optionsList.length > 0) {
+        session.configOptions = optionsList;
+      }
       session.status = transitionSessionStatus("starting", "idle");
       session.lastActivityAt = new Date().toISOString();
       persist(options.store, session);
@@ -912,6 +940,14 @@ export function createSessionService(options: CreateSessionServiceOptions): Sess
         item: userItem,
       });
 
+      const publishSessionUpdated = (): void => {
+        options.events.publish({
+          type: "session.updated",
+          sessionId,
+          session: toSummary(enrichSession(entry.session, true)),
+        });
+      };
+
       let updateCtx: UpdateHandlerContext = {
         store: options.store,
         events: options.events,
@@ -924,11 +960,19 @@ export function createSessionService(options: CreateSessionServiceOptions): Sess
           entry.session.title = title;
           entry.session.lastActivityAt = new Date().toISOString();
           persist(options.store, entry.session);
-          options.events.publish({
-            type: "session.updated",
-            sessionId,
-            session: toSummary(entry.session),
-          });
+          publishSessionUpdated();
+        },
+        setConfigOptions: (nextOptions) => {
+          entry.session.configOptions = nextOptions;
+          entry.session.lastActivityAt = new Date().toISOString();
+          persist(options.store, entry.session);
+          publishSessionUpdated();
+        },
+        setAvailableCommands: (commands) => {
+          entry.session.availableCommands = commands;
+          entry.session.lastActivityAt = new Date().toISOString();
+          persist(options.store, entry.session);
+          publishSessionUpdated();
         },
       };
 
@@ -1044,8 +1088,55 @@ export function createSessionService(options: CreateSessionServiceOptions): Sess
       });
       return Promise.resolve();
     },
-    setConfigOption: () =>
-      Promise.reject(new SterError("invalid-argument", "Config options arrive later in US1/US6")),
+    async setConfigOption(sessionId, configId, value) {
+      const entry = requireLive(sessionId);
+      if (!entry.agentSessionId) {
+        throw new SterError("invalid-argument", "Session has no agent session yet");
+      }
+      const existing = (entry.session.configOptions ?? []).find((option) => option.id === configId);
+      if (!existing) {
+        throw new SterError("invalid-argument", `Unknown config option ${configId}`, { configId });
+      }
+
+      if (existing.legacyMode === true) {
+        await entry.connection.client.request(methods.agent.session.setMode, {
+          sessionId: entry.agentSessionId,
+          modeId: value,
+        });
+        entry.session.configOptions = (entry.session.configOptions ?? []).map((option) =>
+          option.id === configId ? { ...option, currentValue: value } : option,
+        );
+      } else {
+        const response = await entry.connection.client.request(
+          methods.agent.session.setConfigOption,
+          {
+            sessionId: entry.agentSessionId,
+            configId,
+            value,
+          },
+        );
+        const returned = normalizeConfigOptions(response.configOptions);
+        if (returned.length > 0) {
+          entry.session.configOptions = returned;
+        } else {
+          entry.session.configOptions = (entry.session.configOptions ?? []).map((option) =>
+            option.id === configId
+              ? {
+                  ...option,
+                  currentValue: option.type === "boolean" ? value === "true" : value,
+                }
+              : option,
+          );
+        }
+      }
+      entry.session.lastActivityAt = new Date().toISOString();
+      persist(options.store, entry.session);
+      options.events.publish({
+        type: "session.updated",
+        sessionId,
+        session: toSummary(enrichSession(entry.session, true)),
+      });
+    },
     rules: (sessionId) => {
       loadOrThrow(sessionId);
       return Promise.resolve(approvals.listRules(sessionId));
@@ -1096,6 +1187,14 @@ export function createSessionService(options: CreateSessionServiceOptions): Sess
         const acpSession = await entry.connection.client.buildSession(entry.session.cwd).start();
         entry.agentSessionId = acpSession.sessionId;
         entry.session.agentSessionId = acpSession.sessionId;
+        const created = acpSession.newSessionResponse;
+        const optionsList = initialConfigOptions({
+          configOptions: created.configOptions,
+          modes: created.modes ?? acpSession.modes ?? null,
+        });
+        if (optionsList.length > 0) {
+          entry.session.configOptions = optionsList;
+        }
         setStatus(entry.session, "idle");
       } catch (error) {
         if (isAuthRequiredError(error)) {
