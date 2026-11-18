@@ -1,14 +1,16 @@
 import type { JSX } from "react";
 import { useTranslation } from "react-i18next";
+import { sidebarPanels } from "../../../extensions/index.js";
 
-export type ShellSection = "conversation" | "agents" | "runs" | "settings";
+export type BuiltinSection = "conversation" | "agents" | "runs" | "settings";
+export type ShellSection = string;
 
 export interface IconRailProps {
   current: ShellSection;
   onSelect: (section: ShellSection) => void;
 }
 
-function RailIcon({ name }: { name: ShellSection }): JSX.Element {
+function RailIcon({ name }: { name: BuiltinSection }): JSX.Element {
   switch (name) {
     case "conversation":
       return (
@@ -40,11 +42,12 @@ function RailIcon({ name }: { name: ShellSection }): JSX.Element {
 }
 
 /**
- * Slim icon rail for primary sections (research.md R20 / mockup).
+ * Slim icon rail for primary sections plus registered sidebar panels (R16 / R20).
  */
 export function IconRail({ current, onSelect }: IconRailProps): JSX.Element {
   const { t } = useTranslation();
-  const items: ShellSection[] = ["conversation", "agents", "runs", "settings"];
+  const builtins: BuiltinSection[] = ["conversation", "agents", "runs", "settings"];
+  const panels = sidebarPanels();
 
   return (
     <nav className="rail" aria-label={t("app.name")}>
@@ -54,7 +57,7 @@ export function IconRail({ current, onSelect }: IconRailProps): JSX.Element {
           <path d="M7 15h5" />
         </svg>
       </div>
-      {items.map((item) => (
+      {builtins.map((item) => (
         <button
           key={item}
           type="button"
@@ -65,6 +68,22 @@ export function IconRail({ current, onSelect }: IconRailProps): JSX.Element {
         >
           <RailIcon name={item} />
           <span>{t(`nav.${item}`)}</span>
+        </button>
+      ))}
+      {panels.map((panel) => (
+        <button
+          key={panel.id}
+          type="button"
+          data-testid={`nav-${panel.id}`}
+          aria-current={current === panel.id ? "page" : undefined}
+          onClick={() => {
+            onSelect(panel.id);
+          }}
+        >
+          <svg className="ic" viewBox="0 0 24 24" aria-hidden="true">
+            <rect x="5" y="5" width="14" height="14" rx="2" />
+          </svg>
+          <span>{t(panel.titleKey)}</span>
         </button>
       ))}
     </nav>

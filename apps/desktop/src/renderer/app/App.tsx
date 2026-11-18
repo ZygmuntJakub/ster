@@ -1,5 +1,6 @@
 import { useEffect, useState, type JSX } from "react";
 import { useTranslation } from "react-i18next";
+import { panelExtensions, settingsPanels } from "../../extensions/index.js";
 import { AgentsPane } from "../features/agents/AgentsPane.js";
 import { ConversationPane } from "./layout/ConversationPane.js";
 import { IconRail, type ShellSection } from "./layout/IconRail.js";
@@ -52,6 +53,9 @@ export function App(): JSX.Element {
     };
   }, [i18n]);
 
+  const extension = panelExtensions.find((panel) => panel.id === section);
+  const ExtensionComponent = extension?.component;
+
   return (
     <div id="app" className="flex h-full min-h-screen">
       <div className="frame">
@@ -63,6 +67,7 @@ export function App(): JSX.Element {
                 void i18n.changeLanguage(language);
               }
             }}
+            extraPanels={settingsPanels()}
           />
         ) : section === "agents" ? (
           <AgentsPane />
@@ -71,6 +76,8 @@ export function App(): JSX.Element {
             <SessionBoard />
             <ConversationPane />
           </div>
+        ) : ExtensionComponent ? (
+          <ExtensionComponent />
         ) : (
           <section className="conv col px-6 py-4">
             <h1 className="title">{i18n.t(`nav.${section}`)}</h1>

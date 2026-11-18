@@ -169,6 +169,13 @@
       "integrity-failed": "Błąd integralności"
     }
   },
+  "extensions": {
+    "example": {
+      "nav": "Przykład",
+      "title": "Panel przykładowy",
+      "body": "Ten panel jest zarejestrowany w apps/desktop/src/extensions/index.ts. Zastąp go własnym panelem w pasku bocznym, obok sesji lub w ustawieniach."
+    }
+  },
   "errors": {
     "policy-invalid": "Polityka organizacji jest nieprawidłowa",
     "blocked-by-policy": "Zablokowane przez politykę organizacji",

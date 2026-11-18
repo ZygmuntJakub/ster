@@ -307,19 +307,19 @@ description: "Task list for Ster — ACP Desktop Client"
 
 ### Tests for User Story 9
 
-- [ ] T128 [P] [US9] Test that the brand is single-sourced: changing `apps/desktop/resources/brand.json` changes window title, about text, data directory, and installer name, in `apps/desktop/tests/brand.test.ts`
-- [ ] T129 [P] [US9] Run `examples/headless.ts` as an integration test in `packages/core/tests/integration/headless-example.test.ts`
+- [x] T128 [P] [US9] Test that the brand is single-sourced: changing `apps/desktop/resources/brand.json` changes window title, about text, data directory, and installer name, in `apps/desktop/tests/brand.test.ts`
+- [x] T129 [P] [US9] Run `examples/headless.ts` as an integration test in `packages/core/tests/integration/headless-example.test.ts`
 
 ### Implementation for User Story 9
 
-- [ ] T130 [US9] Complete `apps/desktop/electron-builder.yml`: dmg and zip (arm64, x64), NSIS (x64, arm64), AppImage and deb (x64, arm64), names from `brand.json`, documented placeholders for signing credentials; macOS builds are ad hoc signed, with a `codesign --verify` step in `.github/workflows/release.yml`
-- [ ] T131 [US9] Create `.github/workflows/release.yml`: on version tag, build on three runners and attach installers to a draft GitHub Release
-- [ ] T132 [US9] Add a smoke test of the packaged application (launch, start a mock-agent session, receive a reply) in `apps/desktop/tests/e2e/packaged-smoke.spec.ts`, run for each platform in `.github/workflows/release.yml`
-- [ ] T133 [P] [US9] Write `examples/headless.ts` driving the core without a UI (contracts/core-api.md, "Headless use")
-- [ ] T134 [P] [US9] Add an example panel extension and the single registration file in `apps/desktop/src/extensions/example-panel/index.tsx` and `apps/desktop/src/extensions/index.ts`, implementing `PanelExtension`
-- [ ] T135 [P] [US9] Write `README.md`: what Ster is, prerequisites, clone-to-run steps, how login works, the subscription-terms notice, installing unsigned builds on each platform
-- [ ] T136 [P] [US9] Write adopter guides in `docs/`: `rebranding.md`, `adding-a-language.md`, `default-agents.md`, `extensions.md` (panel, agent source, permission mode, policy item, event consumer, each with an example), `signing.md`, `security-model.md`; `security-model.md` states the limits of confinement for agents that use their own tools
-- [ ] T137 [US9] Document the extension-contract change policy in `CHANGELOG.md` and add a release checklist in `docs/releasing.md` (FR-062)
+- [x] T130 [US9] Complete `apps/desktop/electron-builder.yml`: dmg and zip (arm64, x64), NSIS (x64, arm64), AppImage and deb (x64, arm64), names from `brand.json`, documented placeholders for signing credentials; macOS builds are ad hoc signed, with a `codesign --verify` step in `.github/workflows/release.yml`
+- [x] T131 [US9] Create `.github/workflows/release.yml`: on version tag, build on three runners and attach installers to a draft GitHub Release
+- [x] T132 [US9] Add a smoke test of the packaged application (launch, start a mock-agent session, receive a reply) in `apps/desktop/tests/e2e/packaged-smoke.spec.ts`, run for each platform in `.github/workflows/release.yml`
+- [x] T133 [P] [US9] Write `examples/headless.ts` driving the core without a UI (contracts/core-api.md, "Headless use")
+- [x] T134 [P] [US9] Add an example panel extension and the single registration file in `apps/desktop/src/extensions/example-panel/index.tsx` and `apps/desktop/src/extensions/index.ts`, implementing `PanelExtension`
+- [x] T135 [P] [US9] Write `README.md`: what Ster is, prerequisites, clone-to-run steps, how login works, the subscription-terms notice, installing unsigned builds on each platform
+- [x] T136 [P] [US9] Write adopter guides in `docs/`: `rebranding.md`, `adding-a-language.md`, `default-agents.md`, `extensions.md` (panel, agent source, permission mode, policy item, event consumer, each with an example), `signing.md`, `security-model.md`; `security-model.md` states the limits of confinement for agents that use their own tools
+- [x] T137 [US9] Document the extension-contract change policy in `CHANGELOG.md` and add a release checklist in `docs/releasing.md` (FR-062)
 
 **Checkpoint**: The repository is usable as a template by someone who has never seen it
 

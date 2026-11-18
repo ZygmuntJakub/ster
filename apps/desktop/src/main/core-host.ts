@@ -9,6 +9,7 @@ import {
 import { existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import { app, shell } from "electron";
+import { dataDirSegmentFromBrand } from "./brand-surface.js";
 import { setupMainI18n } from "./i18n.js";
 import { resolveAppLanguage } from "./language.js";
 
@@ -44,7 +45,7 @@ function loadBrand(): Brand {
 export async function startCoreHost(): Promise<CoreHost> {
   const brand = loadBrand();
   const log = createLogger({ fields: { component: "desktop" } });
-  const dataDir = join(app.getPath("userData"), brand.dataDirName);
+  const dataDir = join(app.getPath("userData"), dataDirSegmentFromBrand(brand));
 
   const environment: Record<string, string> = {};
   for (const [key, value] of Object.entries(process.env)) {

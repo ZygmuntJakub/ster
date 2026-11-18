@@ -1,17 +1,22 @@
 import type { JSX } from "react";
 import { useTranslation } from "react-i18next";
+import type { PanelExtension } from "../../../extensions/types.js";
 import { LanguageSettings } from "../../features/settings/LanguageSettings.js";
 import { PermissionSettings } from "../../features/settings/PermissionSettings.js";
 import { applyTheme, getSettings, setSettings, type ThemePreference } from "../stores/settings.js";
 
 export interface SettingsPaneProps {
   onLanguageChange: (language: string) => void;
+  extraPanels?: readonly PanelExtension[];
 }
 
 /**
- * Settings entry: language, theme, and default permission mode.
+ * Settings entry: language, theme, default permission mode, and settings-placement panels.
  */
-export function SettingsPane({ onLanguageChange }: SettingsPaneProps): JSX.Element {
+export function SettingsPane({
+  onLanguageChange,
+  extraPanels = [],
+}: SettingsPaneProps): JSX.Element {
   const { t } = useTranslation();
   const settings = getSettings();
 
@@ -41,6 +46,10 @@ export function SettingsPane({ onLanguageChange }: SettingsPaneProps): JSX.Eleme
           </select>
         </label>
         <PermissionSettings />
+        {extraPanels.map((panel) => {
+          const Component = panel.component;
+          return <Component key={panel.id} />;
+        })}
       </div>
     </section>
   );

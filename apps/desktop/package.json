@@ -11,7 +11,8 @@
     "preview": "electron-vite preview",
     "test": "vitest run",
     "test:e2e": "electron-vite build && playwright test",
-    "dist": "electron-vite build && electron-builder --config electron-builder.yml"
+    "dist": "electron-vite build && electron-builder --config electron-builder.config.mjs",
+    "dist:dir": "electron-vite build && electron-builder --config electron-builder.config.mjs --dir"
   },
   "dependencies": {
     "@ster/core": "workspace:*",

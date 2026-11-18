@@ -1,0 +1,143 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: write
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  package:
+    name: Package ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: macos-latest
+            platform: mac
+          - os: windows-latest
+            platform: win
+          - os: ubuntu-latest
+            platform: linux
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10.28.2
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version-file: ".nvmrc"
+          cache: "pnpm"
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Install Linux packaging dependencies
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y xvfb rpm fakeroot
+
+      - name: Quality gates
+        run: pnpm check
+
+      - name: Build unpackaged app (dir)
+        run: pnpm --filter @ster/desktop dist:dir
+        env:
+          # Leave CSC_* / APPLE_* unset for ad hoc / unsigned builds (docs/signing.md).
+          CSC_IDENTITY_AUTO_DISCOVERY: "false"
+
+      - name: Verify macOS ad hoc code signature
+        if: runner.os == 'macOS'
+        run: |
+          set -euo pipefail
+          APP="$(find apps/desktop/dist -name '*.app' -maxdepth 3 | head -n 1)"
+          test -n "$APP"
+          codesign --verify --verbose=2 "$APP"
+          echo "codesign ok: $APP"
+
+      - name: Pack installers
+        run: pnpm --filter @ster/desktop exec electron-builder --config electron-builder.config.mjs --publish never
+        env:
+          CSC_IDENTITY_AUTO_DISCOVERY: "false"
+
+      - name: Resolve packaged app path
+        id: app_path
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [[ "${{ runner.os }}" == "macOS" ]]; then
+            BIN="$(find apps/desktop/dist -path '*.app/Contents/MacOS/*' -type f | head -n 1)"
+          elif [[ "${{ runner.os }}" == "Windows" ]]; then
+            BIN="$(find apps/desktop/dist -name '*.exe' -not -name '*Setup*' -not -name 'uninstall*.exe' | head -n 1)"
+          else
+            BIN="$(find apps/desktop/dist -type f -name '*AppImage' | head -n 1)"
+            if [[ -z "$BIN" ]]; then
+              BIN="$(find apps/desktop/dist -type f -perm -111 | head -n 1)"
+            fi
+          fi
+          echo "path=$BIN" >> "$GITHUB_OUTPUT"
+          echo "Using packaged binary: $BIN"
+
+      - name: Packaged smoke (mock agent session)
+        if: runner.os != 'Linux'
+        env:
+          STER_PACKAGED_APP: ${{ steps.app_path.outputs.path }}
+        run: |
+          export STER_NODE_BINARY="$(command -v node)"
+          pnpm --filter @ster/desktop exec playwright test tests/e2e/packaged-smoke.spec.ts
+
+      - name: Packaged smoke (Linux / xvfb)
+        if: runner.os == 'Linux'
+        env:
+          STER_PACKAGED_APP: ${{ steps.app_path.outputs.path }}
+        run: |
+          export STER_NODE_BINARY="$(command -v node)"
+          xvfb-run --auto-servernum pnpm --filter @ster/desktop exec playwright test tests/e2e/packaged-smoke.spec.ts
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: installers-${{ matrix.platform }}
+          path: |
+            apps/desktop/dist/*.*
+            apps/desktop/dist/**/*.dmg
+            apps/desktop/dist/**/*.zip
+            apps/desktop/dist/**/*.exe
+            apps/desktop/dist/**/*.AppImage
+            apps/desktop/dist/**/*.deb
+          if-no-files-found: warn
+
+  draft-release:
+    name: Draft GitHub Release
+    needs: package
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Download artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: release-assets
+
+      - name: Create draft release
+        uses: softprops/action-gh-release@v2
+        with:
+          draft: true
+          generate_release_notes: true
+          files: release-assets/**/*
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

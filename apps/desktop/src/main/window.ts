@@ -1,6 +1,8 @@
+import type { Brand } from "@ster/core";
 import { BrowserWindow, session } from "electron";
 import { existsSync } from "node:fs";
 import { join } from "node:path";
+import { windowTitleFromBrand } from "./brand-surface.js";
 
 const CSP =
   "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self'; font-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'";
@@ -41,11 +43,12 @@ export function applySessionHardening(): void {
 /**
  * Create the main application window with sandbox + context isolation (research.md R9).
  */
-export function createMainWindow(): BrowserWindow {
+export function createMainWindow(brand: Brand): BrowserWindow {
   const win = new BrowserWindow({
     width: 1280,
     height: 800,
     show: false,
+    title: windowTitleFromBrand(brand),
     backgroundColor: "#E7E7E4",
     webPreferences: {
       preload: resolvePreloadPath(),
