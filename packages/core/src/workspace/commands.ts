@@ -304,9 +304,16 @@ export function createCommandRunner(options: CommandRunnerOptions) {
       await Promise.race([
         entry.exitPromise,
         new Promise<void>((resolve) => {
-          setTimeout(resolve, 1000);
+          setTimeout(resolve, 2000);
         }),
       ]);
+      // Ensure listeners see a terminal killed state even if the OS exit event is delayed
+      // (common on Windows after taskkill, where signal is often null).
+      if (!entry.run.exit) {
+        entry.run.exit = { code: null, signal: "SIGTERM" };
+        entry.run.endedAt = now().toISOString();
+      }
+      options.onExit?.(entry.run);
     },
 
     async release(terminalId: string): Promise<void> {

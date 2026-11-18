@@ -148,6 +148,7 @@ export function ConversationPane(): JSX.Element {
         cwd?: string;
         truncated?: boolean;
         exit?: { code?: number | null; signal?: string | null };
+        state?: "running" | "exited" | "killed" | "released";
       };
 
       if (
@@ -211,7 +212,7 @@ export function ConversationPane(): JSX.Element {
         appendCommandOutput(typed.commandRunId, typed.data, typed.truncated);
       }
       if (typed.type === "command.exited" && typed.commandRunId) {
-        markCommandExited(typed.commandRunId, typed.exit);
+        markCommandExited(typed.commandRunId, typed.exit, typed.state);
       }
     });
   }, []);

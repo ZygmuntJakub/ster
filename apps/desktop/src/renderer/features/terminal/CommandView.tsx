@@ -1,6 +1,6 @@
 import type { JSX } from "react";
 import { useTranslation } from "react-i18next";
-import type { CommandRunView } from "../../app/stores/commands.js";
+import { markCommandExited, type CommandRunView } from "../../app/stores/commands.js";
 
 export interface CommandViewProps {
   run: CommandRunView;
@@ -28,6 +28,7 @@ export function CommandView({ run }: CommandViewProps): JSX.Element {
             className="btn danger"
             data-testid={`command-stop-${run.commandRunId}`}
             onClick={() => {
+              markCommandExited(run.commandRunId, undefined, "killed");
               void window.ster.sessions.killCommand({ commandRunId: run.commandRunId });
             }}
           >

@@ -463,10 +463,14 @@ export async function runScenario(
         });
         return { stopReason: isCancelled(session) ? "cancelled" : "end_turn" };
       }
+      const longRunning =
+        process.platform === "win32"
+          ? { command: "ping", args: ["-n", "40", "127.0.0.1"] }
+          : { command: "sleep", args: ["30"] };
       const terminal = await client.createTerminal({
         sessionId: session.id,
-        command: "sleep",
-        args: ["30"],
+        command: longRunning.command,
+        args: longRunning.args,
         cwd: session.cwd,
       });
       await client.notify("session/update", {

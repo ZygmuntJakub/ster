@@ -425,11 +425,13 @@ export function createSessionService(options: CreateSessionServiceOptions): Sess
           type: "command.exited";
           sessionId: string;
           commandRunId: string;
+          state: typeof run.state;
           exit?: { code?: number | null; signal?: string | null };
         } = {
           type: "command.exited",
           sessionId: entry.session.id,
           commandRunId: run.id,
+          state: run.state,
         };
         if (run.exit) {
           payload.exit = run.exit;

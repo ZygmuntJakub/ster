@@ -35,6 +35,8 @@ export type CoreEventPayload =
       commandRunId: string;
       data?: string;
       exit?: CommandExit;
+      /** Terminal lifecycle state when the event was published (esp. `killed` on Windows). */
+      state?: "running" | "exited" | "killed" | "released";
       command?: string;
       args?: string[];
       cwd?: string;

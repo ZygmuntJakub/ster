@@ -1,3 +1,8 @@
+import {
+  resolveCommandExitState,
+  type CommandLifecycleState,
+} from "../../../shared/command-state.js";
+
 export interface CommandRunView {
   commandRunId: string;
   sessionId: string;
@@ -6,7 +11,7 @@ export interface CommandRunView {
   cwd?: string;
   output: string;
   truncated: boolean;
-  state: "running" | "exited" | "killed" | "released";
+  state: CommandLifecycleState;
   exit?: { code?: number | null; signal?: string | null };
 }
 
@@ -82,15 +87,19 @@ export function appendCommandOutput(commandRunId: string, data: string, truncate
 export function markCommandExited(
   commandRunId: string,
   exit?: { code?: number | null; signal?: string | null },
+  state?: CommandLifecycleState,
 ): void {
   const existing = runs.get(commandRunId);
   if (!existing) {
     return;
   }
-  const killed = exit?.signal != null && exit.signal.length > 0;
   const next: CommandRunView = {
     ...existing,
-    state: killed ? "killed" : "exited",
+    state: resolveCommandExitState({
+      previous: existing.state,
+      ...(exit !== undefined ? { exit } : {}),
+      ...(state !== undefined ? { state } : {}),
+    }),
   };
   if (exit !== undefined) {
     next.exit = exit;

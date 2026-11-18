@@ -43,6 +43,7 @@ describe("bridge surface", () => {
       "dialogs.pickAttachments",
       "dialogs.pickFolder",
       "events.subscribe",
+      "factory.applied",
       "factory.find",
       "factory.renderTemplate",
       "factory.revoke",
