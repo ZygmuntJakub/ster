@@ -17,7 +17,11 @@
     "waiting": "Oczekuje",
     "finished": "Zakończone",
     "failed": "Błąd",
-    "attention": "Wymaga uwagi"
+    "attention": "Wymaga uwagi",
+    "sessionCount_one": "{{count}} sesja",
+    "sessionCount_few": "{{count}} sesje",
+    "sessionCount_many": "{{count}} sesji",
+    "sessionCount_other": "{{count}} sesji"
   },
   "history": {
     "readOnly": "Ta sesja jest zamknięta. Możesz czytać historię lub kontynuować, jeśli agent obsługuje wznawianie.",
@@ -122,10 +126,19 @@
   "settings": {
     "title": "Ustawienia",
     "language": "Język",
+    "languageEn": "English",
+    "languagePl": "Polski",
     "theme": "Motyw",
     "themeSystem": "Systemowy",
     "themeLight": "Jasny",
     "themeDark": "Ciemny"
+  },
+  "dialogs": {
+    "cancel": "Anuluj",
+    "open": "Otwórz",
+    "openLink": "Otworzyć ten odnośnik w przeglądarce?",
+    "pickFolderTitle": "Wybierz folder projektu",
+    "pickAttachmentsTitle": "Dołącz pliki"
   },
   "agents": {
     "title": "Agenci",

@@ -29,6 +29,7 @@ import {
   setConfigOption,
   setPermissionMode,
 } from "./handlers/sessions.js";
+import { setMainLanguage, t } from "./i18n.js";
 import { createLinkIndex } from "./link-index.js";
 import { createLocationIndex } from "./location-index.js";
 import { createLoginTerminalManager } from "./login-terminal.js";
@@ -114,7 +115,11 @@ async function handleMethod(
       } else if (patch.defaultAgentId !== undefined) {
         next.defaultAgentId = patch.defaultAgentId;
       }
-      return ok(core.settings.set(next));
+      const saved = core.settings.set(next);
+      if (patch.language !== undefined) {
+        await setMainLanguage(saved.language);
+      }
+      return ok(saved);
     }
     case "events.subscribe":
       return ok({ subscribed: true });
@@ -166,6 +171,7 @@ async function handleMethod(
         return ok({ folderToken: record.token, displayPath: record.displayPath });
       }
       const result = await dialog.showOpenDialog({
+        title: t("dialogs.pickFolderTitle"),
         properties: ["openDirectory", "createDirectory"],
       });
       if (result.canceled || result.filePaths.length === 0) {
@@ -181,6 +187,7 @@ async function handleMethod(
     case "dialogs.pickAttachments": {
       const { sessionId } = payload as { sessionId: string };
       const result = await dialog.showOpenDialog({
+        title: t("dialogs.pickAttachmentsTitle"),
         properties: ["openFile", "multiSelections"],
       });
       if (result.canceled || result.filePaths.length === 0) {
@@ -346,10 +353,10 @@ async function handleMethod(
       const url = ctx.links.resolve(sessionId, itemSeq, linkIndex);
       const choice = await dialog.showMessageBox({
         type: "question",
-        buttons: ["Cancel", "Open"],
+        buttons: [t("dialogs.cancel"), t("dialogs.open")],
         defaultId: 1,
         cancelId: 0,
-        message: "Open this link in your browser?",
+        message: t("dialogs.openLink"),
         detail: url,
       });
       if (choice.response === 1) {

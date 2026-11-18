@@ -17,7 +17,11 @@
     "waiting": "Waiting",
     "finished": "Finished",
     "failed": "Failed",
-    "attention": "Needs attention"
+    "attention": "Needs attention",
+    "sessionCount_one": "{{count}} session",
+    "sessionCount_few": "{{count}} sessions",
+    "sessionCount_many": "{{count}} sessions",
+    "sessionCount_other": "{{count}} sessions"
   },
   "history": {
     "readOnly": "This session is closed. You can read the history or continue if the agent supports resume.",
@@ -122,10 +126,19 @@
   "settings": {
     "title": "Settings",
     "language": "Language",
+    "languageEn": "English",
+    "languagePl": "Polski",
     "theme": "Theme",
     "themeSystem": "System",
     "themeLight": "Light",
     "themeDark": "Dark"
+  },
+  "dialogs": {
+    "cancel": "Cancel",
+    "open": "Open",
+    "openLink": "Open this link in your browser?",
+    "pickFolderTitle": "Choose a project folder",
+    "pickAttachmentsTitle": "Attach files"
   },
   "agents": {
     "title": "Agents",

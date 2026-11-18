@@ -75,6 +75,11 @@ export interface CreateSettingsServiceOptions {
   store: Store;
   /** Keys that policy manages and that set() must refuse to change. */
   managedKeys?: ReadonlyArray<keyof Settings>;
+  /**
+   * Overrides applied only when no settings document exists yet
+   * (first launch — e.g. system-derived language).
+   */
+  defaults?: Partial<Settings>;
 }
 
 /**
@@ -90,9 +95,17 @@ export function createSettingsService(options: CreateSettingsServiceOptions): Se
     return settings;
   };
 
-  // Ensure defaults exist.
+  // Ensure defaults exist (first launch can seed language from the OS locale).
   if (options.store.getSetting(SETTINGS_KEY) === null) {
-    write({ ...DEFAULT_SETTINGS, customAgents: [] });
+    const seed: Settings = {
+      ...DEFAULT_SETTINGS,
+      ...options.defaults,
+      customAgents: options.defaults?.customAgents ?? [],
+    };
+    if (options.defaults?.defaultAgentId !== undefined) {
+      seed.defaultAgentId = options.defaults.defaultAgentId;
+    }
+    write(seed);
   }
 
   return {

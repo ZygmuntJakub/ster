@@ -1,5 +1,6 @@
 import type { JSX } from "react";
 import { useTranslation } from "react-i18next";
+import { LanguageSettings } from "../../features/settings/LanguageSettings.js";
 import { PermissionSettings } from "../../features/settings/PermissionSettings.js";
 import { applyTheme, getSettings, setSettings, type ThemePreference } from "../stores/settings.js";
 
@@ -11,28 +12,18 @@ export interface SettingsPaneProps {
  * Settings entry: language, theme, and default permission mode.
  */
 export function SettingsPane({ onLanguageChange }: SettingsPaneProps): JSX.Element {
-  const { t, i18n } = useTranslation();
+  const { t } = useTranslation();
   const settings = getSettings();
 
   return (
-    <section className="conv col px-6 py-4" aria-label={t("settings.title")}>
+    <section
+      className="conv col px-6 py-4"
+      aria-label={t("settings.title")}
+      data-testid="settings-pane"
+    >
       <h1 className="title mb-4">{t("settings.title")}</h1>
       <div className="flex max-w-md flex-col gap-4">
-        <label className="f">
-          {t("settings.language")}
-          <select
-            value={settings.language}
-            onChange={(event) => {
-              const language = event.target.value;
-              setSettings({ ...getSettings(), language });
-              onLanguageChange(language);
-              void window.ster.settings.set({ language });
-            }}
-          >
-            <option value="en">English</option>
-            <option value="pl">Polski</option>
-          </select>
-        </label>
+        <LanguageSettings onLanguageChange={onLanguageChange} />
         <label className="f">
           {t("settings.theme")}
           <select
@@ -50,7 +41,6 @@ export function SettingsPane({ onLanguageChange }: SettingsPaneProps): JSX.Eleme
           </select>
         </label>
         <PermissionSettings />
-        <p className="faint text-xs mono">i18n: {i18n.language}</p>
       </div>
     </section>
   );

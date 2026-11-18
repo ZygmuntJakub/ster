@@ -109,6 +109,8 @@ export interface CreateCoreOptions {
   registryUrl?: string;
   fetchImpl?: typeof fetch;
   seedNodeBinary?: string;
+  /** First-launch settings seed (e.g. system language). Ignored when settings already exist. */
+  settingsDefaults?: Partial<import("./settings/service.js").Settings>;
 }
 
 export interface Core {
@@ -189,7 +191,10 @@ export async function createCore(options: CreateCoreOptions): Promise<Core> {
   const policy = createPolicyService({ sources: options.policySources });
   await policy.reload();
 
-  const settings = createSettingsService({ store });
+  const settings = createSettingsService({
+    store,
+    ...(options.settingsDefaults !== undefined ? { defaults: options.settingsDefaults } : {}),
+  });
   const events = createEventStream();
   const detachConsumers = attachEventConsumers(events, extensions.eventConsumers ?? [], log);
 

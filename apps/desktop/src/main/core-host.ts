@@ -9,6 +9,8 @@ import {
 import { existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import { app, shell } from "electron";
+import { setupMainI18n } from "./i18n.js";
+import { resolveAppLanguage } from "./language.js";
 
 export interface CoreHost {
   readonly core: Core;
@@ -74,6 +76,8 @@ export async function startCoreHost(): Promise<CoreHost> {
     }
   }
 
+  const systemLanguage = resolveAppLanguage(app.getLocale());
+
   const core = await createCore({
     dataDir,
     brand,
@@ -81,6 +85,7 @@ export async function startCoreHost(): Promise<CoreHost> {
     environment,
     log,
     nodeExecutable,
+    settingsDefaults: { language: systemLanguage },
     includeMockAgent: process.env["NODE_ENV"] !== "production" && hasMockAgent,
     ...(hasMockAgent ? { mockAgentEntry } : {}),
     ...(agentHints !== undefined ? { agentHints } : {}),
@@ -91,6 +96,8 @@ export async function startCoreHost(): Promise<CoreHost> {
       },
     },
   });
+
+  await setupMainI18n(core.settings.get().language);
 
   return {
     core,

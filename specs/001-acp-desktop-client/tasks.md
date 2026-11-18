@@ -285,15 +285,15 @@ description: "Task list for Ster — ACP Desktop Client"
 
 ### Tests for User Story 8
 
-- [ ] T122 [P] [US8] Unit tests for first-launch language selection and fallback in `apps/desktop/tests/language.test.ts`
-- [ ] T123 [P] [US8] End-to-end flow for US8 that switches language and scans every screen for untranslated keys in `apps/desktop/tests/e2e/us8-language.spec.ts`, asserting that agent-produced content is left untranslated (FR-037)
+- [x] T122 [P] [US8] Unit tests for first-launch language selection and fallback in `apps/desktop/tests/language.test.ts`
+- [x] T123 [P] [US8] End-to-end flow for US8 that switches language and scans every screen for untranslated keys in `apps/desktop/tests/e2e/us8-language.spec.ts`, asserting that agent-produced content is left untranslated (FR-037)
 
 ### Implementation for User Story 8
 
-- [ ] T124 [US8] Implement language selection from the system locale with English fallback and persistence in `apps/desktop/src/main/language.ts` per data-model.md `Settings.language`
-- [ ] T125 [US8] Translate main-process text (menus, native dialogs, confirmations) through the shared resources in `apps/desktop/src/main/i18n.ts`
-- [ ] T126 [P] [US8] Build the language setting with live switching in `apps/desktop/src/renderer/features/settings/LanguageSettings.tsx`
-- [ ] T127 [US8] Review and complete `apps/desktop/src/renderer/i18n/pl.json` against `en.json`, with plural forms, and make `scripts/check-i18n.mjs` fail on hard-coded strings in `apps/desktop/src/renderer/`
+- [x] T124 [US8] Implement language selection from the system locale with English fallback and persistence in `apps/desktop/src/main/language.ts` per data-model.md `Settings.language`
+- [x] T125 [US8] Translate main-process text (menus, native dialogs, confirmations) through the shared resources in `apps/desktop/src/main/i18n.ts`
+- [x] T126 [P] [US8] Build the language setting with live switching in `apps/desktop/src/renderer/features/settings/LanguageSettings.tsx`
+- [x] T127 [US8] Review and complete `apps/desktop/src/renderer/i18n/pl.json` against `en.json`, with plural forms, and make `scripts/check-i18n.mjs` fail on hard-coded strings in `apps/desktop/src/renderer/`
 
 **Checkpoint**: Increment 3 complete
 

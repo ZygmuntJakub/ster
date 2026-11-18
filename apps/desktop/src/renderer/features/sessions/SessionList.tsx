@@ -78,7 +78,12 @@ export function SessionList(): JSX.Element {
       </div>
       <div className="scroll grow flex flex-col gap-2 pt-2">
         <div className="flex items-center justify-between gap-2">
-          <p className="lbl">{t("board.title")}</p>
+          <div>
+            <p className="lbl">{t("board.title")}</p>
+            <p className="faint text-xs" data-testid="session-count">
+              {t("board.sessionCount", { count: sessions.length })}
+            </p>
+          </div>
           <button
             type="button"
             className="btn primary text-xs"

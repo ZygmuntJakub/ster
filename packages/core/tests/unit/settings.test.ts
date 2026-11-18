@@ -37,6 +37,30 @@ describe("SettingsService", () => {
     }
   });
 
+  it("seeds first-launch defaults without overwriting existing settings", async () => {
+    const dataDir = await mkdtemp(join(tmpdir(), "ster-settings-"));
+    dirs.push(dataDir);
+    const store = openSqliteStore({ dataDir });
+    try {
+      const first = createSettingsService({
+        store,
+        defaults: { language: "pl", theme: "dark" },
+      });
+      expect(first.get().language).toBe("pl");
+      expect(first.get().theme).toBe("dark");
+
+      first.set({ language: "en" });
+      const second = createSettingsService({
+        store,
+        defaults: { language: "pl", theme: "light" },
+      });
+      expect(second.get().language).toBe("en");
+      expect(second.get().theme).toBe("dark");
+    } finally {
+      store.close();
+    }
+  });
+
   it("refuses managed keys", async () => {
     const dataDir = await mkdtemp(join(tmpdir(), "ster-settings-"));
     dirs.push(dataDir);
