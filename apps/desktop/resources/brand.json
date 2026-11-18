@@ -1,0 +1,13 @@
+{
+  "productName": "Ster",
+  "appId": "ster-desktop",
+  "dataDirName": "Ster",
+  "policyDirName": "Ster",
+  "icon": "icon.png",
+  "colors": {
+    "accent": "#111113",
+    "accentInk": "#FFFFFF",
+    "canvas": "#F6F6F4",
+    "ink": "#111113"
+  }
+}
