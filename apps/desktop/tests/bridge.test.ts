@@ -77,11 +77,18 @@ describe("bridge surface", () => {
     expect(settingsPatchSchema.safeParse({ language: "pl" }).success).toBe(true);
   });
 
-  it("rejects unexpected payloads for methods without a schema", () => {
-    expect(() => validateBridgePayload("agents.list", { hack: true })).toThrow(
-      /Unexpected payload/,
-    );
+  it("rejects invalid payloads for schema-backed methods", () => {
+    expect(() => validateBridgePayload("agents.list", { hack: true })).toThrow(/Invalid payload/);
     expect(validateBridgePayload("agents.list", undefined)).toBeUndefined();
+    expect(
+      validateBridgePayload("sessions.create", {
+        agentId: "mock-agent",
+        folderToken: "folder:test",
+      }),
+    ).toEqual({ agentId: "mock-agent", folderToken: "folder:test" });
+    expect(() =>
+      validateBridgePayload("sessions.create", { agentId: "mock-agent", cwd: "/tmp" }),
+    ).toThrow(/Invalid payload/);
   });
 
   it("rejects non-top-level senders", () => {

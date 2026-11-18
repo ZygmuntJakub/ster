@@ -21,7 +21,54 @@
   "conversation": {
     "title": "Rozmowa",
     "empty": "Wybierz sesję, aby zobaczyć rozmowę",
-    "placeholder": "Elementy rozmowy pojawią się tutaj"
+    "placeholder": "Elementy rozmowy pojawią się tutaj",
+    "emptySession": "Wyślij wiadomość, aby rozpocząć rozmowę",
+    "you": "Ty",
+    "agent": "Agent",
+    "thought": "Rozumowanie",
+    "notice": "Powiadomienie",
+    "unknown": "Nieobsługiwany element",
+    "unknownHint": "Element {{kind}} nie może jeszcze być pokazany",
+    "copy": "Kopiuj",
+    "copied": "Skopiowano",
+    "imageBlocked": "Zdalny obraz zablokowany"
+  },
+  "composer": {
+    "placeholder": "Napisz do agenta…",
+    "send": "Wyślij",
+    "stop": "Stop",
+    "attach": "Dołącz"
+  },
+  "approval": {
+    "title": "Wymagana zgoda",
+    "guardTitle": "Potwierdź chronioną akcję",
+    "cancel": "Anuluj"
+  },
+  "session": {
+    "new": "Nowa",
+    "newTitle": "Nowa sesja",
+    "newHint": "Wybierz agenta i folder projektu.",
+    "agent": "Agent",
+    "folder": "Folder",
+    "pickFolder": "Wybierz folder",
+    "noFolder": "Nie wybrano folderu",
+    "confirmLaunch": "Potwierdzam uruchomienie {{command}} (pochodzenie: {{origin}})",
+    "confirmRequired": "Potwierdź uruchomienie agenta przed startem",
+    "needAgentFolder": "Wybierz agenta i folder",
+    "confinementTitle": "Co obejmuje ograniczenie dostępu",
+    "confinementBody": "Dostęp do plików jest ograniczony do wybranego folderu po rozwinięciu dowiązań symbolicznych. Nie izoluje procesu agenta, sieci ani poleceń, które agent może później uruchomić.",
+    "cancel": "Anuluj",
+    "start": "Start",
+    "failedTitle": "Sesja zakończyła się błędem",
+    "restart": "Uruchom ponownie"
+  },
+  "login": {
+    "title": "Wymagane logowanie",
+    "hint": "Ten agent wymaga logowania, zanim sesja będzie mogła być kontynuowana.",
+    "command": "Polecenie",
+    "fallback": "Jeśli terminal logowania nie może się uruchomić, zaloguj się w CLI dostawcy we własnym terminalu, a następnie uruchom sesję ponownie.",
+    "terminalFailed": "Terminal logowania zakończył się bez sukcesu",
+    "terminalUnavailable": "Terminal logowania jest niedostępny na tej maszynie"
   },
   "settings": {
     "title": "Ustawienia",

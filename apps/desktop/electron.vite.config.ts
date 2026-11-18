@@ -37,10 +37,15 @@ export default defineConfig({
   },
   preload: {
     build: {
+      // Sandboxed preload must be CommonJS; ESM `.mjs` fails to load under Electron sandbox.
       externalizeDeps: true,
       rollupOptions: {
         input: {
           index: resolve("src/preload/index.ts"),
+        },
+        output: {
+          format: "cjs",
+          entryFileNames: "[name].cjs",
         },
       },
     },

@@ -6,11 +6,17 @@ const CSP =
   "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self'; font-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'";
 
 function resolvePreloadPath(): string {
-  const mjs = join(__dirname, "../preload/index.mjs");
-  if (existsSync(mjs)) {
-    return mjs;
+  const candidates = [
+    join(__dirname, "../preload/index.cjs"),
+    join(__dirname, "../preload/index.js"),
+    join(__dirname, "../preload/index.mjs"),
+  ];
+  for (const candidate of candidates) {
+    if (existsSync(candidate)) {
+      return candidate;
+    }
   }
-  return join(__dirname, "../preload/index.js");
+  return join(__dirname, "../preload/index.cjs");
 }
 
 /**

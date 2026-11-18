@@ -90,7 +90,7 @@ description: "Task list for Ster — ACP Desktop Client"
 - [x] T036 [P] [US1] Integration tests for prompt, streaming, cancel, and agent crash in `packages/core/tests/integration/session-turn.test.ts`
 - [x] T037 [P] [US1] Integration tests for login-required and both auth method types in `packages/core/tests/integration/auth.test.ts`
 - [x] T038 [P] [US1] Security tests for file access confinement, including symlinks and `..`, in `packages/core/tests/security/workspace-paths.test.ts`
-- [ ] T039 [P] [US1] End-to-end flow for US1 in `apps/desktop/tests/e2e/us1-conversation.spec.ts`
+- [x] T039 [P] [US1] End-to-end flow for US1 in `apps/desktop/tests/e2e/us1-conversation.spec.ts`
 
 ### Implementation for User Story 1
 
@@ -105,16 +105,16 @@ description: "Task list for Ster — ACP Desktop Client"
 - [x] T048 [US1] Add file snapshots and stale-write detection to `packages/core/src/workspace/snapshots.ts` per data-model.md `FileSnapshot.contentHash`, raising a guard approval before overwriting (FR-079), with tests in `packages/core/tests/integration/stale-write.test.ts`
 - [x] T049 [US1] Detect a deleted, moved, or unreadable working folder in `packages/core/src/workspace/availability.ts`, failing the session with an explanation and blocking further file and command operations, with tests in `packages/core/tests/integration/workspace-gone.test.ts`
 - [x] T050 [US1] Implement login support in `packages/core/src/sessions/auth.ts`: detect error `-32000`, expose `authMethods`, call `authenticate` for agent-type methods, and describe the relaunch command for terminal-type methods (research.md R3)
-- [ ] T051 [US1] Implement the login terminal in `apps/desktop/src/main/login-terminal.ts` using `node-pty`, started only for an agent-declared method and reconnecting the session on exit code 0
-- [ ] T052 [US1] Add bridge functions `dialogs.pickFolder`, `dialogs.pickAttachments`, `agents.list`, `agents.confirmFirstStart`, `sessions.create`, `sessions.get`, `sessions.items`, `sessions.prompt`, `sessions.cancel`, `sessions.resolveApproval`, `sessions.authMethods`, `sessions.authenticate`, `sessions.restart`, `sessions.end`, `links.open`, `login.terminal.*` with schemas in `apps/desktop/src/shared/bridge.ts` and handlers in `apps/desktop/src/main/handlers/sessions.ts`, using folder and attachment tokens instead of paths
-- [ ] T053 [US1] Implement event forwarding with per-frame coalescing of streamed text in `apps/desktop/src/main/event-forwarder.ts` (research.md R18)
-- [ ] T054 [P] [US1] Build the new-session dialog (agent, folder, first-start confirmation showing the program and its origin) in `apps/desktop/src/renderer/features/sessions/NewSessionDialog.tsx`, and the statement of what confinement does and does not cover (FR-015)
-- [ ] T055 [P] [US1] Build safe Markdown rendering (no raw HTML, no remote images, links as confirm-to-open buttons, copy for text and code blocks) in `apps/desktop/src/renderer/features/conversation/Markdown.tsx`
-- [ ] T056 [US1] Build the conversation view with streaming agent messages, distinct reasoning text, notices, and unknown-item placeholders in `apps/desktop/src/renderer/features/conversation/ConversationView.tsx`
-- [ ] T057 [US1] Build the composer with send, stop, and attachments gated by agent prompt capabilities in `apps/desktop/src/renderer/features/conversation/Composer.tsx`
-- [ ] T058 [P] [US1] Build the approval prompt showing the action and the agent's options in `apps/desktop/src/renderer/features/approvals/ApprovalPrompt.tsx`, showing only one-time options (FR-011), presented as a bar docked above the composer for agent requests and as a blocking dialog for client-guard requests (research.md R20)
-- [ ] T059 [P] [US1] Build the error and restart banner and the login-required panel with the embedded login terminal (`xterm.js`) in `apps/desktop/src/renderer/features/sessions/SessionStatus.tsx` and `apps/desktop/src/renderer/features/sessions/LoginPanel.tsx`
-- [ ] T060 [US1] Add English and Polish strings for all US1 screens in `apps/desktop/src/renderer/i18n/en.json` and `apps/desktop/src/renderer/i18n/pl.json`
+- [x] T051 [US1] Implement the login terminal in `apps/desktop/src/main/login-terminal.ts` using `node-pty`, started only for an agent-declared method and reconnecting the session on exit code 0
+- [x] T052 [US1] Add bridge functions `dialogs.pickFolder`, `dialogs.pickAttachments`, `agents.list`, `agents.confirmFirstStart`, `sessions.create`, `sessions.get`, `sessions.items`, `sessions.prompt`, `sessions.cancel`, `sessions.resolveApproval`, `sessions.authMethods`, `sessions.authenticate`, `sessions.restart`, `sessions.end`, `links.open`, `login.terminal.*` with schemas in `apps/desktop/src/shared/bridge.ts` and handlers in `apps/desktop/src/main/handlers/sessions.ts`, using folder and attachment tokens instead of paths
+- [x] T053 [US1] Implement event forwarding with per-frame coalescing of streamed text in `apps/desktop/src/main/event-forwarder.ts` (research.md R18)
+- [x] T054 [P] [US1] Build the new-session dialog (agent, folder, first-start confirmation showing the program and its origin) in `apps/desktop/src/renderer/features/sessions/NewSessionDialog.tsx`, and the statement of what confinement does and does not cover (FR-015)
+- [x] T055 [P] [US1] Build safe Markdown rendering (no raw HTML, no remote images, links as confirm-to-open buttons, copy for text and code blocks) in `apps/desktop/src/renderer/features/conversation/Markdown.tsx`
+- [x] T056 [US1] Build the conversation view with streaming agent messages, distinct reasoning text, notices, and unknown-item placeholders in `apps/desktop/src/renderer/features/conversation/ConversationView.tsx`
+- [x] T057 [US1] Build the composer with send, stop, and attachments gated by agent prompt capabilities in `apps/desktop/src/renderer/features/conversation/Composer.tsx`
+- [x] T058 [P] [US1] Build the approval prompt showing the action and the agent's options in `apps/desktop/src/renderer/features/approvals/ApprovalPrompt.tsx`, showing only one-time options (FR-011), presented as a bar docked above the composer for agent requests and as a blocking dialog for client-guard requests (research.md R20)
+- [x] T059 [P] [US1] Build the error and restart banner and the login-required panel with the embedded login terminal (`xterm.js`) in `apps/desktop/src/renderer/features/sessions/SessionStatus.tsx` and `apps/desktop/src/renderer/features/sessions/LoginPanel.tsx`
+- [x] T060 [US1] Add English and Polish strings for all US1 screens in `apps/desktop/src/renderer/i18n/en.json` and `apps/desktop/src/renderer/i18n/pl.json`
 
 **Checkpoint**: A user can hold a full conversation with an agent, approve requests one by one, stop it, and recover from a crash
 

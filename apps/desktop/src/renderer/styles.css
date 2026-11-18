@@ -25,6 +25,9 @@
   --ok-soft: #e6f4ea;
   --bad: #b42318;
   --bad-soft: #fdebea;
+  --danger: var(--bad);
+  --danger-soft: var(--bad-soft);
+  --surface-2: var(--surface2);
   --run: #3f3f46;
   --run-soft: #ebebe8;
   --code-bg: #f3f3f0;
@@ -60,6 +63,9 @@
   --ok-soft: #12261a;
   --bad: #ff8a80;
   --bad-soft: #331715;
+  --danger: var(--bad);
+  --danger-soft: var(--bad-soft);
+  --surface-2: var(--surface2);
   --run: #d4d4d8;
   --run-soft: #262629;
   --code-bg: #0b0b0c;
@@ -297,4 +303,99 @@ label.f select {
   background: var(--surface);
   border: 1px solid var(--line-strong);
   border-radius: var(--r-sm);
+}
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  border: 1px solid var(--line-strong);
+  background: var(--surface);
+  border-radius: var(--r-sm);
+  padding: 5px 11px;
+  font-weight: 500;
+  font-size: 13px;
+  color: var(--ink);
+  cursor: pointer;
+}
+
+.btn:hover {
+  background: var(--surface3);
+}
+
+.btn.primary {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--accent-ink);
+}
+
+.btn.primary:hover {
+  opacity: 0.88;
+  background: var(--accent);
+}
+
+.btn.ghost {
+  background: transparent;
+}
+
+.btn[disabled] {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 1px 8px 1px 7px;
+  border-radius: 99px;
+  font-size: 11.5px;
+  font-weight: 500;
+  background: var(--surface);
+  border: 1px solid var(--line-strong);
+  color: var(--ink);
+  white-space: nowrap;
+}
+
+.chip::before {
+  content: "";
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--ink3);
+}
+
+.chip.working::before {
+  background: var(--ink);
+}
+
+.chip.waiting::before {
+  background: var(--brass);
+}
+
+.chip.finished::before {
+  background: var(--ok);
+}
+
+.chip.failed::before {
+  background: var(--bad);
+}
+
+.input {
+  font-family: var(--ui);
+  color: var(--ink);
+  font-size: 13px;
+  padding: 8px 10px;
+  background: var(--surface);
+  border: 1px solid var(--line-strong);
+  border-radius: var(--r-sm);
+}
+
+.link-btn {
+  background: none;
+  border: none;
+  padding: 0;
+  color: var(--ink);
+  cursor: pointer;
+  font: inherit;
 }

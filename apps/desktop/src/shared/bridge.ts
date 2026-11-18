@@ -1,79 +1,21 @@
 import { z } from "zod";
+import {
+  BRIDGE_SURFACE,
+  EVENT_CHANNEL,
+  INVOKE_CHANNEL,
+  isTrustedSender,
+  listBridgeMethods,
+  type BridgeGroup,
+} from "./bridge-surface.js";
 
-/**
- * Fixed bridge surface from contracts/ipc.md.
- * Nested keys are the only functions exposed on `window.ster`.
- */
-export const BRIDGE_SURFACE = {
-  app: ["info"],
-  settings: ["get", "set"],
-  agents: [
-    "list",
-    "icon",
-    "refreshRegistry",
-    "planInstall",
-    "install",
-    "remove",
-    "saveCustom",
-    "deleteCustom",
-    "confirmFirstStart",
-  ],
-  dialogs: ["pickFolder", "pickAttachments"],
-  sessions: [
-    "create",
-    "list",
-    "get",
-    "items",
-    "prompt",
-    "cancel",
-    "resolveApproval",
-    "setPermissionMode",
-    "setConfigOption",
-    "rules",
-    "revokeRule",
-    "killCommand",
-    "authMethods",
-    "authenticate",
-    "resume",
-    "restart",
-    "rename",
-    "end",
-    "delete",
-  ],
-  files: ["openLocation"],
-  links: ["open"],
-  factory: ["find", "trust", "revoke", "renderTemplate"],
-  runs: ["list", "get", "rate", "judge", "export", "delete"],
-  login: {
-    terminal: ["start", "input", "resize"],
-  },
-  events: ["subscribe"],
-} as const;
-
-export type BridgeGroup = keyof typeof BRIDGE_SURFACE;
-
-/** Flattened `"group.method"` ids for the invoke channel allow-list. */
-export function listBridgeMethods(): string[] {
-  const flat = (group: string, methods: readonly string[]): string[] =>
-    methods.map((method) => `${group}.${method}`);
-
-  return [
-    ...flat("app", BRIDGE_SURFACE.app),
-    ...flat("settings", BRIDGE_SURFACE.settings),
-    ...flat("agents", BRIDGE_SURFACE.agents),
-    ...flat("dialogs", BRIDGE_SURFACE.dialogs),
-    ...flat("sessions", BRIDGE_SURFACE.sessions),
-    ...flat("files", BRIDGE_SURFACE.files),
-    ...flat("links", BRIDGE_SURFACE.links),
-    ...flat("factory", BRIDGE_SURFACE.factory),
-    ...flat("runs", BRIDGE_SURFACE.runs),
-    ...flat("login.terminal", BRIDGE_SURFACE.login.terminal),
-    ...flat("events", BRIDGE_SURFACE.events),
-  ].sort();
-}
-
-export const EVENT_CHANNEL = "ster:event";
-export const INVOKE_CHANNEL = "ster:invoke";
+export {
+  BRIDGE_SURFACE,
+  EVENT_CHANNEL,
+  INVOKE_CHANNEL,
+  isTrustedSender,
+  listBridgeMethods,
+  type BridgeGroup,
+};
 
 export const settingsPatchSchema = z
   .object({
@@ -86,22 +28,116 @@ export const settingsPatchSchema = z
 
 export const emptySchema = z.undefined();
 
+const idSchema = z.string().min(1);
+const tokenSchema = z.string().min(1);
+
 export const bridgePayloadSchemas: Record<string, z.ZodType> = {
   "app.info": emptySchema,
   "settings.get": emptySchema,
   "settings.set": settingsPatchSchema,
   "events.subscribe": emptySchema,
+  "agents.list": emptySchema,
+  "agents.icon": z.object({ agentId: idSchema }).strict(),
+  "agents.refreshRegistry": z.object({ force: z.boolean().optional() }).strict().optional(),
+  "agents.planInstall": z.object({ agentId: idSchema }).strict(),
+  "agents.install": z.object({ planId: idSchema }).strict(),
+  "agents.remove": z.object({ agentId: idSchema }).strict(),
+  "agents.saveCustom": z
+    .object({
+      id: idSchema.optional(),
+      name: z.string().min(1),
+      command: z.string().min(1),
+      args: z.array(z.string()),
+      env: z.record(z.string(), z.string()),
+    })
+    .strict(),
+  "agents.deleteCustom": z.object({ agentId: idSchema }).strict(),
+  "agents.confirmFirstStart": z.object({ agentId: idSchema }).strict(),
+  "dialogs.pickFolder": emptySchema,
+  "dialogs.pickAttachments": z.object({ sessionId: idSchema }).strict(),
+  "sessions.create": z
+    .object({
+      agentId: idSchema,
+      folderToken: tokenSchema,
+      permissionMode: z.string().min(1).optional(),
+    })
+    .strict(),
+  "sessions.list": z
+    .object({
+      agentId: idSchema.optional(),
+      cwd: z.string().min(1).optional(),
+      status: z.string().min(1).optional(),
+    })
+    .strict()
+    .optional(),
+  "sessions.get": z.object({ sessionId: idSchema }).strict(),
+  "sessions.items": z
+    .object({
+      sessionId: idSchema,
+      before: z.number().int().positive().optional(),
+      limit: z.number().int().positive().max(200).default(50),
+    })
+    .strict(),
+  "sessions.prompt": z
+    .object({
+      sessionId: idSchema,
+      text: z.string().min(1),
+      attachmentTokens: z.array(tokenSchema).default([]),
+    })
+    .strict(),
+  "sessions.cancel": z.object({ sessionId: idSchema }).strict(),
+  "sessions.resolveApproval": z
+    .object({
+      approvalId: idSchema,
+      outcome: z.union([
+        z.object({ optionId: idSchema }).strict(),
+        z.object({ cancelled: z.literal(true) }).strict(),
+      ]),
+    })
+    .strict(),
+  "sessions.setPermissionMode": z.object({ sessionId: idSchema, mode: z.string().min(1) }).strict(),
+  "sessions.setConfigOption": z
+    .object({ sessionId: idSchema, configId: idSchema, value: z.string() })
+    .strict(),
+  "sessions.rules": z.object({ sessionId: idSchema }).strict(),
+  "sessions.revokeRule": z.object({ ruleId: idSchema }).strict(),
+  "sessions.killCommand": z.object({ commandRunId: idSchema }).strict(),
+  "sessions.authMethods": z.object({ sessionId: idSchema }).strict(),
+  "sessions.authenticate": z.object({ sessionId: idSchema, methodId: idSchema }).strict(),
+  "sessions.resume": z.object({ sessionId: idSchema }).strict(),
+  "sessions.restart": z.object({ sessionId: idSchema }).strict(),
+  "sessions.rename": z.object({ sessionId: idSchema, title: z.string().min(1) }).strict(),
+  "sessions.end": z.object({ sessionId: idSchema }).strict(),
+  "sessions.delete": z
+    .object({
+      sessionId: idSchema,
+      runRecords: z.enum(["delete", "keep-without-text"]).default("delete"),
+    })
+    .strict(),
+  "files.openLocation": z
+    .object({
+      sessionId: idSchema,
+      itemSeq: z.number().int().nonnegative(),
+      locationIndex: z.number().int().nonnegative(),
+    })
+    .strict(),
+  "links.open": z
+    .object({
+      sessionId: idSchema,
+      itemSeq: z.number().int().nonnegative(),
+      linkIndex: z.number().int().nonnegative(),
+    })
+    .strict(),
+  "login.terminal.start": z.object({ sessionId: idSchema, methodId: idSchema }).strict(),
+  "login.terminal.input": z.object({ terminalToken: tokenSchema, data: z.string() }).strict(),
+  "login.terminal.resize": z
+    .object({
+      terminalToken: tokenSchema,
+      cols: z.number().int().positive().max(500),
+      rows: z.number().int().positive().max(200),
+    })
+    .strict(),
 };
-
-/**
- * Reject calls that do not come from the application's own top-level frame.
- */
-export function isTrustedSender(event: {
-  sender: { mainFrame: unknown };
-  senderFrame: unknown;
-}): boolean {
-  return event.senderFrame != null && event.senderFrame === event.sender.mainFrame;
-}
 
 /**
  * Validate an invoke payload for a known method. Unknown methods fail closed.

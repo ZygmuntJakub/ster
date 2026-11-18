@@ -19,6 +19,7 @@ export async function launchApp(): Promise<LaunchedApp> {
     env: {
       ...process.env,
       NODE_ENV: "test",
+      STER_NODE_BINARY: process.execPath,
     },
   });
 

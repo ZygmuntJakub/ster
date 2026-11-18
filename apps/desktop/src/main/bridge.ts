@@ -1,13 +1,16 @@
-import { isSterError, type Core, type CoreEvent } from "@ster/core";
-import { BrowserWindow, ipcMain, type IpcMainInvokeEvent } from "electron";
+import { isSterError, type Core, type CoreEvent, type ConversationItem } from "@ster/core";
+import { BrowserWindow, dialog, ipcMain, shell, type IpcMainInvokeEvent } from "electron";
 import {
-  EVENT_CHANNEL,
   INVOKE_CHANNEL,
   isTrustedSender,
   listBridgeMethods,
   validateBridgePayload,
 } from "../shared/bridge.js";
 import type { CoreHost } from "./core-host.js";
+import { createEventForwarder } from "./event-forwarder.js";
+import { createLinkIndex } from "./link-index.js";
+import { createLoginTerminalManager } from "./login-terminal.js";
+import { createTokenStore } from "./tokens.js";
 
 const allowedMethods = new Set(listBridgeMethods());
 
@@ -30,10 +33,24 @@ function ok<T>(value: T): BridgeResult<T> {
   return { ok: true, value };
 }
 
+function indexItems(
+  linkIndex: ReturnType<typeof createLinkIndex>,
+  items: ConversationItem[],
+): void {
+  for (const item of items) {
+    linkIndex.indexItem(item.sessionId, item.seq, item.payload);
+  }
+}
+
 async function handleMethod(
   host: CoreHost,
   method: string,
   payload: unknown,
+  ctx: {
+    tokens: ReturnType<typeof createTokenStore>;
+    links: ReturnType<typeof createLinkIndex>;
+    login: ReturnType<typeof createLoginTerminalManager>;
+  },
 ): Promise<BridgeResult<unknown>> {
   const core: Core = host.core;
 
@@ -73,12 +90,182 @@ async function handleMethod(
       return ok(core.settings.set(next));
     }
     case "events.subscribe":
-      // Subscription is established from preload via the event channel; invoke is a no-op ack.
       return ok({ subscribed: true });
     case "agents.list":
       return ok(await core.agents.list());
+    case "agents.confirmFirstStart": {
+      const { agentId } = payload as { agentId: string };
+      await core.agents.confirmFirstStart(agentId);
+      return ok({ confirmed: true });
+    }
+    case "dialogs.pickFolder": {
+      const e2eFolder = process.env["STER_E2E_FOLDER"];
+      if (e2eFolder) {
+        const record = ctx.tokens.issueFolder(e2eFolder);
+        return ok({ folderToken: record.token, displayPath: record.displayPath });
+      }
+      const result = await dialog.showOpenDialog({
+        properties: ["openDirectory", "createDirectory"],
+      });
+      if (result.canceled || result.filePaths.length === 0) {
+        return ok({ cancelled: true });
+      }
+      const path = result.filePaths[0];
+      if (!path) {
+        return ok({ cancelled: true });
+      }
+      const record = ctx.tokens.issueFolder(path);
+      return ok({ folderToken: record.token, displayPath: record.displayPath });
+    }
+    case "dialogs.pickAttachments": {
+      const { sessionId } = payload as { sessionId: string };
+      const result = await dialog.showOpenDialog({
+        properties: ["openFile", "multiSelections"],
+      });
+      if (result.canceled || result.filePaths.length === 0) {
+        return ok({ cancelled: true, attachments: [] });
+      }
+      const attachments = result.filePaths.map((path) => {
+        const record = ctx.tokens.issueAttachment(sessionId, path);
+        return { token: record.token, name: record.name };
+      });
+      return ok({ attachments });
+    }
+    case "sessions.create": {
+      const input = payload as {
+        agentId: string;
+        folderToken: string;
+        permissionMode?: string;
+      };
+      const folder = ctx.tokens.resolveFolder(input.folderToken);
+      const createInput: { agentId: string; cwd: string; permissionMode?: string } = {
+        agentId: input.agentId,
+        cwd: folder.path,
+      };
+      if (input.permissionMode !== undefined) {
+        createInput.permissionMode = input.permissionMode;
+      }
+      const session = await core.sessions.create(createInput);
+      return ok(session);
+    }
     case "sessions.list":
-      return ok(await core.sessions.list());
+      return ok(await core.sessions.list(payload as undefined | { agentId?: string }));
+    case "sessions.get": {
+      const { sessionId } = payload as { sessionId: string };
+      return ok(await core.sessions.get(sessionId));
+    }
+    case "sessions.items": {
+      const { sessionId, before, limit } = payload as {
+        sessionId: string;
+        before?: number;
+        limit: number;
+      };
+      const page: { limit: number; before?: number } = { limit };
+      if (before !== undefined) {
+        page.before = before;
+      }
+      const items = await core.sessions.items(sessionId, page);
+      indexItems(ctx.links, items);
+      return ok(items);
+    }
+    case "sessions.prompt": {
+      const { sessionId, text, attachmentTokens } = payload as {
+        sessionId: string;
+        text: string;
+        attachmentTokens: string[];
+      };
+      for (const token of attachmentTokens) {
+        ctx.tokens.resolveAttachment(token, sessionId);
+      }
+      // Attachments are validated; US1 prompt content is text-only until media lands.
+      const run = await core.sessions.prompt(sessionId, [{ type: "text", text }]);
+      return ok(run);
+    }
+    case "sessions.cancel": {
+      const { sessionId } = payload as { sessionId: string };
+      await core.sessions.cancel(sessionId);
+      return ok({ cancelled: true });
+    }
+    case "sessions.resolveApproval": {
+      const { approvalId, outcome } = payload as {
+        approvalId: string;
+        outcome: { optionId: string } | { cancelled: true };
+      };
+      await core.sessions.resolveApproval(approvalId, outcome);
+      return ok({ resolved: true });
+    }
+    case "sessions.authMethods": {
+      const { sessionId } = payload as { sessionId: string };
+      return ok(await core.sessions.authMethods(sessionId));
+    }
+    case "sessions.authenticate": {
+      const { sessionId, methodId } = payload as { sessionId: string; methodId: string };
+      await core.sessions.authenticate(sessionId, methodId);
+      return ok({ authenticated: true });
+    }
+    case "sessions.restart": {
+      const { sessionId } = payload as { sessionId: string };
+      return ok(await core.sessions.restart(sessionId));
+    }
+    case "sessions.rename": {
+      const { sessionId, title } = payload as { sessionId: string; title: string };
+      await core.sessions.rename(sessionId, title);
+      return ok({ renamed: true });
+    }
+    case "sessions.end": {
+      const { sessionId } = payload as { sessionId: string };
+      await core.sessions.end(sessionId);
+      ctx.links.clearSession(sessionId);
+      return ok({ ended: true });
+    }
+    case "sessions.delete": {
+      const { sessionId, runRecords } = payload as {
+        sessionId: string;
+        runRecords: "delete" | "keep-without-text";
+      };
+      await core.sessions.delete(sessionId, { runRecords });
+      ctx.links.clearSession(sessionId);
+      return ok({ deleted: true });
+    }
+    case "links.open": {
+      const { sessionId, itemSeq, linkIndex } = payload as {
+        sessionId: string;
+        itemSeq: number;
+        linkIndex: number;
+      };
+      const url = ctx.links.resolve(sessionId, itemSeq, linkIndex);
+      const choice = await dialog.showMessageBox({
+        type: "question",
+        buttons: ["Cancel", "Open"],
+        defaultId: 1,
+        cancelId: 0,
+        message: "Open this link in your browser?",
+        detail: url,
+      });
+      if (choice.response === 1) {
+        await shell.openExternal(url);
+        return ok({ opened: true });
+      }
+      return ok({ opened: false });
+    }
+    case "login.terminal.start": {
+      const { sessionId, methodId } = payload as { sessionId: string; methodId: string };
+      return ok(await ctx.login.start(sessionId, methodId));
+    }
+    case "login.terminal.input": {
+      const { terminalToken, data } = payload as { terminalToken: string; data: string };
+      ctx.login.input(terminalToken, data);
+      return ok({ written: true });
+    }
+    case "login.terminal.resize": {
+      const { terminalToken, cols, rows } = payload as {
+        terminalToken: string;
+        cols: number;
+        rows: number;
+      };
+      ctx.login.resize(terminalToken, cols, rows);
+      return ok({ resized: true });
+    }
     default:
       return fail("invalid-argument", { method, reason: "not-implemented" });
   }
@@ -88,6 +275,21 @@ async function handleMethod(
  * Register the validating IPC bridge (contracts/ipc.md).
  */
 export function registerBridge(host: CoreHost): () => void {
+  const tokens = createTokenStore();
+  const links = createLinkIndex();
+  const environment: Record<string, string> = {};
+  for (const [key, value] of Object.entries(process.env)) {
+    if (typeof value === "string") {
+      environment[key] = value;
+    }
+  }
+  const login = createLoginTerminalManager({
+    core: host.core,
+    getWindows: () => BrowserWindow.getAllWindows(),
+    environment,
+  });
+  const forwarder = createEventForwarder(() => BrowserWindow.getAllWindows());
+
   const onInvoke = async (
     event: IpcMainInvokeEvent,
     method: unknown,
@@ -101,7 +303,7 @@ export function registerBridge(host: CoreHost): () => void {
     }
     try {
       const validated = validateBridgePayload(method, payload);
-      return await handleMethod(host, method, validated);
+      return await handleMethod(host, method, validated, { tokens, links, login });
     } catch (error) {
       if (isSterError(error)) {
         return fail(error.code, error.details);
@@ -115,15 +317,27 @@ export function registerBridge(host: CoreHost): () => void {
   ipcMain.handle(INVOKE_CHANNEL, onInvoke);
 
   const unsubscribe = host.core.events.subscribe((coreEvent: CoreEvent) => {
-    for (const win of BrowserWindow.getAllWindows()) {
-      if (!win.isDestroyed()) {
-        win.webContents.send(EVENT_CHANNEL, coreEvent);
+    if (coreEvent.type === "item.appended") {
+      links.indexItem(coreEvent.sessionId, coreEvent.item.seq, coreEvent.item.payload);
+    }
+    if (coreEvent.type === "item.updated") {
+      // Keep link index roughly current when payload text grows.
+      const patch = coreEvent.patch;
+      if (typeof patch === "object" && "payload" in patch) {
+        links.indexItem(coreEvent.sessionId, coreEvent.seq, patch.payload);
       }
     }
+    if (coreEvent.type === "session.deleted") {
+      links.clearSession(coreEvent.sessionId);
+    }
+    forwarder.publish(coreEvent);
   });
 
   return () => {
     ipcMain.removeHandler(INVOKE_CHANNEL);
     unsubscribe();
+    forwarder.dispose();
+    login.dispose();
+    tokens.clear();
   };
 }

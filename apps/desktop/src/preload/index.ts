@@ -4,7 +4,7 @@ import {
   EVENT_CHANNEL,
   INVOKE_CHANNEL,
   listBridgeMethods,
-} from "../shared/bridge.js";
+} from "../shared/bridge-surface.js";
 
 type BridgeListener = (event: unknown) => void;
 

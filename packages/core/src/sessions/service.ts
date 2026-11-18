@@ -763,8 +763,11 @@ export function createSessionService(options: CreateSessionServiceOptions): Sess
 
     async restart(sessionId) {
       const session = loadOrThrow(sessionId);
-      if (session.status !== "failed") {
-        throw new SterError("invalid-argument", "Only failed sessions can be restarted");
+      if (session.status !== "failed" && session.status !== "needs-login") {
+        throw new SterError(
+          "invalid-argument",
+          "Only failed or needs-login sessions can be restarted",
+        );
       }
       const existing = live.get(sessionId);
       if (existing) {

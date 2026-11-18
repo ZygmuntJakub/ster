@@ -21,7 +21,54 @@
   "conversation": {
     "title": "Conversation",
     "empty": "Select a session to read the conversation",
-    "placeholder": "Conversation items will appear here"
+    "placeholder": "Conversation items will appear here",
+    "emptySession": "Send a message to start this conversation",
+    "you": "You",
+    "agent": "Agent",
+    "thought": "Reasoning",
+    "notice": "Notice",
+    "unknown": "Unsupported item",
+    "unknownHint": "This {{kind}} item cannot be shown yet",
+    "copy": "Copy",
+    "copied": "Copied",
+    "imageBlocked": "Remote image blocked"
+  },
+  "composer": {
+    "placeholder": "Message the agent…",
+    "send": "Send",
+    "stop": "Stop",
+    "attach": "Attach"
+  },
+  "approval": {
+    "title": "Approval needed",
+    "guardTitle": "Confirm this guarded action",
+    "cancel": "Cancel"
+  },
+  "session": {
+    "new": "New",
+    "newTitle": "New session",
+    "newHint": "Choose an agent and a project folder.",
+    "agent": "Agent",
+    "folder": "Folder",
+    "pickFolder": "Choose folder",
+    "noFolder": "No folder selected",
+    "confirmLaunch": "I confirm starting {{command}} (origin: {{origin}})",
+    "confirmRequired": "Confirm the agent launch before starting",
+    "needAgentFolder": "Pick an agent and a folder",
+    "confinementTitle": "What confinement covers",
+    "confinementBody": "File access is limited to the chosen folder after resolving symlinks. It does not sandbox the agent process, network access, or commands the agent may run later.",
+    "cancel": "Cancel",
+    "start": "Start",
+    "failedTitle": "Session failed",
+    "restart": "Restart"
+  },
+  "login": {
+    "title": "Sign in required",
+    "hint": "This agent needs you to sign in before the session can continue.",
+    "command": "Command",
+    "fallback": "If the login terminal cannot start, run the vendor CLI login in your own terminal, then restart the session.",
+    "terminalFailed": "Login terminal exited without success",
+    "terminalUnavailable": "Login terminal is unavailable on this machine"
   },
   "settings": {
     "title": "Settings",

@@ -51,12 +51,24 @@ export async function startCoreHost(): Promise<CoreHost> {
     }
   }
 
+  // Bundled main lives at apps/desktop/out/main → four levels up to the repo root.
+  const mockAgentEntry = join(__dirname, "../../../../packages/mock-agent/src/index.ts");
+  const hasMockAgent = existsSync(mockAgentEntry);
+  // Under Electron, process.execPath is the Electron binary — mock ACP agents need Node.
+  const nodeExecutable =
+    process.env["STER_NODE_BINARY"] ??
+    process.env["npm_node_execpath"] ??
+    environment["STER_NODE_BINARY"] ??
+    "node";
   const core = await createCore({
     dataDir,
     brand,
     policySources: [],
     environment,
     log,
+    nodeExecutable,
+    includeMockAgent: process.env["NODE_ENV"] !== "production" && hasMockAgent,
+    ...(hasMockAgent ? { mockAgentEntry } : {}),
     platform: {
       openExternal: async (url) => {
         await shell.openExternal(url);
