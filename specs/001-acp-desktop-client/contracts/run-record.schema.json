@@ -1,0 +1,93 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://ster.invalid/schemas/run-record/1",
+  "title": "Ster run record",
+  "description": "One agent turn. Export files are JSON Lines: one object of this shape per line. Designed for reuse by unattended runs in a later stage; no field assumes a person at a screen.",
+  "type": "object",
+  "additionalProperties": true,
+  "required": ["schemaVersion", "id", "sessionId", "kind", "agent", "permissionMode", "cwd", "startedAt", "outcome", "actions", "approvals", "commands", "scores"],
+  "properties": {
+    "schemaVersion": { "const": 1 },
+    "id": { "type": "string" },
+    "sessionId": { "type": "string" },
+    "kind": { "enum": ["task", "judging"] },
+    "request": { "type": ["string", "null"] },
+    "agent": {
+      "type": "object",
+      "required": ["id", "name"],
+      "properties": { "id": { "type": "string" }, "name": { "type": "string" }, "version": { "type": "string" } }
+    },
+    "model": { "type": "string" },
+    "mode": { "type": "string" },
+    "permissionMode": { "type": "string" },
+    "cwd": { "type": "string" },
+    "factoryDefinitionHash": { "type": "string" },
+    "templateId": { "type": "string" },
+    "startedAt": { "type": "string", "format": "date-time" },
+    "endedAt": { "type": "string", "format": "date-time" },
+    "durationMs": { "type": "integer", "minimum": 0 },
+    "outcome": { "enum": ["completed", "cancelled", "failed", "interrupted"] },
+    "stopReason": { "type": "string" },
+    "error": { "type": "string" },
+    "actions": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["toolCallId", "kind", "status"],
+        "properties": {
+          "toolCallId": { "type": "string" },
+          "kind": { "type": "string" },
+          "title": { "type": "string" },
+          "status": { "enum": ["pending", "in_progress", "completed", "failed"] },
+          "locations": { "type": "array", "items": { "type": "object", "required": ["path"], "properties": { "path": { "type": "string" }, "line": { "type": "integer" } } } }
+        }
+      }
+    },
+    "approvals": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["subject", "decidedBy"],
+        "properties": {
+          "subject": { "type": "string" },
+          "decidedBy": { "enum": ["user", "rule", "mode", "cancelled"] },
+          "optionKind": { "enum": ["allow_once", "allow_always", "reject_once", "reject_always"] }
+        }
+      }
+    },
+    "commands": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["command"],
+        "properties": { "command": { "type": "string" }, "exitCode": { "type": "integer" }, "durationMs": { "type": "integer" } }
+      }
+    },
+    "usage": {
+      "description": "Only what the agent reported. Absent means unknown.",
+      "type": "object",
+      "properties": {
+        "contextUsed": { "type": "integer" },
+        "contextSize": { "type": "integer" },
+        "cost": { "type": "object", "required": ["amount", "currency"], "properties": { "amount": { "type": "number" }, "currency": { "type": "string" } } }
+      }
+    },
+    "scores": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["source", "value", "createdAt"],
+        "properties": {
+          "source": { "enum": ["user", "agent"] },
+          "value": { "type": "number" },
+          "scale": { "type": "object", "required": ["min", "max"], "properties": { "min": { "type": "number" }, "max": { "type": "number" } } },
+          "note": { "type": "string" },
+          "reasoning": { "type": "string" },
+          "criteria": { "type": "array", "items": { "type": "object", "required": ["id", "value"], "properties": { "id": { "type": "string" }, "value": { "type": "number" } } } },
+          "judge": { "type": "object", "properties": { "agentId": { "type": "string" }, "version": { "type": "string" }, "model": { "type": "string" }, "judgingRunId": { "type": "string" } } },
+          "createdAt": { "type": "string", "format": "date-time" }
+        }
+      }
+    }
+  }
+}

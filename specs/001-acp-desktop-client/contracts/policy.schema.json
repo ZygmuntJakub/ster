@@ -1,0 +1,78 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://ster.invalid/schemas/policy/1",
+  "title": "Ster organization policy",
+  "description": "Restrictions an organization places on the application. Every item is optional; an absent item means no restriction. Policy can only restrict.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["version"],
+  "properties": {
+    "version": { "const": 1 },
+    "agents": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "allow": {
+          "description": "Agent ids that may be installed and started. Absent: all agents.",
+          "type": "array",
+          "items": { "type": "string", "pattern": "^[a-z][a-z0-9-]*$" },
+          "uniqueItems": true
+        },
+        "customAllowed": {
+          "description": "Whether users may add and start agents defined by a start command.",
+          "type": "boolean",
+          "default": true
+        }
+      }
+    },
+    "registry": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["mode"],
+      "properties": {
+        "mode": { "enum": ["public", "custom", "disabled"] },
+        "url": {
+          "description": "Registry index in the public registry format. Required when mode is custom.",
+          "type": "string",
+          "format": "uri",
+          "pattern": "^https://"
+        }
+      },
+      "if": { "properties": { "mode": { "const": "custom" } } },
+      "then": { "required": ["mode", "url"] }
+    },
+    "install": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "requireChecksum": {
+          "description": "Refuse to install agents for which the registry publishes no checksum.",
+          "type": "boolean",
+          "default": false
+        },
+        "allowInstallScripts": {
+          "description": "Whether users may allow package install scripts for an agent.",
+          "type": "boolean",
+          "default": true
+        }
+      }
+    },
+    "permissions": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "modes": {
+          "description": "Selectable permission modes. Absent: all modes.",
+          "type": "array",
+          "items": { "type": "string" },
+          "minItems": 1,
+          "uniqueItems": true
+        },
+        "default": {
+          "description": "Mode preselected for new sessions. Must be one of modes when modes is present.",
+          "type": "string"
+        }
+      }
+    }
+  }
+}

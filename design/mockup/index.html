@@ -1,0 +1,1065 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Ster - UI mockup</title>
+<style>
+/* ==========================================================================
+   Ster UI mockup. Design reference only: all data is fake, nothing is fetched.
+   Visual identity: flat, monochrome, quiet. Near-white panels on warm gray,
+   near-black text and primary buttons, hairline borders. Colour is reserved
+   for tiny status signals (green done, amber needs a decision, red failed).
+   Labels are small uppercase mono; numbers and ids are mono.
+   ========================================================================== */
+:root {
+  --bg: #E7E7E4;          /* page behind the app panel */
+  --canvas: #F6F6F4;      /* content area, behind cards */
+  --side: #EFEFEC;        /* sidebar */
+  --surface: #FFFFFF;     /* cards */
+  --surface2: #F6F6F4;
+  --surface3: #EBEBE8;
+  --line: #E2E2DE;
+  --line-strong: #C9C9C4;
+  --ink: #111113;
+  --ink2: #4E4E55;
+  --ink3: #62626A;
+  --accent: #111113;      /* primary button = near-black */
+  --accent-ink: #FFFFFF;
+  --accent-soft: #EBEBE8;
+  --brass: #9A5B00;       /* amber: pending / needs a decision */
+  --brass-soft: #FFF4D6;
+  --ok: #15803D;
+  --ok-soft: #E6F4EA;
+  --bad: #B42318;
+  --bad-soft: #FDEBEA;
+  --run: #3F3F46;
+  --run-soft: #EBEBE8;
+  --code-bg: #F3F3F0;
+  --add-bg: #E5F4E9;
+  --del-bg: #FCEBE8;
+  --shadow: 0 1px 2px rgba(17,17,19,.06), 0 8px 24px rgba(17,17,19,.08);
+  --scrim: rgba(17,17,19,.4);
+  --ui: "Inter", "Geist", system-ui, -apple-system, "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+  --mono: ui-monospace, "SF Mono", "Geist Mono", Menlo, Consolas, "Liberation Mono", monospace;
+  --r-sm: 6px;
+  --r-md: 9px;
+  --r-lg: 14px;
+}
+:root[data-theme="dark"] {
+  --bg: #050505;
+  --canvas: #0D0D0E;
+  --side: #111112;
+  --surface: #171719;
+  --surface2: #1C1C1F;
+  --surface3: #262629;
+  --line: #2A2A2E;
+  --line-strong: #44444A;
+  --ink: #F2F2F0;
+  --ink2: #B4B4BA;
+  --ink3: #97979E;
+  --accent: #F2F2F0;
+  --accent-ink: #0A0A0A;
+  --accent-soft: #262629;
+  --brass: #F0B84A;
+  --brass-soft: #2D2410;
+  --ok: #4ADE80;
+  --ok-soft: #12261A;
+  --bad: #FF8A80;
+  --bad-soft: #331715;
+  --run: #D4D4D8;
+  --run-soft: #262629;
+  --code-bg: #0B0B0C;
+  --add-bg: #12281A;
+  --del-bg: #301816;
+  --shadow: 0 1px 2px rgba(0,0,0,.5), 0 8px 24px rgba(0,0,0,.55);
+  --scrim: rgba(0,0,0,.65);
+}
+
+* { box-sizing: border-box; }
+html, body { margin: 0; height: 100%; }
+body { font-family: var(--ui); background: var(--bg); color: var(--ink); font-size: 13px; line-height: 1.45; overflow: hidden; }
+button, select, input, textarea { font: inherit; color: inherit; }
+button { cursor: pointer; }
+code, pre, .mono { font-family: var(--mono); }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 4px; }
+svg.ic { width: 16px; height: 16px; flex: none; fill: none; stroke: currentColor; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; }
+
+/* ---------- mockup controls (not part of the product) ---------- */
+#ctl { height: 46px; display: flex; align-items: center; gap: 18px; padding: 0 14px; background: #241E33; color: #E9E4F5; border-bottom: 3px solid #E8B24F; font-size: 12px; overflow-x: auto; white-space: nowrap; }
+#ctl .ctl-title { font-weight: 700; color: #F4C969; flex: none; }
+#ctl .grp { display: flex; align-items: center; gap: 6px; flex: none; }
+#ctl .grp > span { color: #B9B0D1; }
+#ctl .seg { display: flex; border: 1px solid #5A4F78; border-radius: 6px; overflow: hidden; }
+#ctl .seg button { background: transparent; border: 0; color: #E9E4F5; padding: 4px 9px; font-size: 12px; border-right: 1px solid #5A4F78; }
+#ctl .seg button:last-child { border-right: 0; }
+#ctl .seg button[aria-pressed="true"] { background: #F4C969; color: #241E33; font-weight: 700; }
+#ctl .seg button:focus-visible { outline-color: #fff; outline-offset: -2px; }
+#ctl .reset { background: transparent; border: 1px solid #5A4F78; color: #E9E4F5; border-radius: 6px; padding: 4px 9px; font-size: 12px; }
+
+/* ---------- app frame ---------- */
+#app { position: relative; height: calc(100vh - 46px); min-height: 640px; display: flex; background: var(--bg); overflow: hidden; }
+/* Controls bar wraps instead of scrolling, so every switch stays reachable at any width. */
+html, body { height: 100%; margin: 0; }
+body { display: flex; flex-direction: column; }
+#ctl { height: auto; min-height: 46px; flex: none; flex-wrap: wrap; gap: 6px 16px; padding: 6px 14px; overflow: visible; }
+#app { flex: 1 1 auto; height: auto; min-height: 0; }
+.col { display: flex; flex-direction: column; min-width: 0; min-height: 0; }
+.grow { flex: 1; }
+.scroll { overflow: auto; min-height: 0; }
+.muted { color: var(--ink2); }
+.faint { color: var(--ink3); }
+.row { display: flex; align-items: center; gap: 8px; }
+.sp { flex: 1; }
+
+/* ---------- app panel on gray page ---------- */
+#app { padding: 10px; background: var(--bg); }
+.frame { flex: 1; min-width: 0; display: flex; background: var(--canvas); border: 1px solid var(--line); border-radius: 14px; overflow: hidden; }
+.mainc { min-width: 0; min-height: 0; }
+
+/* labels: small uppercase mono */
+.lbl { font-family: var(--mono); font-size: 10.5px; font-weight: 500; letter-spacing: .08em; text-transform: uppercase; color: var(--ink2); }
+
+/* logo mark: black rounded square with a minimal S */
+.logo-sq { width: 28px; height: 28px; border-radius: 8px; background: var(--accent); display: grid; place-items: center; flex: none; }
+.logo-sq svg { width: 18px; height: 18px; stroke: var(--accent-ink); stroke-width: 2.2; fill: none; stroke-linecap: round; stroke-linejoin: round; }
+
+/* buttons */
+.btn { display: inline-flex; align-items: center; gap: 6px; border: 1px solid var(--line-strong); background: var(--surface); border-radius: var(--r-sm); padding: 5px 11px; font-weight: 500; font-size: 13px; }
+.btn:hover { background: var(--surface3); }
+.btn.primary { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); }
+.btn.primary:hover { opacity: .88; background: var(--accent); }
+.btn.danger { color: var(--bad); border-color: var(--line-strong); }
+.btn.sm { padding: 3px 8px; font-size: 12px; }
+.btn[disabled] { opacity: .45; cursor: not-allowed; }
+.iconbtn, .ib { display: inline-grid; place-items: center; width: 30px; height: 30px; border: 1px solid transparent; background: transparent; border-radius: var(--r-sm); color: var(--ink2); }
+.ib { border-color: var(--line); background: var(--surface); border-radius: 8px; }
+.ib.sm { width: 22px; height: 22px; border-radius: 6px; }
+.ib.sm svg { width: 13px; height: 13px; }
+.iconbtn:hover, .ib:hover { background: var(--surface3); color: var(--ink); }
+.iconbtn[aria-pressed="true"], .ib[aria-pressed="true"] { background: var(--surface3); color: var(--ink); }
+
+select, input[type=text], textarea { background: var(--surface); border: 1px solid var(--line-strong); border-radius: var(--r-sm); padding: 4px 8px; }
+select { padding-right: 4px; }
+select:disabled, input:disabled { opacity: .65; cursor: not-allowed; background: var(--surface3); }
+label.f { display: flex; flex-direction: column; gap: 4px; font-family: var(--mono); font-size: 10.5px; letter-spacing: .08em; text-transform: uppercase; color: var(--ink2); font-weight: 500; }
+label.f input { font-family: var(--ui); font-weight: 400; color: var(--ink); font-size: 13px; padding: 6px 8px; text-transform: none; letter-spacing: 0; }
+
+/* status chips: outlined pill + coloured dot */
+.chip { display: inline-flex; align-items: center; gap: 6px; padding: 1px 8px 1px 7px; border-radius: 99px; font-size: 11.5px; font-weight: 500; background: var(--surface); border: 1px solid var(--line-strong); color: var(--ink); white-space: nowrap; }
+.chip::before { content: ""; width: 6px; height: 6px; border-radius: 50%; background: var(--ink3); }
+.chip.nodot::before { display: none; }
+.chip.working::before, .chip.in_progress::before { background: var(--ink); }
+.chip.waiting::before, .chip.pending::before, .chip.needs_login::before, .chip.update::before { background: var(--brass); }
+.chip.finished::before, .chip.completed::before, .chip.ready::before { background: var(--ok); }
+.chip.failed::before { background: var(--bad); }
+.badge-org { display: inline-flex; align-items: center; gap: 5px; font-size: 11.5px; font-weight: 500; color: var(--ink2); background: var(--surface2); border: 1px solid var(--line-strong); border-radius: 99px; padding: 1px 8px; }
+.badge-org svg { width: 12px; height: 12px; }
+
+.dot { width: 8px; height: 8px; border-radius: 50%; flex: none; background: var(--ink3); }
+.dot.working { background: var(--ink); }
+.dot.waiting { background: var(--brass); box-shadow: 0 0 0 3px var(--brass-soft); }
+.dot.finished { background: var(--ok); }
+.dot.failed { background: var(--bad); }
+
+
+/* C rail */
+.rail { width: 64px; flex: none; background: var(--side); display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 12px 0; }
+.rail button { width: 52px; padding: 7px 0 5px; border: 1px solid transparent; background: transparent; border-radius: 10px; display: flex; flex-direction: column; align-items: center; gap: 3px; color: var(--ink2); font-size: 10.5px; font-weight: 500; }
+.rail button svg { width: 18px; height: 18px; }
+.rail button:hover { background: var(--surface3); }
+.rail button[aria-current="page"] { background: var(--surface); border-color: var(--line); color: var(--ink); }
+
+/* ---------- top bar ---------- */
+.tb { height: 50px; flex: none; display: flex; align-items: center; gap: 10px; padding: 0 16px; }
+.crumb { display: flex; gap: 7px; min-width: 0; overflow: hidden; white-space: nowrap; color: var(--ink3); font-size: 13px; }
+.crumb b { font-weight: 500; color: var(--ink); overflow: hidden; text-overflow: ellipsis; }
+.search { display: flex; align-items: center; gap: 7px; width: 240px; max-width: 30vw; border: 1px solid var(--line); background: var(--surface); border-radius: 8px; padding: 3px 7px 3px 9px; color: var(--ink3); }
+.search input { border: 0; background: transparent; padding: 3px 0; flex: 1; min-width: 0; font-size: 12.5px; color: var(--ink); }
+.search input:focus-visible { outline: none; }
+.search:focus-within { outline: 2px solid var(--accent); outline-offset: 2px; }
+.kbd { font-family: var(--mono); font-size: 10.5px; border: 1px solid var(--line-strong); border-radius: 4px; padding: 0 5px; background: var(--surface2); color: var(--ink2); }
+
+/* C board */
+.board-C { width: 316px; flex: none; background: var(--canvas); border-right: 1px solid var(--line); padding: 4px 12px 12px; gap: 10px; }
+.tally { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; }
+.tally div { background: var(--surface); border: 1px solid var(--line); border-radius: var(--r-md); padding: 6px 4px; text-align: center; font-size: 10.5px; color: var(--ink2); line-height: 1.25; }
+.tally b { display: block; font-size: 18px; font-family: var(--mono); font-weight: 500; color: var(--ink); }
+.scard { text-align: left; width: 100%; background: var(--surface); border: 1px solid var(--line); border-radius: var(--r-md); padding: 10px 12px; display: flex; flex-direction: column; gap: 6px; }
+.scard:hover { border-color: var(--line-strong); }
+.scard[aria-current="true"] { border-color: var(--ink); box-shadow: 0 0 0 1px var(--ink); }
+.scard .ti { font-weight: 600; font-size: 13px; line-height: 1.3; }
+.scard .meta { font-family: var(--mono); font-size: 11px; color: var(--ink3); display: flex; gap: 10px; flex-wrap: wrap; }
+.bar { height: 4px; border-radius: 2px; background: var(--surface3); overflow: hidden; }
+.bar i { display: block; height: 100%; background: var(--ink); }
+
+/* ---------- cards ---------- */
+.card { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; }
+.card.pad { padding: 12px 14px; }
+.card h3 { margin: 0 0 8px; font-family: var(--mono); font-size: 10.5px; font-weight: 500; letter-spacing: .08em; text-transform: uppercase; color: var(--ink2); }
+.card-h { display: flex; align-items: center; gap: 8px; min-height: 22px; margin-bottom: 8px; }
+.card-h .lbl { flex: 1; }
+
+/* ---------- conversation ---------- */
+.conv { flex: 1; min-width: 0; background: var(--canvas); position: relative; }
+.chead { flex: none; padding: 2px 18px 12px; display: flex; flex-direction: column; gap: 8px; }
+.chead .line { display: flex; flex-wrap: wrap; gap: 6px 12px; align-items: center; }
+.chead .title { margin: 0; font-weight: 600; font-size: 20px; letter-spacing: -.01em; line-height: 1.25; }
+.chead .sel { display: flex; align-items: center; gap: 5px; font-family: var(--mono); font-size: 10.5px; letter-spacing: .06em; text-transform: uppercase; color: var(--ink3); }
+.chead select { font-family: var(--ui); font-size: 12.5px; letter-spacing: 0; text-transform: none; color: var(--ink); font-weight: 500; padding: 4px 6px; background: var(--surface); }
+.pathtag { font-family: var(--mono); font-size: 11.5px; color: var(--ink2); display: inline-flex; align-items: center; gap: 5px; }
+.agenttag { display: inline-flex; align-items: center; gap: 5px; font-weight: 500; font-size: 12px; background: var(--surface); border: 1px solid var(--line-strong); color: var(--ink); padding: 0 8px; border-radius: 6px; }
+.agenttag svg { width: 13px; height: 13px; }
+
+.msgs { display: flex; flex-direction: column; gap: 12px; padding: 4px 18px 20px; }
+
+.m-user { align-self: flex-end; max-width: 80%; background: var(--surface3); color: var(--ink); padding: 8px 12px; border-radius: 12px 12px 3px 12px; }
+.m-agent { display: flex; flex-direction: column; gap: 8px; }
+.who { font-family: var(--mono); font-size: 10.5px; letter-spacing: .08em; text-transform: uppercase; color: var(--ink3); display: flex; gap: 6px; align-items: center; }
+.reply { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 10px 14px; }
+.reply h4 { margin: 2px 0 6px; font-weight: 600; font-size: 1.05em; }
+.reply ul { margin: 6px 0; padding-left: 20px; }
+.reply p { margin: 6px 0; }
+.reply code.i { background: var(--code-bg); border: 1px solid var(--line); padding: 0 5px; border-radius: 4px; font-size: .88em; }
+pre.code { margin: 8px 0; background: var(--code-bg); border: 1px solid var(--line); border-radius: var(--r-sm); padding: 9px 11px; overflow: auto; font-size: 12px; line-height: 1.5; color: var(--ink); }
+.caret { display: inline-block; width: 7px; height: 14px; background: var(--ink); vertical-align: -2px; margin-left: 2px; animation: blink 1.1s steps(2) infinite; }
+@keyframes blink { 50% { opacity: 0; } }
+@media (prefers-reduced-motion: reduce) { .caret, .term .cur { animation: none; } }
+
+details.reason { border-left: 2px dashed var(--line-strong); padding-left: 10px; color: var(--ink2); font-style: italic; font-size: .93em; }
+details.reason summary { cursor: pointer; font-style: normal; color: var(--ink3); list-style: none; display: flex; align-items: center; gap: 6px; }
+details.reason summary .lbl { color: var(--ink3); }
+details.reason summary::-webkit-details-marker { display: none; }
+details.reason p { margin: 6px 0 2px; }
+
+/* action cards */
+.act { background: var(--surface); border: 1px solid var(--line); border-radius: 8px; }
+.act.st-pending { border-left: 3px solid var(--brass); }
+.act > summary, .act > .act-h { display: flex; align-items: center; gap: 9px; padding: 7px 10px; list-style: none; }
+.act > summary { cursor: pointer; }
+.act > summary::-webkit-details-marker { display: none; }
+.act .kind { display: inline-flex; align-items: center; gap: 6px; min-width: 76px; font-family: var(--mono); font-size: 10.5px; font-weight: 500; letter-spacing: .08em; text-transform: uppercase; color: var(--ink2); }
+.act .tgt { font-family: var(--mono); font-size: .88em; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; flex: 1; }
+.act .body { padding: 2px 10px 10px; display: flex; flex-direction: column; gap: 8px; }
+.act .link { background: none; border: 0; color: var(--ink); font-weight: 500; font-size: 12px; padding: 0; text-decoration: underline; text-underline-offset: 2px; }
+.act .why { font-size: .9em; color: var(--ink2); }
+
+.notice { display: flex; align-items: center; gap: 8px; color: var(--ink2); font-size: .9em; padding: 2px 4px; }
+.notice svg { color: var(--ok); }
+.notice b { font-weight: 500; color: var(--ink); }
+
+/* diff: subtle tints only */
+.diff { border: 1px solid var(--line); border-radius: var(--r-sm); overflow: hidden; background: var(--surface); }
+.diff .dh { display: flex; gap: 8px; align-items: center; padding: 5px 9px; background: var(--surface2); border-bottom: 1px solid var(--line); font-family: var(--mono); font-size: 12px; }
+.diff .dh .plus { color: var(--ok); }
+.diff .dh .minus { color: var(--bad); }
+.diff pre { margin: 0; font-size: 12px; line-height: 1.55; overflow: auto; }
+.diff .ln { display: block; padding: 0 9px 0 6px; white-space: pre; }
+.diff .ln i { display: inline-block; width: 18px; font-style: normal; color: var(--ink3); user-select: none; }
+.diff .ln.add { background: var(--add-bg); }
+.diff .ln.del { background: var(--del-bg); }
+.diff .ln.hunk { color: var(--ink3); background: var(--surface2); }
+
+/* plan = checklist card */
+.plan { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 10px 12px; }
+.plan ol { margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 6px; }
+.plan li { display: flex; gap: 8px; align-items: flex-start; }
+.plan li .pi { width: 15px; height: 15px; border-radius: 4px; border: 1.5px solid var(--line-strong); display: grid; place-items: center; flex: none; margin-top: 2px; }
+.plan li.completed .pi { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); }
+.plan li.completed .pi svg { width: 11px; height: 11px; stroke-width: 3; }
+.plan li.in_progress .pi { border-color: var(--ink); box-shadow: inset 0 0 0 3px var(--surface), inset 0 0 0 8px var(--ink); }
+.plan li.pending .pi { border-style: dashed; }
+.plan li.completed span.tx { color: var(--ink2); text-decoration: line-through; text-decoration-color: var(--line-strong); }
+.plan li .chip { margin-left: auto; }
+
+/* command */
+.cmd { background: var(--code-bg); border: 1px solid var(--line); border-radius: var(--r-sm); overflow: hidden; }
+.cmd .ch { display: flex; align-items: center; gap: 8px; padding: 5px 9px; border-bottom: 1px solid var(--line); font-family: var(--mono); font-size: 12px; }
+.cmd .ch .exit { margin-left: auto; font-weight: 500; }
+.cmd .exit.ok { color: var(--ok); }
+.cmd .exit.bad { color: var(--bad); }
+.cmd pre { margin: 0; padding: 8px 10px; font-size: 12px; line-height: 1.5; overflow: auto; max-height: 180px; }
+
+/* approval: neutral card, thin amber edge */
+.appr { background: var(--surface); border: 1px solid var(--line-strong); border-left: 3px solid var(--brass); border-radius: 10px; padding: 12px 14px; display: flex; flex-direction: column; gap: 9px; }
+.appr .ah { display: flex; gap: 8px; align-items: center; font-weight: 600; }
+.appr .ah svg { color: var(--brass); }
+.appr .what { font-family: var(--mono); font-size: 12.5px; background: var(--code-bg); border: 1px solid var(--line); border-radius: var(--r-sm); padding: 7px 10px; overflow-wrap: anywhere; color: var(--ink); }
+.appr .btns { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+.appr .remember { display: flex; gap: 7px; align-items: flex-start; font-size: 12.5px; color: var(--ink); }
+.appr .remember small { display: block; color: var(--ink3); font-size: 11.5px; }
+.appr input[type=checkbox] { margin-top: 3px; accent-color: var(--ink); }
+
+/* composer */
+.composer { flex: none; position: relative; }
+.cbox { background: var(--surface); border: 1px solid var(--line-strong); border-radius: 10px; display: flex; flex-direction: column; max-width: 780px; margin: 0 auto; width: 100%; }
+.cbox textarea { border: 0; resize: none; background: transparent; padding: 10px 12px 4px; min-height: 52px; outline-offset: -2px; }
+.cbar { display: flex; align-items: center; gap: 4px; padding: 4px 6px 6px; }
+.slashmenu { position: absolute; bottom: 100%; left: 50%; transform: translateX(-50%); width: min(420px, calc(100% - 28px)); background: var(--surface); border: 1px solid var(--line-strong); border-radius: 10px; box-shadow: var(--shadow); margin-bottom: 4px; overflow: hidden; z-index: 5; }
+.slashmenu button { display: flex; gap: 12px; width: 100%; text-align: left; border: 0; background: transparent; padding: 8px 12px; align-items: baseline; }
+.slashmenu button:hover, .slashmenu button:focus-visible { background: var(--surface3); }
+.slashmenu code { font-weight: 600; min-width: 74px; }
+.slashmenu span { color: var(--ink2); font-size: 12.5px; }
+
+
+/* ---------- generic screens ---------- */
+.screen { flex: 1; min-width: 0; overflow: auto; }
+.screen-in { padding: 6px 20px 40px; display: flex; flex-direction: column; gap: 14px; }
+h2.sh { margin: 0; font-weight: 600; font-size: 20px; letter-spacing: -.01em; }
+.lead { margin: 4px 0 0; color: var(--ink2); max-width: 64ch; }
+
+/* agents */
+.agents { display: flex; flex-direction: column; gap: 8px; }
+.agent { display: flex; gap: 12px; align-items: center; padding: 10px 14px; }
+.agent .av { width: 32px; height: 32px; border-radius: 8px; background: var(--surface3); border: 1px solid var(--line); color: var(--ink); display: grid; place-items: center; font-family: var(--mono); font-weight: 500; font-size: 14px; flex: none; }
+.agent .nm { font-weight: 600; }
+.agent .sub { color: var(--ink2); font-size: .92em; }
+.agent .info { flex: 1; min-width: 0; }
+.term { background: #0B0B0C; color: #E2E2E0; border-radius: var(--r-sm); padding: 10px 12px; font-family: var(--mono); font-size: 12px; line-height: 1.6; border: 1px solid #2A2A2E; }
+.term .pr { color: #8A8A90; }
+.term .hl { color: #F0B84A; }
+.term .cur { display: inline-block; width: 7px; height: 13px; background: #E2E2E0; vertical-align: -2px; animation: blink 1.1s steps(2) infinite; }
+.formgrid { display: grid; grid-template-columns: 1fr 1.3fr 1.3fr auto; gap: 10px; align-items: end; }
+@media (max-width: 1100px) { .formgrid { grid-template-columns: 1fr 1fr; } }
+
+/* runs */
+.stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; }
+.stat { padding: 10px 12px 10px; }
+.stat .big { font-family: var(--mono); font-size: 24px; font-weight: 500; letter-spacing: -.02em; line-height: 1.2; }
+.stat .cap { margin-top: 6px; font-size: 11.5px; color: var(--ink3); }
+@media (max-width: 1100px) { .stats { grid-template-columns: repeat(2, 1fr); } }
+.filters { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+.filters input[type=text] { min-width: 180px; }
+.runs-wrap { display: flex; gap: 12px; align-items: flex-start; min-height: 0; }
+.tbl { width: 100%; border-collapse: collapse; background: var(--surface); border: 1px solid var(--line); border-radius: 10px; overflow: hidden; font-size: 13px; }
+.tbl th { text-align: left; font-family: var(--mono); font-size: 10.5px; font-weight: 500; letter-spacing: .08em; text-transform: uppercase; color: var(--ink3); background: var(--surface); padding: 9px 10px; border-bottom: 1px solid var(--line); white-space: nowrap; }
+.tbl td { padding: 8px 10px; border-bottom: 1px solid var(--line); vertical-align: middle; }
+.tbl tr:last-child td { border-bottom: 0; }
+.tbl tr.rr { cursor: pointer; }
+.tbl tr.rr:hover td { background: var(--surface2); }
+.tbl tr.rr[aria-selected="true"] td { background: var(--surface3); }
+.tbl td.req { max-width: 240px; font-weight: 500; }
+.tbl td.req div { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.tbl .num { text-align: right; font-family: var(--mono); font-variant-numeric: tabular-nums; white-space: nowrap; }
+.tbl th.num { text-align: right; }
+.tablewrap { flex: 1; min-width: 0; overflow-x: auto; }
+.detail { width: 290px; flex: none; padding: 14px 16px; display: flex; flex-direction: column; gap: 12px; }
+.detail h3.dt { margin: 0; font-family: var(--ui); font-size: 15px; font-weight: 600; letter-spacing: 0; text-transform: none; color: var(--ink); line-height: 1.3; }
+.summ { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+.summ div { background: var(--surface2); border: 1px solid var(--line); border-radius: var(--r-sm); padding: 6px 8px; font-size: 11.5px; color: var(--ink2); }
+.summ b { display: block; font-family: var(--mono); font-weight: 500; font-size: 17px; color: var(--ink); }
+.stars { display: inline-flex; gap: 1px; }
+.stars button { border: 0; background: transparent; padding: 1px; color: var(--line-strong); }
+.stars button svg { width: 18px; height: 18px; }
+.stars button.on { color: var(--ink); }
+.stars button.on svg { fill: currentColor; }
+.stars.ro button { cursor: default; pointer-events: none; }
+.stars.ro svg { width: 13px; height: 13px; }
+
+/* settings */
+.srow { display: flex; align-items: center; gap: 16px; padding: 11px 0; border-bottom: 1px solid var(--line); }
+.srow:last-child { border-bottom: 0; padding-bottom: 2px; }
+.srow .lbl2 { flex: 1; min-width: 0; }
+.srow .lbl2 b { display: block; font-weight: 600; }
+.srow .lbl2 span { color: var(--ink2); font-size: .92em; }
+.srow.locked .lbl2 b { color: var(--ink2); }
+.notebox { display: flex; gap: 10px; align-items: flex-start; background: var(--surface); color: var(--ink); border-radius: 10px; padding: 10px 14px; border: 1px solid var(--line); border-left: 3px solid var(--brass); }
+.notebox svg { color: var(--brass); margin-top: 2px; }
+
+/* modal */
+.scrim { position: absolute; inset: 0; background: var(--scrim); display: grid; place-items: center; z-index: 20; padding: 16px; }
+.dialog { background: var(--surface); border: 1px solid var(--line-strong); border-radius: 14px; box-shadow: var(--shadow); width: min(520px, 100%); padding: 18px 20px; display: flex; flex-direction: column; gap: 12px; max-height: 100%; overflow: auto; }
+.dialog h3 { margin: 0; font-size: 17px; font-weight: 600; }
+.dl { display: grid; grid-template-columns: 120px 1fr; gap: 6px 12px; font-size: 13px; margin: 0; }
+.dl dt { font-family: var(--mono); font-size: 10.5px; letter-spacing: .08em; text-transform: uppercase; color: var(--ink2); padding-top: 2px; }
+.dl dd { margin: 0; overflow-wrap: anywhere; }
+.verify { display: flex; gap: 8px; align-items: flex-start; padding: 8px 11px; border-radius: var(--r-sm); font-size: 13px; border: 1px solid var(--line); background: var(--surface2); }
+.verify.good svg { color: var(--ok); }
+.verify.warn { border-left: 3px solid var(--bad); }
+.verify.warn svg { color: var(--bad); }
+.verify span { color: var(--ink2); }
+.dialog .btns { display: flex; gap: 8px; justify-content: flex-end; }
+.toast { position: absolute; left: 50%; bottom: 20px; transform: translateX(-50%); background: var(--accent); color: var(--accent-ink); padding: 8px 14px; border-radius: 99px; font-weight: 500; z-index: 30; }
+
+
+/* ---------- final design (C + docked approval) ---------- */
+.tb { padding: 0 24px; }
+.screen-in { padding: 4px 24px 32px; gap: 16px; }
+.chead { padding: 4px 24px 12px; gap: 8px; }
+.chead .meta { gap: 8px 14px; }
+.msgs { padding: 4px 24px 20px; max-width: none; margin: 0; width: auto; }
+.composer { padding: 0 24px 18px; }
+.cbox { max-width: none; margin: 0; }
+.slashmenu { left: 24px; transform: none; }
+.dockrow { flex: none; padding: 0 24px 8px; }
+.appr.dock { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 6px 16px; align-items: center; width: 100%; }
+.appr.dock .what { font-size: 12px; padding: 5px 9px; }
+.appr.dock .btns { grid-column: 2; grid-row: 1 / span 3; flex-direction: column; align-items: stretch; }
+.appr.dock .btns .btn { justify-content: center; }
+.board-C { width: 330px; }
+.tally div { display: flex; flex-direction: column; align-items: center; justify-content: flex-start; gap: 2px; font-size: 10px; line-height: 1.2; text-align: center; padding: 6px 3px; min-height: 54px; }
+.bar { height: 3px; }
+.bar.bad i { background: var(--bad); }
+.agents { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+@media (min-width: 1500px) { .agents { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+.agent { display: flex; flex-direction: column; align-items: stretch; gap: 12px; padding: 14px; }
+.ag-h { display: flex; gap: 12px; align-items: flex-start; }
+.ag-f { margin-top: auto; display: flex; align-items: center; justify-content: space-between; gap: 8px; flex-wrap: wrap; min-height: 28px; }
+.agent .info { flex: 1; min-width: 0; overflow-wrap: anywhere; }
+.agent .info .badge-org { margin-top: 6px; max-width: 100%; }
+.runs-wrap { display: grid; grid-template-columns: minmax(0, 1fr) 320px; gap: 12px; align-items: start; }
+@media (max-width: 1180px) { .runs-wrap { grid-template-columns: minmax(0, 1fr); } }
+.detail { width: auto; }
+.tbl th { white-space: normal; vertical-align: bottom; padding: 9px 8px; }
+.tbl td { white-space: nowrap; padding: 8px; }
+.tbl td.req { width: 100%; max-width: 0; overflow: hidden; text-overflow: ellipsis; }
+.tbl td.req div { overflow: hidden; text-overflow: ellipsis; }
+.tbl .sub { font-family: var(--mono); font-size: 10.5px; color: var(--ink3); }
+.set-in { max-width: 760px; }
+.badge-org { white-space: nowrap; }
+@media (max-width: 1100px) { .tb .badge-org { display: none; } }
+.rail { width: 78px; }
+.rail button { width: 70px; }
+.board-C { width: 316px; }
+.chead .meta { gap: 6px 10px; }
+.chead select { max-width: 172px; }
+.dockrow { padding-top: 8px; }
+.srow select { max-width: 280px; }
+.srow .lbl2 { flex: 1 1 260px; }
+.appr.dock .remember small { display: inline; margin-left: 6px; }
+.appr.dock { padding: 10px 14px; gap: 5px 16px; }
+.chead select { max-width: 190px; }
+.chead { gap: 6px; padding-bottom: 8px; }
+</style>
+</head>
+<body>
+
+<div id="ctl" role="toolbar" aria-label="Mockup controls"></div>
+<div id="app"></div>
+
+<script>
+/* ==========================================================================
+   1. Dictionary. Agent-produced text and sample project data stay English.
+   ========================================================================== */
+const I18N = {
+  en: {
+    appName: "Ster", org: "Managed by Acme Corp",
+    navConversation: "Conversation", navAgents: "Agents", navRuns: "Runs", navSettings: "Settings",
+    newSession: "New session", board: "Mission board",
+    stWorking: "Working", stWaiting: "Waiting for approval", stFinished: "Finished", stFailed: "Failed",
+    folderLabel: "Folder", modeLabel: "Mode", modelLabel: "Model", permLabel: "Permissions",
+    modeCode: "Code", modePlan: "Plan first", modeAsk: "Ask only",
+    permAsk: "Always ask", permSession: "Ask, remember for session", permReads: "Auto-approve reads",
+    reasoning: "Reasoning", reasoningHint: "Collapsed. Click to read.",
+    kRead: "Read", kSearch: "Search", kEdit: "Edit", kExecute: "Run",
+    sPending: "Pending", sInProgress: "In progress", sCompleted: "Completed", sFailed: "Failed",
+    autoRule: "Approved automatically by rule", autoRuleWhy: "Rule: read-only actions inside this folder",
+    ruleManaged: "managed by your organization",
+    rememberedNote: "Ster will approve this kind of command for the rest of this session.",
+    rejectedNote: "You rejected this action. The agent was told the request was denied.",
+    stoppedNote: "You stopped the agent. The pending request was cancelled.",
+    planTitle: "Plan", planProgress: "of 5 steps done",
+    changesTitle: "Changes", commandsTitle: "Commands",
+    exitCode: "exit code", noOutputYet: "No output yet.",
+    apprTitle: "The agent wants to run a command", apprAllow: "Allow once", apprReject: "Reject",
+    apprRemember: "Remember for this session", apprRememberHint: "Ster option. The agent only ever receives a one-time decision.",
+    apprWhere: "Folder",
+    attach: "Attach file", slash: "Commands", send: "Send", stop: "Stop", composerPlaceholder: "Message the agent, or type / for commands",
+    cmdPlanD: "Ask for a plan before any edits", cmdReviewD: "Review the uncommitted changes", cmdCompactD: "Summarize and shrink the context", cmdClearD: "Clear the conversation, keep the folder",
+    guardTag: "Ster guard", guardTitle: "The agent wants to write outside the project folder", guardPath: "Path", guardWhy: "This folder is outside the project folder ~/work/acme-api. Nothing is written unless you allow it.",
+    /* agents */
+    agentsTitle: "Agents", agentsLead: "Agents that Ster can talk to on this computer. Install, sign in or update them here.",
+    aReady: "Ready", aNeedsLogin: "Needs login", aNotInstalled: "Not installed", aUpdate: "Update available", aUnavailable: "Unavailable on this system", aBlocked: "Blocked by your organization",
+    aUnavailableWhy: "Requires macOS 14 or later on Apple silicon.", aBlockedWhy: "Not on the approved agents list.",
+    aReadySub: "Version", aUpdateSub: "Installed 0.14.2, new 0.15.0",
+    btnInstall: "Install", btnLogin: "Log in", btnUpdate: "Update", btnOpen: "Open session",
+    loginTitle: "Login required: Codex", loginLead: "Codex needs you to sign in before it can start a session. Complete the steps below in your browser.", loginCancel: "Cancel", loginRetry: "Check again",
+    customTitle: "Add custom agent", customLead: "Run any agent that speaks the Agent Client Protocol over standard input and output.",
+    fName: "Name", fCommand: "Command", fArgs: "Arguments", addAgent: "Add agent", customAdded: "Custom agent added",
+    custom: "Custom",
+    instTitle: "Install", instSource: "Source", instVersion: "Version", instSize: "Download size", instRuntime: "Extra runtime", instNone: "None, nothing else is downloaded.",
+    instRuntimeYes: "Node.js 22.11.0 will also be downloaded (31 MB).", instVerified: "Verified (SHA-256)", instVerifiedD: "The download matches the checksum published by the vendor.",
+    instUnverified: "Cannot be verified", instUnverifiedD: "No checksum is published. Install only if you trust the source.", instCancel: "Cancel", instConfirm: "Download and install",
+    /* runs */
+    runsTitle: "Runs", runsLead: "Every request you sent to an agent, with what it cost and how it went.",
+    fSearch: "Search requests", fAgent: "Agent", fOutcome: "Outcome", fAll: "All", fFolder: "Folder", fPeriod: "Period", p7: "Last 7 days", p30: "Last 30 days",
+    cRequest: "Request", cAgent: "Agent", cFolder: "Folder", cDuration: "Duration", cOutcome: "Outcome", cCost: "Cost", cRating: "Your rating", cScore: "Agent score",
+    oCompleted: "Completed", oCancelled: "Cancelled", oFailed: "Failed", oInterrupted: "Interrupted",
+    unknown: "unknown", tRuns: "Runs", tCost: "Known cost", tTime: "Total time", tAvg: "Avg. agent score", tScored: "runs scored",
+    dActions: "What the agent did", dReads: "Reads", dSearches: "Searches", dEdits: "Edits", dCommands: "Commands",
+    dRate: "Your rating", dJudge: "Have it judged", dJudging: "Judged by a second agent", dJudgeText: "Scored 4 of 5. The retry logic is correct and tested; the backoff ceiling is not configurable.",
+    dNone: "Select a run to see its details.", noRuns: "No runs match these filters.",
+    /* settings */
+    setTitle: "Settings", setLead: "Preferences for this computer. Some are set by your organization.",
+    sLang: "Language", sLangD: "Language of the Ster interface.", sTheme: "Theme", sThemeD: "Light or dark appearance.", themeLight: "Light", themeDark: "Dark",
+    sPerm: "Default permission mode", sPermD: "Used for every new session.", sAgent: "Default agent", sAgentD: "Preselected when you start a session.",
+    sAllowed: "Allowed permission modes", sAllowedD: "Modes people can choose in a session. Auto-approve reads is not allowed.", sAllowedV: "Always ask; Ask, remember for session",
+    sRegistry: "Agent sources", sRegistryD: "Where agents may be downloaded from.", sRegistryV: "Acme Corp registry only",
+    managed: "Managed by your organization", managedHint: "Contact your IT administrator to change this.",
+    confineTitle: "About folder confinement",
+    confineText: "Folder confinement covers only operations the agent performs through Ster (reading, editing and running commands that Ster mediates). It cannot stop an agent from acting outside the folder by other means.",
+    secGeneral: "General", secAgents: "Agents and permissions", secOrg: "Set by your organization",
+    searchPh: "Search sessions and runs", more: "More", notifications: "Notifications",
+  },
+  pl: {
+    appName: "Ster", org: "Zarządzane przez Acme Corp",
+    navConversation: "Rozmowa", navAgents: "Agenci", navRuns: "Przebiegi", navSettings: "Ustawienia",
+    newSession: "Nowa sesja", board: "Tablica sesji",
+    stWorking: "Pracuje", stWaiting: "Czeka na zgodę", stFinished: "Zakończona", stFailed: "Nieudana",
+    folderLabel: "Folder", modeLabel: "Tryb", modelLabel: "Model", permLabel: "Uprawnienia",
+    modeCode: "Kodowanie", modePlan: "Najpierw plan", modeAsk: "Tylko pytania",
+    permAsk: "Zawsze pytaj", permSession: "Pytaj, zapamiętaj na sesję", permReads: "Odczyty automatycznie",
+    reasoning: "Rozumowanie", reasoningHint: "Zwinięte. Kliknij, aby przeczytać.",
+    kRead: "Odczyt", kSearch: "Szukanie", kEdit: "Edycja", kExecute: "Polecenie",
+    sPending: "Oczekuje", sInProgress: "W toku", sCompleted: "Ukończono", sFailed: "Nieudane",
+    autoRule: "Zatwierdzono automatycznie przez regułę", autoRuleWhy: "Reguła: akcje tylko do odczytu w tym folderze",
+    ruleManaged: "zarządzana przez Twoją organizację",
+    rememberedNote: "Ster będzie zatwierdzać ten rodzaj poleceń do końca tej sesji.",
+    rejectedNote: "Odrzucono tę akcję. Agent otrzymał informację o odmowie.",
+    stoppedNote: "Zatrzymano agenta. Oczekująca prośba została anulowana.",
+    planTitle: "Plan", planProgress: "z 5 kroków wykonano",
+    changesTitle: "Zmiany", commandsTitle: "Polecenia",
+    exitCode: "kod wyjścia", noOutputYet: "Brak wyniku.",
+    apprTitle: "Agent chce uruchomić polecenie", apprAllow: "Zezwól raz", apprReject: "Odrzuć",
+    apprRemember: "Zapamiętaj na tę sesję", apprRememberHint: "Opcja Stera. Agent zawsze dostaje tylko jednorazową decyzję.",
+    apprWhere: "Folder",
+    attach: "Dołącz plik", slash: "Polecenia", send: "Wyślij", stop: "Zatrzymaj", composerPlaceholder: "Napisz do agenta lub wpisz / dla poleceń",
+    cmdPlanD: "Poproś o plan przed jakąkolwiek edycją", cmdReviewD: "Przejrzyj niezatwierdzone zmiany", cmdCompactD: "Streść i zmniejsz kontekst", cmdClearD: "Wyczyść rozmowę, zachowaj folder",
+    guardTag: "Strażnik Stera", guardTitle: "Agent chce zapisać plik poza folderem projektu", guardPath: "Ścieżka", guardWhy: "Ten folder jest poza folderem projektu ~/work/acme-api. Nic nie zostanie zapisane, dopóki nie zezwolisz.",
+    agentsTitle: "Agenci", agentsLead: "Agenci, z którymi Ster może rozmawiać na tym komputerze. Instaluj, loguj i aktualizuj ich tutaj.",
+    aReady: "Gotowy", aNeedsLogin: "Wymaga logowania", aNotInstalled: "Nie zainstalowany", aUpdate: "Dostępna aktualizacja", aUnavailable: "Niedostępny w tym systemie", aBlocked: "Zablokowany przez Twoją organizację",
+    aUnavailableWhy: "Wymaga macOS 14 lub nowszego na procesorze Apple.", aBlockedWhy: "Nie ma go na liście zatwierdzonych agentów.",
+    aReadySub: "Wersja", aUpdateSub: "Zainstalowano 0.14.2, nowa 0.15.0",
+    btnInstall: "Zainstaluj", btnLogin: "Zaloguj", btnUpdate: "Aktualizuj", btnOpen: "Otwórz sesję",
+    loginTitle: "Wymagane logowanie: Codex", loginLead: "Codex wymaga zalogowania, zanim rozpocznie sesję. Wykonaj poniższe kroki w przeglądarce.", loginCancel: "Anuluj", loginRetry: "Sprawdź ponownie",
+    customTitle: "Dodaj własnego agenta", customLead: "Uruchom dowolnego agenta obsługującego Agent Client Protocol przez standardowe wejście i wyjście.",
+    fName: "Nazwa", fCommand: "Polecenie", fArgs: "Argumenty", addAgent: "Dodaj agenta", customAdded: "Dodano własnego agenta",
+    custom: "Własny",
+    instTitle: "Instalacja", instSource: "Źródło", instVersion: "Wersja", instSize: "Rozmiar pobierania", instRuntime: "Dodatkowe środowisko", instNone: "Brak, nic więcej nie zostanie pobrane.",
+    instRuntimeYes: "Zostanie też pobrany Node.js 22.11.0 (31 MB).", instVerified: "Zweryfikowano (SHA-256)", instVerifiedD: "Pobrany plik zgadza się z sumą kontrolną opublikowaną przez dostawcę.",
+    instUnverified: "Nie można zweryfikować", instUnverifiedD: "Nie opublikowano sumy kontrolnej. Instaluj tylko, jeśli ufasz źródłu.", instCancel: "Anuluj", instConfirm: "Pobierz i zainstaluj",
+    runsTitle: "Przebiegi", runsLead: "Każde zlecenie wysłane do agenta, z kosztem i wynikiem.",
+    fSearch: "Szukaj zleceń", fAgent: "Agent", fOutcome: "Wynik", fAll: "Wszystkie", fFolder: "Folder", fPeriod: "Okres", p7: "Ostatnie 7 dni", p30: "Ostatnie 30 dni",
+    cRequest: "Zlecenie", cAgent: "Agent", cFolder: "Folder", cDuration: "Czas", cOutcome: "Wynik", cCost: "Koszt", cRating: "Twoja ocena", cScore: "Ocena agenta",
+    oCompleted: "Ukończony", oCancelled: "Anulowany", oFailed: "Nieudany", oInterrupted: "Przerwany",
+    unknown: "nieznany", tRuns: "Przebiegi", tCost: "Znany koszt", tTime: "Łączny czas", tAvg: "Śr. ocena agenta", tScored: "ocenionych przebiegów",
+    dActions: "Co zrobił agent", dReads: "Odczyty", dSearches: "Szukania", dEdits: "Edycje", dCommands: "Polecenia",
+    dRate: "Twoja ocena", dJudge: "Zleć ocenę", dJudging: "Oceniono przez drugiego agenta", dJudgeText: "Ocena 4 z 5. Logika ponowień jest poprawna i przetestowana; górny limit opóźnienia nie jest konfigurowalny.",
+    dNone: "Wybierz przebieg, aby zobaczyć szczegóły.", noRuns: "Żaden przebieg nie pasuje do filtrów.",
+    setTitle: "Ustawienia", setLead: "Preferencje dla tego komputera. Część z nich ustawia Twoja organizacja.",
+    sLang: "Język", sLangD: "Język interfejsu Stera.", sTheme: "Motyw", sThemeD: "Jasny lub ciemny wygląd.", themeLight: "Jasny", themeDark: "Ciemny",
+    sPerm: "Domyślny tryb uprawnień", sPermD: "Używany w każdej nowej sesji.", sAgent: "Domyślny agent", sAgentD: "Wybrany z góry przy starcie sesji.",
+    sAllowed: "Dozwolone tryby uprawnień", sAllowedD: "Tryby, które można wybrać w sesji. Automatyczne zatwierdzanie odczytów jest niedozwolone.", sAllowedV: "Zawsze pytaj; Pytaj, zapamiętaj na sesję",
+    sRegistry: "Źródła agentów", sRegistryD: "Skąd wolno pobierać agentów.", sRegistryV: "Tylko rejestr Acme Corp",
+    managed: "Zarządzane przez Twoją organizację", managedHint: "Aby to zmienić, skontaktuj się z administratorem IT.",
+    confineTitle: "O ograniczeniu do folderu",
+    confineText: "Ograniczenie do folderu obejmuje tylko operacje, które agent wykonuje przez Ster (odczyt, edycję i polecenia pośredniczone przez Ster). Nie powstrzyma agenta przed działaniem poza folderem innymi sposobami.",
+    secGeneral: "Ogólne", secAgents: "Agenci i uprawnienia", secOrg: "Ustawione przez organizację",
+    searchPh: "Szukaj sesji i przebiegów", more: "Więcej", notifications: "Powiadomienia",
+  }
+};
+
+/* ==========================================================================
+   2. State. Theme, language and screen mirror the URL hash so a combination
+      can be linked. Any other hash keys (e.g. old layout=/approval=) are ignored.
+   ========================================================================== */
+const OPTIONS = {
+  theme: ["light", "dark"],
+  lang: ["en", "pl"],
+  screen: ["conversation", "agents", "runs", "settings"],
+};
+const S = {
+  theme: "light", lang: "en", screen: "conversation",
+  // demo state (not in the hash)
+  ap: "pending",          // agent request: pending | allowed | rejected | stopped
+  remember: false, guard: false, slashOpen: false, draft: "",
+  sel: 1, installing: null, toast: "", selRun: 3, runAgent: "all", runOutcome: "all", runQuery: "",
+  rated: {}, judged: {}, customAgents: [], open: {},
+  defPerm: "permSession", defAgent: "Claude Code",
+};
+function readHash() {
+  const p = new URLSearchParams(location.hash.slice(1));
+  for (const k of Object.keys(OPTIONS)) { const v = p.get(k); if (v && OPTIONS[k].includes(v)) S[k] = v; }
+}
+function writeHash() {
+  const p = new URLSearchParams();
+  for (const k of Object.keys(OPTIONS)) p.set(k, S[k]);
+  history.replaceState(null, "", "#" + p.toString());
+}
+const t = (k) => (I18N[S.lang][k] !== undefined ? I18N[S.lang][k] : (I18N.en[k] !== undefined ? I18N.en[k] : k));
+
+/* ==========================================================================
+   3. Sample data (English on purpose: it is project data, not UI)
+   ========================================================================== */
+const PROJECTS = [
+  { name: "acme-api", path: "~/work/acme-api" },
+  { name: "acme-web", path: "~/work/acme-web" },
+];
+const SESSIONS = [
+  { id: 1, proj: 0, title: "Add retry with backoff to the HTTP client", agent: "Claude Code", model: "claude-sonnet-5.5", st: "dynamic", progress: 60 },
+  { id: 2, proj: 0, title: "Fix flaky pagination test", agent: "Codex", model: "gpt-5-codex", st: "finished", progress: 100 },
+  { id: 3, proj: 1, title: "Migrate sidebar to MDX", agent: "Gemini CLI", model: "gemini-2.5-pro", st: "working", progress: 35 },
+  { id: 4, proj: 1, title: "Update changelog script", agent: "goose", model: "claude-haiku-4.5", st: "failed", progress: 80 },
+];
+function sessionStatus(s) {
+  if (s.st !== "dynamic") return s.st;
+  return S.ap === "pending" ? "waiting" : "finished";
+}
+const stLabel = (st) => t({ working: "stWorking", waiting: "stWaiting", finished: "stFinished", failed: "stFailed" }[st]);
+
+const PLAN = [
+  ["completed", "Read the current HTTP client and its error handling"],
+  ["completed", "Add a retry helper with exponential backoff and jitter"],
+  ["in_progress", "Wire the helper into HttpClient.request()"],
+  ["pending", "Write unit tests with fake timers"],
+  ["pending", "Run the full test suite and the type check"],
+];
+const DIFF = {
+  path: "src/http/retry.ts", plus: 14, minus: 2,
+  lines: [
+    ["hunk", "", "@@ -1,6 +1,18 @@"],
+    ["ctx", "1", "export interface RetryOptions {"],
+    ["del", "2", "  attempts: number;"],
+    ["add", "2", "  attempts: number;          // total tries, including the first"],
+    ["add", "3", "  baseDelayMs: number;       // delay before the 2nd try"],
+    ["add", "4", "  maxDelayMs: number;"],
+    ["ctx", "5", "}"],
+    ["ctx", "6", ""],
+    ["del", "7", "export const withRetry = (fn) => fn();"],
+    ["add", "7", "export async function withRetry<T>("],
+    ["add", "8", "  fn: () => Promise<T>,"],
+    ["add", "9", "  { attempts, baseDelayMs, maxDelayMs }: RetryOptions,"],
+    ["add", "10", "): Promise<T> {"],
+    ["add", "11", "  for (let i = 0; ; i++) {"],
+    ["add", "12", "    try { return await fn(); }"],
+    ["add", "13", "    catch (err) {"],
+    ["add", "14", "      if (i + 1 >= attempts) throw err;"],
+    ["add", "15", "      await sleep(backoff(i, baseDelayMs, maxDelayMs));"],
+    ["add", "16", "    }"],
+    ["add", "17", "  }"],
+    ["add", "18", "}"],
+  ],
+};
+const TSC_OUT = "$ npx tsc --noEmit\n(no errors)";
+const TEST_OUT_OK = "$ npm test -- retry\n\n PASS  test/retry.test.ts\n  withRetry\n    ok retries up to 3 times (4 ms)\n    ok stops on success (1 ms)\n    ok caps the delay at maxDelayMs (2 ms)\n\nTests: 3 passed, 3 total";
+const REPLY_MD = `<h4>Retry with backoff is in place</h4>
+<p>I added <code class="i">withRetry</code> and used it for idempotent requests only:</p>
+<ul><li>Delay grows as <code class="i">base * 2^n</code> with full jitter, capped by <code class="i">maxDelayMs</code>.</li>
+<li>Only <code class="i">GET</code> and <code class="i">PUT</code> are retried; <code class="i">POST</code> never is.</li>
+<li>Network errors and HTTP 502, 503, 504 count as retryable.</li></ul>
+<pre class="code">const data = await withRetry(
+  () => client.get("/orders"),
+  { attempts: 4, baseDelayMs: 200, maxDelayMs: 5000 },
+);</pre>`;
+const AGENTS = [
+  { n: "Claude Code", st: "ready", ver: "2.1.4" },
+  { n: "Codex", st: "needs_login", sub: "" },
+  { n: "Gemini CLI", st: "notinstalled", inst: { ver: "0.9.2", size: "48.3 MB", url: "github.com/google-gemini/gemini-cli/releases/download/v0.9.2/gemini-darwin-arm64.tar.gz", verified: true, runtime: true } },
+  { n: "OpenCode", st: "notinstalled", inst: { ver: "1.3.0", size: "22.1 MB", url: "cdn.opencode.example/dl/opencode-1.3.0-darwin-arm64.zip", verified: false, runtime: false } },
+  { n: "goose", st: "update", sub: "aUpdateSub" },
+  { n: "Cursor Agent", st: "unavailable", sub: "aUnavailableWhy" },
+  { n: "Internal Review Agent", st: "blocked", sub: "aBlockedWhy" },
+];
+const RUNS = [
+  { id: 1, req: "Add retry with backoff to the HTTP client", agent: "Claude Code", model: "claude-sonnet-5.5", folder: "acme-api", dur: "6m 12s", out: "completed", cost: "$0.84", rating: 5, score: 4, a: [7, 3, 4, 3] },
+  { id: 2, req: "Fix flaky pagination test", agent: "Codex", model: "gpt-5-codex", folder: "acme-api", dur: "3m 40s", out: "completed", cost: null, rating: 4, score: 4, a: [5, 2, 1, 4] },
+  { id: 3, req: "Migrate sidebar to MDX", agent: "Gemini CLI", model: "gemini-2.5-pro", folder: "acme-web", dur: "11m 05s", out: "interrupted", cost: "$1.92", rating: 0, score: null, a: [12, 6, 9, 5] },
+  { id: 4, req: "Update changelog script", agent: "goose", model: "claude-haiku-4.5", folder: "acme-web", dur: "1m 58s", out: "failed", cost: "$0.07", rating: 2, score: 2, a: [3, 1, 2, 2] },
+  { id: 5, req: "Rename OrderDto to OrderResponse", agent: "Claude Code", model: "claude-opus-4.5", folder: "acme-api", dur: "4m 31s", out: "completed", cost: "$2.31", rating: 5, score: 5, a: [9, 4, 14, 2] },
+  { id: 6, req: "Explain the auth middleware", agent: "Claude Code", model: "claude-sonnet-5.5", folder: "acme-api", dur: "0m 48s", out: "cancelled", cost: "$0.05", rating: 0, score: null, a: [4, 2, 0, 0] },
+  { id: 7, req: "Bump TypeScript to 5.9", agent: "Codex", model: "gpt-5-codex", folder: "acme-web", dur: "7m 20s", out: "completed", cost: null, rating: 3, score: 3, a: [6, 1, 8, 6] },
+];
+
+/* ==========================================================================
+   4. Icons (inline SVG, 24 grid)
+   ========================================================================== */
+const ICONS = {
+  read: '<path d="M6 3h8l4 4v14H6z"/><path d="M14 3v4h4"/>',
+  search: '<circle cx="11" cy="11" r="6"/><path d="M20 20l-4.5-4.5"/>',
+  edit: '<path d="M4 20l1-4L16 5l3 3L8 19z"/><path d="M14 7l3 3"/>',
+  execute: '<rect x="3" y="4" width="18" height="16" rx="2"/><path d="M7 9l3 3-3 3M13 15h4"/>',
+  diff: '<path d="M8 4v12M4 12l4 4 4-4M16 20V8M12 12l4-4 4 4"/>',
+  folder: '<path d="M3 7a2 2 0 012-2h4l2 2h8a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2z"/>',
+  plus: '<path d="M12 5v14M5 12h14"/>',
+  slash: '<path d="M16 4L8 20"/>',
+  send: '<path d="M4 12l16-8-6 16-3-7z"/>',
+  stop: '<rect x="6" y="6" width="12" height="12" rx="2"/>',
+  clip: '<path d="M20 11l-8 8a5 5 0 01-7-7l9-9a3.5 3.5 0 015 5l-9 9a2 2 0 01-3-3l8-8"/>',
+  check: '<path d="M5 12.5l4.5 4.5L19 7"/>',
+  x: '<path d="M6 6l12 12M18 6L6 18"/>',
+  chev: '<path d="M9 6l6 6-6 6"/>',
+  lock: '<rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V8a4 4 0 018 0v3"/>',
+  agents: '<rect x="5" y="7" width="14" height="11" rx="3"/><path d="M12 7V4M9 12h.01M15 12h.01M9 15h6"/>',
+  runs: '<circle cx="12" cy="12" r="8"/><path d="M12 8v4l3 2"/>',
+  gear: '<circle cx="12" cy="12" r="3"/><path d="M12 3v3M12 18v3M3 12h3M18 12h3M5.6 5.6l2.1 2.1M16.3 16.3l2.1 2.1M18.4 5.6l-2.1 2.1M7.7 16.3l-2.1 2.1"/>',
+  chat: '<path d="M4 5h16v11H9l-5 4z"/>',
+  star: '<path d="M12 3.5l2.6 5.4 5.9.8-4.3 4.1 1 5.9L12 16.9 6.8 19.7l1-5.9L3.5 9.7l5.9-.8z"/>',
+  shield: '<path d="M12 3l7 3v6c0 4.5-3 7.5-7 9-4-1.5-7-4.5-7-9V6z"/>',
+  download: '<path d="M12 4v11M7 11l5 5 5-5M5 20h14"/>',
+  alert: '<path d="M12 4l9 16H3z"/><path d="M12 10v4M12 17h.01"/>',
+  info: '<circle cx="12" cy="12" r="9"/><path d="M12 11v5M12 8h.01"/>',
+  bolt: '<path d="M13 3L5 14h6l-1 7 8-11h-6z"/>',
+  bell: '<path d="M6 17V11a6 6 0 0112 0v6l1.5 2h-15zM10 21h4"/>',
+  dots: '<path d="M5 12h.01M12 12h.01M19 12h.01"/>',
+};
+const ic = (n) => `<svg class="ic" viewBox="0 0 24 24" aria-hidden="true">${ICONS[n]}</svg>`;
+// The mark: a black rounded square (see .logo-sq) holding a minimal S.
+const LOGO = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M16.5 8.2c-1-1.3-2.5-2-4.3-2-2.3 0-3.8 1.1-3.8 2.8 0 4 8 1.9 8 6 0 1.8-1.7 3-4.1 3-2 0-3.6-.8-4.7-2.1"/></svg>';
+
+/* ==========================================================================
+   5. Small view helpers
+   ========================================================================== */
+const chip = (cls, label, nodot) => `<span class="chip ${cls}${nodot ? " nodot" : ""}">${label}</span>`;
+const statusChip = (st) => chip(st, t({ pending: "sPending", in_progress: "sInProgress", completed: "sCompleted", failed: "sFailed" }[st]));
+const openAttr = (key, dflt) => `data-key="${key}" ${(S.open[key] !== undefined ? S.open[key] : dflt) ? "open" : ""}`;
+const seg = (name, vals, labels) => `<div class="seg" role="group" aria-label="${name}">${vals.map((v, i) => `<button type="button" data-set="${name}" data-v="${v}" aria-pressed="${S[name] === v}">${labels ? labels[i] : v}</button>`).join("")}</div>`;
+const session = () => SESSIONS.find((s) => s.id === S.sel) || SESSIONS[0];
+const folderOf = (s) => PROJECTS[s.proj];
+
+/* ==========================================================================
+   6. Conversation building blocks
+   ========================================================================== */
+function actionCard(a) {
+  const kindLabel = t({ read: "kRead", search: "kSearch", edit: "kEdit", execute: "kExecute" }[a.kind]);
+  const head = `${ic(a.kind)}<span class="kind">${kindLabel}</span><span class="tgt" title="${a.target}">${a.target}</span>${statusChip(a.status)}`;
+  if (a.body) {
+    return `<details class="act st-${a.status}" ${openAttr("act-" + a.key, a.open)}><summary>${head}</summary><div class="body">${a.note ? `<div class="why">${a.note}</div>` : ""}${a.body}</div></details>`;
+  }
+  return `<div class="act st-${a.status}"><div class="act-h">${head}</div>${a.note ? `<div class="body"><div class="why">${a.note}</div></div>` : ""}</div>`;
+}
+function diffBlock() {
+  return `<div class="diff"><div class="dh">${ic("diff")}<span>${DIFF.path}</span><span class="plus">+${DIFF.plus}</span><span class="minus">-${DIFF.minus}</span></div><pre>${DIFF.lines.map(([k, n, txt]) => `<span class="ln ${k}"><i>${n}</i>${k === "add" ? "+ " : k === "del" ? "- " : "  "}${txt.replace(/</g, "&lt;")}</span>`).join("")}</pre></div>`;
+}
+function planBlock() {
+  const done = PLAN.filter((p) => p[0] === "completed").length;
+  const list = `<ol>${PLAN.map(([st, txt]) => `<li class="${st}"><span class="pi">${st === "completed" ? ic("check") : ""}</span><span class="tx">${txt}</span>${statusChip(st)}</li>`).join("")}</ol>`;
+  return `<div class="plan"><div class="card-h"><span class="lbl">${t("planTitle")}</span><span class="faint">${done} ${t("planProgress")}</span></div>${list}</div>`;
+}
+function cmdBlock(cmd, out, exit) {
+  const exitHtml = exit === null ? "" : `<span class="exit ${exit === 0 ? "ok" : "bad"}">${t("exitCode")} ${exit}</span>`;
+  return `<div class="cmd"><div class="ch">${ic("execute")}<span>${cmd}</span>${exitHtml}</div><pre>${out ? out.replace(/</g, "&lt;") : t("noOutputYet")}</pre></div>`;
+}
+function testActionExtras() {
+  if (S.ap === "allowed") return { status: "completed", body: cmdBlock("npm test -- retry", TEST_OUT_OK, 0), note: "" };
+  if (S.ap === "rejected") return { status: "failed", body: "", note: t("rejectedNote") };
+  if (S.ap === "stopped") return { status: "failed", body: "", note: t("stoppedNote") };
+  return { status: "pending", body: "", note: "" };
+}
+
+/* The agent's request: always a bar docked above the composer. Only one-time choices go to the agent;
+   "remember" is Ster's own option. */
+function approvalBox() {
+  const sess = folderOf(session());
+  return `<div class="dockrow"><div class="appr dock" role="alertdialog" aria-label="${t("apprTitle")}">
+    <div class="ah">${ic("alert")}<span>${t("apprTitle")}</span></div>
+    <div class="what">npm test -- retry <span class="faint">(${t("apprWhere")}: ${sess.path})</span></div>
+    <label class="remember"><input type="checkbox" data-act="remember" ${S.remember ? "checked" : ""}><span>${t("apprRemember")}<small>${t("apprRememberHint")}</small></span></label>
+    <div class="btns"><button class="btn primary" data-act="allow">${ic("check")}${t("apprAllow")}</button><button class="btn" data-act="reject">${ic("x")}${t("apprReject")}</button></div>
+  </div></div>`;
+}
+/* Client guard: a blocking dialog. The safe choice (Reject) is the primary, focused button. No "remember". */
+function guardDialog() {
+  return `<div class="scrim" data-guard><div class="dialog" role="alertdialog" aria-modal="true" aria-labelledby="g-title" aria-describedby="g-why">
+    <span class="lbl">${t("guardTag")}</span>
+    <h3 id="g-title">${t("guardTitle")}</h3>
+    <dl class="dl"><dt>${t("guardPath")}</dt><dd class="mono" style="font-size:12.5px">~/work/shared-config/tsconfig.base.json</dd></dl>
+    <p id="g-why" class="muted" style="margin:0">${t("guardWhy")}</p>
+    <div class="btns"><button class="btn" data-act="guardclose">${t("apprAllow")}</button><button class="btn primary" id="g-reject" data-act="guardclose">${t("apprReject")}</button></div>
+  </div></div>`;
+}
+
+/* The whole transcript: diff, plan and command output expand inside the conversation. */
+function transcript() {
+  const ext = testActionExtras();
+  const cards = [];
+  cards.push(actionCard({ key: "r1", kind: "read", target: "src/http/client.ts", status: "completed" }));
+  cards.push(actionCard({ key: "s1", kind: "search", target: 'grep "fetch(" src/', status: "completed", note: "12 matches in 5 files" }));
+  cards.push(`<div class="notice">${ic("check")}<span><b>${t("autoRule")}</b> <span class="faint">- ${t("autoRuleWhy")} (${t("ruleManaged")})</span></span></div>`);
+  cards.push(actionCard({ key: "e1", kind: "edit", target: DIFF.path, status: "completed", body: diffBlock(), open: true }));
+  cards.push(actionCard({ key: "x1", kind: "execute", target: "npx tsc --noEmit", status: "completed", body: cmdBlock("npx tsc --noEmit", TSC_OUT, 0), open: true }));
+  cards.push(actionCard({ key: "e2", kind: "edit", target: "test/retry.test.ts", status: "in_progress" }));
+  cards.push(actionCard({ key: "r2", kind: "read", target: "config/http.defaults.json", status: "failed", note: "ENOENT: no such file or directory" }));
+  cards.push(actionCard({ key: "x2", kind: "execute", target: "npm test -- retry", status: ext.status, body: ext.body, note: ext.note, open: true }));
+  const remembered = S.ap === "allowed" && S.remember ? `<div class="notice">${ic("info")}<span>${t("rememberedNote")}</span></div>` : "";
+  return `
+    <div class="m-user">Add retry with backoff to the HTTP client and cover it with tests.</div>
+    <div class="m-agent">
+      <div class="who">${ic("bolt")} ${session().agent}</div>
+      <details class="reason" ${openAttr("reason", false)}><summary>${ic("chev")}<span class="lbl">${t("reasoning")}</span> <span class="faint">${t("reasoningHint")}</span></summary><p>The client calls fetch directly in three places. A single helper keeps the retry rules in one spot, so I will add it first and then route request() through it. POST must stay non-retried to avoid duplicate orders.</p></details>
+      ${planBlock()}
+      ${cards.slice(0, 5).join("")}
+      <div class="reply">${REPLY_MD}<span class="caret" aria-hidden="true"></span></div>
+      ${cards.slice(5, 8).join("")}
+      ${remembered}
+    </div>`;
+}
+
+function header() {
+  const s = session(), f = folderOf(s), st = sessionStatus(s);
+  const sel = (id, lab, opts, cur) => `<label class="sel">${lab}<select aria-label="${lab}" data-sel="${id}">${opts.map(([val, txt]) => `<option value="${val}" ${val === cur ? "selected" : ""}>${txt}</option>`).join("")}</select></label>`;
+  const selects = `${sel("mode", t("modeLabel"), [["code", t("modeCode")], ["plan", t("modePlan")], ["ask", t("modeAsk")]], "code")}
+    ${sel("model", t("modelLabel"), [["a", s.model], ["b", "claude-opus-4.5"], ["c", "claude-haiku-4.5"]], "a")}
+    ${sel("perm", t("permLabel"), [["permAsk", t("permAsk")], ["permSession", t("permSession")], ["permReads", t("permReads")]], S.defPerm)}`;
+  return `<div class="chead"><div class="line"><h1 class="title">${s.title}</h1>${chip(st, stLabel(st))}</div>
+    <div class="line meta"><span class="agenttag">${ic("agents")}${s.agent}</span><span class="pathtag" title="${t("folderLabel")}">${ic("folder")}${f.path}</span>${selects}</div></div>`;
+}
+
+function composer() {
+  const working = S.ap === "pending";
+  const cmds = [["/plan", "cmdPlanD"], ["/review", "cmdReviewD"], ["/compact", "cmdCompactD"], ["/clear", "cmdClearD"]];
+  return `<div class="composer">
+    ${S.slashOpen ? `<div class="slashmenu" role="menu">${cmds.map(([c, d]) => `<button role="menuitem" data-act="slashpick" data-v="${c}"><code>${c}</code><span>${t(d)}</span></button>`).join("")}</div>` : ""}
+    <div class="cbox">
+      <textarea rows="2" data-draft placeholder="${t("composerPlaceholder")}" aria-label="${t("composerPlaceholder")}">${S.draft}</textarea>
+      <div class="cbar">
+        <button class="iconbtn" title="${t("attach")}" aria-label="${t("attach")}">${ic("clip")}</button>
+        <button class="iconbtn" data-act="slash" aria-pressed="${S.slashOpen}" aria-label="${t("slash")}" title="${t("slash")}">${ic("slash")}</button>
+        <span class="sp"></span>
+        ${working ? `<button class="btn danger" data-act="stop">${ic("stop")}${t("stop")}</button>` : ""}
+        <button class="btn primary" ${working ? "disabled" : ""}>${ic("send")}${t("send")}</button>
+      </div>
+    </div>
+  </div>`;
+}
+
+/* Scroll area, then the docked approval bar (its own block), then the composer. */
+function conversation() {
+  return `<section class="conv col" aria-label="${t("navConversation")}">
+    ${header()}
+    <div class="scroll grow"><div class="msgs">${transcript()}</div></div>
+    ${S.ap === "pending" ? approvalBox() : ""}
+    ${composer()}
+  </section>`;
+}
+
+/* ---------- rail and session board ---------- */
+const wsName = () => folderOf(session()).name;
+function railC() {
+  return `<nav class="rail" aria-label="Ster"><span class="logo-sq" style="margin-bottom:10px">${LOGO}</span>${NAV.map(([id, icon, k]) => `<button data-act="screen" data-v="${id}" ${S.screen === id ? 'aria-current="page"' : ""} title="${t(k)}">${ic(icon)}<span>${t(k)}</span></button>`).join("")}</nav>`;
+}
+function boardC() {
+  const counts = { working: 0, waiting: 0, finished: 0, failed: 0 };
+  SESSIONS.forEach((s) => counts[sessionStatus(s)]++);
+  const bar = (st, prog) => (st === "working" || st === "waiting") ? `<div class="bar"><i style="width:${prog}%"></i></div>` : st === "failed" ? `<div class="bar bad"><i style="width:100%"></i></div>` : "";
+  return `<aside class="board-C col" aria-label="${t("board")}">
+    <div class="row"><span class="lbl grow">${t("board")}</span><button class="btn sm">${ic("plus")}${t("newSession")}</button></div>
+    <div class="tally">${["working", "waiting", "finished", "failed"].map((k) => `<div><b>${counts[k]}</b><span>${stLabel(k)}</span></div>`).join("")}</div>
+    <div class="scroll grow col" style="gap:8px">${SESSIONS.map((s) => { const st = sessionStatus(s); const prog = s.st === "dynamic" ? 60 : s.progress; return `<button class="scard" data-act="sel" data-v="${s.id}" aria-current="${s.id === S.sel}">
+      <div class="row">${chip(st, stLabel(st))}<span class="sp"></span><span class="faint" style="font-size:11.5px">${s.agent}</span></div>
+      <div class="ti">${s.title}</div>
+      ${bar(st, prog)}
+      <div class="meta"><span>${PROJECTS[s.proj].name}</span><span>${s.model}</span></div></button>`; }).join("")}</div>
+  </aside>`;
+}
+
+/* ==========================================================================
+   7. Other screens
+   ========================================================================== */
+function agentCard(a) {
+  const stMap = { ready: ["ready", "aReady"], needs_login: ["needs_login", "aNeedsLogin"], notinstalled: ["notinstalled", "aNotInstalled"], update: ["update", "aUpdate"], unavailable: ["unavailable", "aUnavailable"], blocked: ["blocked", "aBlocked"] }[a.st];
+  const sub = a.ver ? `${t("aReadySub")} ${a.ver}` : a.inst ? `${t("instVersion")} ${a.inst.ver}` : a.sub ? t(a.sub) : "";
+  let action = "";
+  if (a.st === "ready") action = `<button class="btn sm">${t("btnOpen")}</button>`;
+  if (a.st === "needs_login") action = `<button class="btn sm primary">${t("btnLogin")}</button>`;
+  if (a.st === "notinstalled") action = `<button class="btn sm primary" data-act="install" data-v="${a.n}">${ic("download")}${t("btnInstall")}</button>`;
+  if (a.st === "update") action = `<button class="btn sm">${t("btnUpdate")}</button>`;
+  const lock = a.st === "blocked" ? `<div><span class="badge-org">${ic("lock")}${t("managed")}</span></div>` : "";
+  return `<div class="card agent"><div class="ag-h"><div class="av">${a.n[0]}</div><div class="info"><div class="nm">${a.n}</div><div class="sub">${sub}</div>${lock}</div></div><div class="ag-f">${chip(stMap[0], t(stMap[1]))}${action}</div></div>`;
+}
+function screenAgents() {
+  const all = AGENTS.concat(S.customAgents);
+  return `<div class="screen"><div class="screen-in">
+    <div><h2 class="sh">${t("agentsTitle")}</h2><p class="lead">${t("agentsLead")}</p></div>
+    <div class="agents">${all.map(agentCard).join("")}</div>
+    <div class="card pad"><h3>${t("loginTitle")}</h3><p class="muted" style="margin:0 0 10px">${t("loginLead")}</p>
+      <div class="term"><div><span class="pr">$</span> codex login</div><div>Open this page and sign in:</div><div class="hl">auth.example.com/device</div><div>Enter code: <span class="hl">KXQT-4821</span></div><div>Waiting for sign-in <span class="cur"></span></div></div>
+      <div class="row" style="margin-top:10px"><button class="btn sm">${t("loginRetry")}</button><button class="btn sm">${t("loginCancel")}</button></div></div>
+    <div class="card pad"><h3>${t("customTitle")}</h3><p class="muted" style="margin:0 0 10px">${t("customLead")}</p>
+      <form class="formgrid" data-form="custom"><label class="f">${t("fName")}<input type="text" name="n" value="My review agent" required></label><label class="f">${t("fCommand")}<input type="text" name="c" value="/usr/local/bin/review-agent"></label><label class="f">${t("fArgs")}<input type="text" name="a" value="--acp --stdio"></label><button class="btn primary" type="submit">${ic("plus")}${t("addAgent")}</button></form></div>
+  </div></div>`;
+}
+
+function filteredRuns() {
+  return RUNS.filter((r) => (S.runAgent === "all" || r.agent === S.runAgent) && (S.runOutcome === "all" || r.out === S.runOutcome) && r.req.toLowerCase().includes(S.runQuery.toLowerCase()));
+}
+const oLabel = (o) => t({ completed: "oCompleted", cancelled: "oCancelled", failed: "oFailed", interrupted: "oInterrupted" }[o]);
+const starsHtml = (n, id, ro) => `<span class="stars ${ro ? "ro" : ""}" role="group" aria-label="${t("dRate")}">${[1, 2, 3, 4, 5].map((i) => `<button type="button" class="${i <= n ? "on" : ""}" ${ro ? "tabindex=\"-1\"" : `data-act="rate" data-run="${id}" data-v="${i}"`} aria-label="${i}">${ic("star")}</button>`).join("")}</span>`;
+function screenRuns() {
+  const rs = filteredRuns();
+  const get = (r) => (S.rated[r.id] !== undefined ? S.rated[r.id] : r.rating);
+  const known = rs.filter((r) => r.cost).reduce((a, r) => a + parseFloat(r.cost.slice(1)), 0);
+  const unk = rs.filter((r) => !r.cost).length;
+  const scored = rs.filter((r) => r.score);
+  const avg = scored.length ? (scored.reduce((a, r) => a + r.score, 0) / scored.length).toFixed(1) : "-";
+  const agentsList = [...new Set(RUNS.map((r) => r.agent))];
+  const sel = RUNS.find((r) => r.id === S.selRun);
+  const detail = sel ? (() => {
+    const j = S.judged[sel.id];
+    return `<aside class="card detail"><h3 class="dt">${sel.req}</h3><div class="row" style="flex-wrap:wrap">${chip(sel.out, oLabel(sel.out))}<span class="muted" style="white-space:nowrap">${sel.agent}</span><span class="sub mono faint" style="white-space:nowrap">${sel.model}</span></div>
+      <div><span class="lbl">${t("dActions")}</span><div class="summ" style="margin-top:6px"><div><b>${sel.a[0]}</b>${t("dReads")}</div><div><b>${sel.a[1]}</b>${t("dSearches")}</div><div><b>${sel.a[2]}</b>${t("dEdits")}</div><div><b>${sel.a[3]}</b>${t("dCommands")}</div></div></div>
+      <div><span class="lbl">${t("dRate")}</span><div>${starsHtml(get(sel), sel.id, false)}</div></div>
+      ${j ? `<div class="notebox">${ic("info")}<div><b>${t("dJudging")}</b><div>${t("dJudgeText")}</div></div></div>` : `<button class="btn primary" data-act="judge" data-run="${sel.id}" style="justify-content:center">${ic("bolt")}${t("dJudge")}</button>`}
+    </aside>`;
+  })() : `<aside class="card detail muted">${t("dNone")}</aside>`;
+  const stat = ([l, big, cap]) => `<div class="card stat"><div class="card-h"><span class="lbl">${l}</span><button class="ib sm" aria-label="${t("more")}">${ic("dots")}</button></div><div class="big">${big}</div><div class="cap">${cap}</div></div>`;
+  return `<div class="screen"><div class="screen-in">
+    <div><h2 class="sh">${t("runsTitle")}</h2><p class="lead">${t("runsLead")}</p></div>
+    <div class="filters">
+      <input type="text" data-runq placeholder="${t("fSearch")}" aria-label="${t("fSearch")}" value="${S.runQuery}">
+      <select data-sel="runAgent" aria-label="${t("fAgent")}"><option value="all">${t("fAgent")}: ${t("fAll")}</option>${agentsList.map((a) => `<option ${S.runAgent === a ? "selected" : ""}>${a}</option>`).join("")}</select>
+      <select data-sel="runOutcome" aria-label="${t("fOutcome")}"><option value="all">${t("fOutcome")}: ${t("fAll")}</option>${["completed", "cancelled", "failed", "interrupted"].map((o) => `<option value="${o}" ${S.runOutcome === o ? "selected" : ""}>${oLabel(o)}</option>`).join("")}</select>
+      <select aria-label="${t("fFolder")}"><option>${t("fFolder")}: ${t("fAll")}</option><option>acme-api</option><option>acme-web</option></select>
+      <select aria-label="${t("fPeriod")}"><option>${t("p30")}</option><option>${t("p7")}</option></select>
+    </div>
+    <div class="stats">${[[t("tRuns"), rs.length, t("p30")], [t("tCost"), "$" + known.toFixed(2), unk + " " + t("unknown")], [t("tTime"), rs.length ? "35m" : "0m", t("p30")], [t("tAvg"), avg, scored.length + " " + t("tScored")]].map(stat).join("")}</div>
+    <div class="runs-wrap"><div class="tablewrap"><table class="tbl"><thead><tr><th>${t("cRequest")}</th><th>${t("cAgent")}</th><th>${t("cFolder")}</th><th class="num">${t("cDuration")}</th><th>${t("cOutcome")}</th><th class="num">${t("cCost")}</th><th>${t("cRating")}</th><th class="num">${t("cScore")}</th></tr></thead><tbody>
+    ${rs.length ? rs.map((r) => `<tr class="rr" tabindex="0" data-act="run" data-v="${r.id}" aria-selected="${r.id === S.selRun}"><td class="req"><div title="${r.req}">${r.req}</div></td><td><div>${r.agent}</div><div class="sub">${r.model}</div></td><td>${r.folder}</td><td class="num">${r.dur}</td><td>${chip(r.out, oLabel(r.out))}</td><td class="num">${r.cost || `<span class="faint">${t("unknown")}</span>`}</td><td>${starsHtml(get(r), r.id, true)}</td><td class="num">${r.score ? r.score + "/5" : "-"}</td></tr>`).join("") : `<tr><td colspan="8" class="muted" style="white-space:normal">${t("noRuns")}</td></tr>`}
+    </tbody></table></div>${detail}</div>
+  </div></div>`;
+}
+
+function screenSettings() {
+  const row = (lbl, d, ctl, locked) => `<div class="srow ${locked ? "locked" : ""}"><div class="lbl2"><b>${lbl}</b><span>${d}</span>${locked ? `<div style="margin-top:6px"><span class="badge-org" title="${t("managedHint")}">${ic("lock")}${t("managed")}</span></div>` : ""}</div>${ctl}</div>`;
+  return `<div class="screen"><div class="screen-in set-in">
+    <div><h2 class="sh">${t("setTitle")}</h2><p class="lead">${t("setLead")}</p></div>
+    <div class="card pad"><h3>${t("secGeneral")}</h3>
+      ${row(t("sLang"), t("sLangD"), `<select data-sel="lang" aria-label="${t("sLang")}"><option value="en" ${S.lang === "en" ? "selected" : ""}>English</option><option value="pl" ${S.lang === "pl" ? "selected" : ""}>Polski</option></select>`)}
+      ${row(t("sTheme"), t("sThemeD"), `<select data-sel="theme" aria-label="${t("sTheme")}"><option value="light" ${S.theme === "light" ? "selected" : ""}>${t("themeLight")}</option><option value="dark" ${S.theme === "dark" ? "selected" : ""}>${t("themeDark")}</option></select>`)}
+    </div>
+    <div class="card pad"><h3>${t("secAgents")}</h3>
+      ${row(t("sPerm"), t("sPermD"), `<select data-sel="defPerm" aria-label="${t("sPerm")}">${["permAsk", "permSession", "permReads"].map((k) => `<option value="${k}" ${S.defPerm === k ? "selected" : ""}>${t(k)}</option>`).join("")}</select>`)}
+      ${row(t("sAgent"), t("sAgentD"), `<select data-sel="defAgent" aria-label="${t("sAgent")}">${["Claude Code", "Codex", "goose"].map((a) => `<option ${S.defAgent === a ? "selected" : ""}>${a}</option>`).join("")}</select>`)}
+    </div>
+    <div class="card pad"><h3>${t("secOrg")}</h3>
+      ${row(t("sAllowed"), t("sAllowedD"), `<select disabled aria-label="${t("sAllowed")}"><option>${t("sAllowedV")}</option></select>`, true)}
+      ${row(t("sRegistry"), t("sRegistryD"), `<select disabled aria-label="${t("sRegistry")}"><option>${t("sRegistryV")}</option></select>`, true)}
+    </div>
+    <div class="notebox">${ic("shield")}<div><b>${t("confineTitle")}</b><div>${t("confineText")}</div></div></div>
+  </div></div>`;
+}
+
+function installDialog() {
+  const a = AGENTS.find((x) => x.n === S.installing); if (!a) return "";
+  const i = a.inst;
+  return `<div class="scrim" data-act="closeinstall"><div class="dialog" role="dialog" aria-modal="true" aria-label="${t("instTitle")} ${a.n}">
+    <h3>${t("instTitle")} ${a.n}</h3>
+    <dl class="dl"><dt>${t("instSource")}</dt><dd class="mono" style="font-size:12px">${i.url}</dd><dt>${t("instVersion")}</dt><dd>${i.ver}</dd><dt>${t("instSize")}</dt><dd>${i.size}</dd><dt>${t("instRuntime")}</dt><dd>${i.runtime ? t("instRuntimeYes") : t("instNone")}</dd></dl>
+    ${i.verified ? `<div class="verify good">${ic("shield")}<div><b>${t("instVerified")}</b><br><span>${t("instVerifiedD")}</span></div></div>` : `<div class="verify warn">${ic("alert")}<div><b>${t("instUnverified")}</b><br><span>${t("instUnverifiedD")}</span></div></div>`}
+    <div class="btns"><button class="btn" data-act="closeinstall" data-direct>${t("instCancel")}</button><button class="btn primary" data-act="closeinstall" data-direct>${ic("download")}${t("instConfirm")}</button></div>
+  </div></div>`;
+}
+
+/* ==========================================================================
+   8. App shell per variant
+   ========================================================================== */
+const NAV = [["conversation", "chat", "navConversation"], ["agents", "agents", "navAgents"], ["runs", "runs", "navRuns"], ["settings", "gear", "navSettings"]];
+const NAVKEY = { conversation: "navConversation", agents: "navAgents", runs: "navRuns", settings: "navSettings" };
+
+function screenBody() {
+  if (S.screen === "agents") return screenAgents();
+  if (S.screen === "runs") return screenRuns();
+  if (S.screen === "settings") return screenSettings();
+  return null;
+}
+/* Breadcrumb, search with shortcut hint, small square icon buttons. */
+function topbar() {
+  const crumb = S.screen === "conversation" ? `<span>${wsName()}</span><span>&rsaquo;</span><b>${session().title}</b>` : `<span>${t("appName")}</span><span>&rsaquo;</span><b>${t(NAVKEY[S.screen])}</b>`;
+  return `<div class="tb"><div class="crumb">${crumb}</div><span class="sp"></span><span class="badge-org">${ic("lock")}${t("org")}</span>
+    <label class="search">${ic("search")}<input type="text" placeholder="${t("searchPh")}" aria-label="${t("searchPh")}"><span class="kbd">&#8984;K</span></label>
+    <button class="ib" aria-label="${t("notifications")}" title="${t("notifications")}">${ic("bell")}</button><button class="ib" aria-label="${t("more")}" title="${t("more")}">${ic("dots")}</button></div>`;
+}
+function shell() {
+  const body = S.screen === "conversation" ? `<div class="row grow" style="align-items:stretch;min-height:0">${boardC()}${conversation()}</div>` : screenBody();
+  return `<div class="frame"${S.guard ? " inert" : ""}>${railC()}<div class="mainc col grow">${topbar()}${body}</div></div>`;
+}
+
+/* ==========================================================================
+   9. Render + events
+   ========================================================================== */
+function renderControls() {
+  document.getElementById("ctl").innerHTML = `
+    <span class="ctl-title">Mockup controls - not part of the product</span>
+    <div class="grp"><span>Theme</span>${seg("theme", OPTIONS.theme, ["Light", "Dark"])}</div>
+    <div class="grp"><span>Language</span>${seg("lang", OPTIONS.lang, ["EN", "PL"])}</div>
+    <div class="grp"><span>Screen</span>${seg("screen", OPTIONS.screen, ["Conversation", "Agents", "Runs", "Settings"])}</div>
+    <button class="reset" data-act="guard">Show guard dialog</button>
+    <button class="reset" data-act="reset">Reset demo</button>`;
+}
+function render() {
+  document.documentElement.dataset.theme = S.theme;
+  document.documentElement.lang = S.lang;
+  const keepScroll = {};
+  document.querySelectorAll(".scroll, .screen").forEach((el, i) => (keepScroll[i] = el.scrollTop));
+  const hadFocus = document.activeElement && document.activeElement.dataset ? document.activeElement.dataset.draft !== undefined : false;
+  renderControls();
+  const app = document.getElementById("app");
+  app.innerHTML = shell() + (S.guard ? guardDialog() : "") + (S.screen === "agents" && S.installing ? installDialog() : "") + (S.toast ? `<div class="toast" role="status">${S.toast}</div>` : "");
+  document.querySelectorAll(".scroll, .screen").forEach((el, i) => { if (keepScroll[i]) el.scrollTop = keepScroll[i]; });
+  if (S.guard) { const g = document.getElementById("g-reject"); if (g) g.focus(); }
+  else if (hadFocus) { const ta = app.querySelector("[data-draft]"); if (ta) { ta.focus(); ta.setSelectionRange(ta.value.length, ta.value.length); } }
+  writeHash();
+}
+function toast(msg) { S.toast = msg; render(); setTimeout(() => { S.toast = ""; render(); }, 1800); }
+
+document.addEventListener("click", (e) => {
+  const setBtn = e.target.closest("[data-set]");
+  if (setBtn) { S[setBtn.dataset.set] = setBtn.dataset.v; S.slashOpen = false; return render(); }
+  const el = e.target.closest("[data-act]");
+  if (!el) { if (S.slashOpen && !e.target.closest(".slashmenu")) { S.slashOpen = false; render(); } return; }
+  const act = el.dataset.act, v = el.dataset.v;
+  if (act === "closeinstall") { if (el.hasAttribute("data-direct") || e.target === el) { S.installing = null; render(); } return; }
+  switch (act) {
+    case "screen": S.screen = v; S.slashOpen = false; break;
+    case "sel": S.sel = +v; break;
+    case "guard": S.guard = true; break;
+    case "guardclose": S.guard = false; break;
+    case "allow": S.ap = "allowed"; break;
+    case "reject": S.ap = "rejected"; S.remember = false; break;
+    case "stop": S.ap = "stopped"; S.remember = false; break;
+    case "remember": S.remember = el.checked; return render();
+    case "slash": S.slashOpen = !S.slashOpen; break;
+    case "slashpick": S.draft = v + " "; S.slashOpen = false; break;
+    case "install": S.installing = v; break;
+    case "run": S.selRun = +v; break;
+    case "rate": S.rated[el.dataset.run] = +v; break;
+    case "judge": S.judged[el.dataset.run] = true; break;
+    case "reset": S.ap = "pending"; S.remember = false; S.slashOpen = false; S.draft = ""; S.installing = null; S.guard = false; S.rated = {}; S.judged = {}; S.customAgents = []; break;
+  }
+  render();
+});
+document.addEventListener("keydown", (e) => {
+  if (S.guard && e.key === "Tab") { // keep focus inside the blocking dialog
+    const f = [...document.querySelectorAll(".dialog button")]; if (f.length) { const i = f.indexOf(document.activeElement); e.preventDefault(); f[(i + (e.shiftKey ? f.length - 1 : 1)) % f.length].focus(); }
+  }
+  if (e.key === "Escape") { if (S.installing) S.installing = null; S.guard = false; S.slashOpen = false; render(); }
+  if ((e.key === "Enter" || e.key === " ") && e.target.matches && e.target.matches("tr.rr")) { e.preventDefault(); S.selRun = +e.target.dataset.v; render(); const r = document.querySelector('tr.rr[aria-selected="true"]'); if (r) r.focus(); }
+});
+document.addEventListener("change", (e) => {
+  const sel = e.target.closest("[data-sel]");
+  if (!sel) return;
+  const k = sel.dataset.sel;
+  if (["runAgent", "runOutcome", "lang", "theme", "defPerm", "defAgent"].includes(k)) { S[k] = sel.value; render(); }
+});
+document.addEventListener("input", (e) => {
+  if (e.target.matches("[data-draft]")) S.draft = e.target.value;
+  if (e.target.matches("[data-runq]")) {
+    S.runQuery = e.target.value; render();
+    const q = document.querySelector("[data-runq]"); q.focus(); q.setSelectionRange(q.value.length, q.value.length);
+  }
+});
+document.addEventListener("submit", (e) => {
+  const f = e.target.closest("[data-form=custom]");
+  if (!f) return;
+  e.preventDefault();
+  const name = new FormData(f).get("n") || "Custom agent";
+  S.customAgents.push({ n: String(name), st: "ready", sub: "custom" });
+  toast(t("customAdded"));
+});
+document.addEventListener("toggle", (e) => { if (e.target.dataset && e.target.dataset.key) S.open[e.target.dataset.key] = e.target.open; }, true);
+window.addEventListener("hashchange", () => { readHash(); render(); });
+
+readHash();
+render();
+</script>
+</body>
+</html>
