@@ -592,6 +592,8 @@ export function createSessionService(options: CreateSessionServiceOptions): Sess
         session: entry.session,
         runId: run.id,
         streaming: null,
+        actionsById: new Map(),
+        planSeq: null,
         setTitle: (title) => {
           entry.session.title = title;
           entry.session.lastActivityAt = new Date().toISOString();

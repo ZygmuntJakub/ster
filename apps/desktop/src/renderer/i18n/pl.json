@@ -44,6 +44,16 @@
     "guardTitle": "Potwierdź chronioną akcję",
     "cancel": "Anuluj"
   },
+  "action": {
+    "label": "Akcja"
+  },
+  "diff": {
+    "label": "Różnice"
+  },
+  "plan": {
+    "label": "Plan",
+    "empty": "Brak kroków planu"
+  },
   "session": {
     "new": "Nowa",
     "newTitle": "Nowa sesja",

@@ -365,15 +365,18 @@ label.f select {
   background: var(--ink3);
 }
 
-.chip.working::before {
+.chip.working::before,
+.chip.in_progress::before {
   background: var(--ink);
 }
 
-.chip.waiting::before {
+.chip.waiting::before,
+.chip.pending::before {
   background: var(--brass);
 }
 
-.chip.finished::before {
+.chip.finished::before,
+.chip.completed::before {
   background: var(--ok);
 }
 

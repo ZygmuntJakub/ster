@@ -1,6 +1,8 @@
 import type { JSX } from "react";
 import { useTranslation } from "react-i18next";
 import type { ConversationItemView } from "../../app/stores/sessions.js";
+import { ActionCard, type ActionPayload } from "../actions/ActionCard.js";
+import { PlanView, type PlanEntryView } from "../plan/PlanView.js";
 import { Markdown } from "./Markdown.js";
 
 export interface ConversationViewProps {
@@ -25,8 +27,47 @@ function payloadText(payload: unknown): string {
   return JSON.stringify(payload);
 }
 
+function asAction(payload: unknown): ActionPayload | null {
+  if (!payload || typeof payload !== "object") {
+    return null;
+  }
+  const record = payload as Record<string, unknown>;
+  if (typeof record["toolCallId"] !== "string" || typeof record["title"] !== "string") {
+    return null;
+  }
+  return {
+    toolCallId: record["toolCallId"],
+    title: record["title"],
+    kind: typeof record["kind"] === "string" ? record["kind"] : "other",
+    status: typeof record["status"] === "string" ? record["status"] : "pending",
+    locations: Array.isArray(record["locations"])
+      ? (record["locations"] as ActionPayload["locations"])
+      : [],
+    content: Array.isArray(record["content"])
+      ? (record["content"] as ActionPayload["content"])
+      : [],
+    ...(typeof record["toolName"] === "string" ? { toolName: record["toolName"] } : {}),
+  };
+}
+
+function asPlanEntries(payload: unknown): PlanEntryView[] {
+  if (!payload || typeof payload !== "object") {
+    return [];
+  }
+  const entries = (payload as { entries?: unknown }).entries;
+  if (!Array.isArray(entries)) {
+    return [];
+  }
+  return entries.filter(
+    (entry): entry is PlanEntryView =>
+      Boolean(entry) &&
+      typeof entry === "object" &&
+      typeof (entry as PlanEntryView).content === "string",
+  );
+}
+
 /**
- * Conversation transcript: messages, thoughts, notices, unknown placeholders.
+ * Conversation transcript: messages, thoughts, actions, plans, notices.
  */
 export function ConversationView({ sessionId, items }: ConversationViewProps): JSX.Element {
   const { t } = useTranslation();
@@ -74,6 +115,18 @@ export function ConversationView({ sessionId, items }: ConversationViewProps): J
               <p>{payloadText(item.payload)}</p>
             </article>
           );
+        }
+        if (item.kind === "action") {
+          const action = asAction(item.payload);
+          if (!action) {
+            return null;
+          }
+          return (
+            <ActionCard key={item.seq} sessionId={sessionId} itemSeq={item.seq} action={action} />
+          );
+        }
+        if (item.kind === "plan") {
+          return <PlanView key={item.seq} entries={asPlanEntries(item.payload)} />;
         }
         if (item.kind === "notice" || item.kind === "approval") {
           return (

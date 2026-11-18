@@ -44,6 +44,16 @@
     "guardTitle": "Confirm this guarded action",
     "cancel": "Cancel"
   },
+  "action": {
+    "label": "Action"
+  },
+  "diff": {
+    "label": "Diff"
+  },
+  "plan": {
+    "label": "Plan",
+    "empty": "No plan steps yet"
+  },
   "session": {
     "new": "New",
     "newTitle": "New session",

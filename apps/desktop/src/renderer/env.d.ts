@@ -55,7 +55,11 @@ type SterApi = {
     end: (payload: { sessionId: string }) => Promise<unknown>;
   };
   files: {
-    openLocation: (payload: unknown) => Promise<unknown>;
+    openLocation: (payload: {
+      sessionId: string;
+      itemSeq: number;
+      locationIndex: number;
+    }) => Promise<unknown>;
   };
   links: {
     open: (payload: { sessionId: string; itemSeq: number; linkIndex: number }) => Promise<unknown>;

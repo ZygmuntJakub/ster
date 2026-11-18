@@ -8,7 +8,9 @@ import {
 } from "../shared/bridge.js";
 import type { CoreHost } from "./core-host.js";
 import { createEventForwarder } from "./event-forwarder.js";
+import { openLocation } from "./handlers/files.js";
 import { createLinkIndex } from "./link-index.js";
+import { createLocationIndex } from "./location-index.js";
 import { createLoginTerminalManager } from "./login-terminal.js";
 import { createTokenStore } from "./tokens.js";
 
@@ -35,10 +37,14 @@ function ok<T>(value: T): BridgeResult<T> {
 
 function indexItems(
   linkIndex: ReturnType<typeof createLinkIndex>,
+  locationIndex: ReturnType<typeof createLocationIndex>,
   items: ConversationItem[],
 ): void {
   for (const item of items) {
     linkIndex.indexItem(item.sessionId, item.seq, item.payload);
+    if (item.kind === "action") {
+      locationIndex.indexItem(item.sessionId, item.seq, item.payload);
+    }
   }
 }
 
@@ -49,6 +55,7 @@ async function handleMethod(
   ctx: {
     tokens: ReturnType<typeof createTokenStore>;
     links: ReturnType<typeof createLinkIndex>;
+    locations: ReturnType<typeof createLocationIndex>;
     login: ReturnType<typeof createLoginTerminalManager>;
   },
 ): Promise<BridgeResult<unknown>> {
@@ -165,7 +172,7 @@ async function handleMethod(
         page.before = before;
       }
       const items = await core.sessions.items(sessionId, page);
-      indexItems(ctx.links, items);
+      indexItems(ctx.links, ctx.locations, items);
       return ok(items);
     }
     case "sessions.prompt": {
@@ -227,6 +234,23 @@ async function handleMethod(
       ctx.links.clearSession(sessionId);
       return ok({ deleted: true });
     }
+    case "files.openLocation": {
+      const { sessionId, itemSeq, locationIndex } = payload as {
+        sessionId: string;
+        itemSeq: number;
+        locationIndex: number;
+      };
+      const session = await core.sessions.get(sessionId);
+      return ok(
+        await openLocation({
+          sessionId,
+          itemSeq,
+          locationIndex,
+          cwd: session.cwd,
+          locations: ctx.locations,
+        }),
+      );
+    }
     case "links.open": {
       const { sessionId, itemSeq, linkIndex } = payload as {
         sessionId: string;
@@ -277,6 +301,7 @@ async function handleMethod(
 export function registerBridge(host: CoreHost): () => void {
   const tokens = createTokenStore();
   const links = createLinkIndex();
+  const locations = createLocationIndex();
   const environment: Record<string, string> = {};
   for (const [key, value] of Object.entries(process.env)) {
     if (typeof value === "string") {
@@ -303,7 +328,7 @@ export function registerBridge(host: CoreHost): () => void {
     }
     try {
       const validated = validateBridgePayload(method, payload);
-      return await handleMethod(host, method, validated, { tokens, links, login });
+      return await handleMethod(host, method, validated, { tokens, links, locations, login });
     } catch (error) {
       if (isSterError(error)) {
         return fail(error.code, error.details);
@@ -319,16 +344,25 @@ export function registerBridge(host: CoreHost): () => void {
   const unsubscribe = host.core.events.subscribe((coreEvent: CoreEvent) => {
     if (coreEvent.type === "item.appended") {
       links.indexItem(coreEvent.sessionId, coreEvent.item.seq, coreEvent.item.payload);
+      if (coreEvent.item.kind === "action") {
+        locations.indexItem(coreEvent.sessionId, coreEvent.item.seq, coreEvent.item.payload);
+      }
     }
     if (coreEvent.type === "item.updated") {
-      // Keep link index roughly current when payload text grows.
       const patch = coreEvent.patch;
       if (typeof patch === "object" && "payload" in patch) {
         links.indexItem(coreEvent.sessionId, coreEvent.seq, patch.payload);
+        const payload = patch.payload;
+        const hasToolCallId =
+          typeof payload === "object" && payload !== null && "toolCallId" in payload;
+        if (patch["kind"] === "action" || hasToolCallId) {
+          locations.indexItem(coreEvent.sessionId, coreEvent.seq, payload);
+        }
       }
     }
     if (coreEvent.type === "session.deleted") {
       links.clearSession(coreEvent.sessionId);
+      locations.clearSession(coreEvent.sessionId);
     }
     forwarder.publish(coreEvent);
   });

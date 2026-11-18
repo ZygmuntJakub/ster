@@ -128,18 +128,18 @@ description: "Task list for Ster — ACP Desktop Client"
 
 ### Tests for User Story 2
 
-- [ ] T061 [P] [US2] Unit tests for action merging and status ordering in `packages/core/tests/unit/actions.test.ts`
-- [ ] T062 [P] [US2] End-to-end flow for US2 in `apps/desktop/tests/e2e/us2-actions.spec.ts`
+- [x] T061 [P] [US2] Unit tests for action merging and status ordering in `packages/core/tests/unit/actions.test.ts`
+- [x] T062 [P] [US2] End-to-end flow for US2 in `apps/desktop/tests/e2e/us2-actions.spec.ts`
 
 ### Implementation for User Story 2
 
-- [ ] T063 [US2] Implement `tool_call` and `tool_call_update` merging by `toolCallId` in `packages/core/src/sessions/actions.ts` per data-model.md `AgentAction.status`, `AgentAction.kind`, `AgentAction.content`, `AgentAction.locations`
-- [ ] T064 [US2] Implement plan handling (latest state replaces earlier) in `packages/core/src/sessions/plan.ts` and wire both into `packages/core/src/sessions/updates.ts`
-- [ ] T065 [US2] Add the bridge function `files.openLocation` (indices only) in `apps/desktop/src/main/handlers/files.ts`, opening the file with the system default application after confirming it is inside the workspace or was approved
-- [ ] T066 [P] [US2] Build the action card (title, kind, status, result, locations) in `apps/desktop/src/renderer/features/actions/ActionCard.tsx`
-- [ ] T067 [P] [US2] Build the diff view using the `diff` package in `apps/desktop/src/renderer/features/diff/DiffView.tsx`
-- [ ] T068 [P] [US2] Build the plan view in `apps/desktop/src/renderer/features/plan/PlanView.tsx`
-- [ ] T069 [US2] Integrate action, diff, and plan items into `apps/desktop/src/renderer/features/conversation/ConversationView.tsx` and add EN/PL strings
+- [x] T063 [US2] Implement `tool_call` and `tool_call_update` merging by `toolCallId` in `packages/core/src/sessions/actions.ts` per data-model.md `AgentAction.status`, `AgentAction.kind`, `AgentAction.content`, `AgentAction.locations`
+- [x] T064 [US2] Implement plan handling (latest state replaces earlier) in `packages/core/src/sessions/plan.ts` and wire both into `packages/core/src/sessions/updates.ts`
+- [x] T065 [US2] Add the bridge function `files.openLocation` (indices only) in `apps/desktop/src/main/handlers/files.ts`, opening the file with the system default application after confirming it is inside the workspace or was approved
+- [x] T066 [P] [US2] Build the action card (title, kind, status, result, locations) in `apps/desktop/src/renderer/features/actions/ActionCard.tsx`
+- [x] T067 [P] [US2] Build the diff view using the `diff` package in `apps/desktop/src/renderer/features/diff/DiffView.tsx`
+- [x] T068 [P] [US2] Build the plan view in `apps/desktop/src/renderer/features/plan/PlanView.tsx`
+- [x] T069 [US2] Integrate action, diff, and plan items into `apps/desktop/src/renderer/features/conversation/ConversationView.tsx` and add EN/PL strings
 
 **Checkpoint**: The user can follow and inspect everything the agent does
 

@@ -151,3 +151,22 @@ export {
   type ConnectAgentOptions,
   type SessionUpdateHandler,
 } from "./acp/connection.js";
+
+export {
+  readWorkspaceTextFile,
+  resolveWorkspacePath,
+  writeWorkspaceTextFile,
+} from "./workspace/files.js";
+
+export {
+  actionFromUpdate,
+  canAdvanceActionStatus,
+  mergeActionUpdate,
+  type ActionContent,
+  type ActionKind,
+  type ActionLocation,
+  type ActionStatus,
+  type AgentAction,
+} from "./sessions/actions.js";
+
+export { planFromUpdate, type PlanEntry, type PlanPayload } from "./sessions/plan.js";

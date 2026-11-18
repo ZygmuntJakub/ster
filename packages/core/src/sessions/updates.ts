@@ -1,11 +1,13 @@
 import type { SessionNotification } from "@agentclientprotocol/sdk";
 import type { EventStream } from "../events/stream.js";
 import type { Store } from "../store/store.js";
+import { actionFromUpdate, mergeActionUpdate, type AgentAction } from "./actions.js";
 import {
   appendConversationItem,
   updateConversationItemPayload,
   type ConversationItemKind,
 } from "./items.js";
+import { planFromUpdate } from "./plan.js";
 import type { Session } from "./session.js";
 
 export interface StreamingState {
@@ -21,6 +23,10 @@ export interface UpdateHandlerContext {
   session: Session;
   runId: string;
   streaming: StreamingState | null;
+  /** toolCallId → conversation item seq for in-place action merges. */
+  actionsById: Map<string, number>;
+  /** Seq of the latest plan item for this turn (replaced in place). */
+  planSeq: number | null;
   setTitle?: (title: string) => void;
 }
 
@@ -62,9 +68,13 @@ function publishItemUpdated(
   });
 }
 
+function asRecord(value: unknown): Record<string, unknown> {
+  return value !== null && typeof value === "object" ? (value as Record<string, unknown>) : {};
+}
+
 /**
- * Map a `session/update` notification to conversation items (US1 subset).
- * Handles message chunks, thought chunks, session info, and unknown variants.
+ * Map a `session/update` notification to conversation items.
+ * Handles messages, thoughts, actions, plans, session info, and unknown variants.
  */
 export function applySessionUpdate(
   ctx: UpdateHandlerContext,
@@ -121,6 +131,54 @@ export function applySessionUpdate(
     };
   }
 
+  if (kind === "tool_call" || kind === "tool_call_update") {
+    const record = asRecord(update);
+    const incoming = actionFromUpdate(record);
+    if (!incoming) {
+      return { ...ctx, streaming: null };
+    }
+
+    const existingSeq = ctx.actionsById.get(incoming.toolCallId);
+    if (existingSeq !== undefined) {
+      const rows = ctx.store.listItems(ctx.session.id, { limit: 500 });
+      const row = rows.find((r) => r.seq === existingSeq);
+      const currentPayload = row ? (JSON.parse(row.payloadJson) as AgentAction) : incoming;
+      const merged =
+        kind === "tool_call_update" ? mergeActionUpdate(currentPayload, record) : incoming;
+      updateConversationItemPayload(ctx.store, ctx.session.id, existingSeq, merged);
+      publishItemUpdated(ctx, existingSeq, { payload: merged, kind: "action" });
+      return { ...ctx, streaming: null };
+    }
+
+    const item = appendConversationItem(ctx.store, {
+      sessionId: ctx.session.id,
+      kind: "action",
+      runId: ctx.runId,
+      payload: incoming,
+    });
+    const actionsById = new Map(ctx.actionsById);
+    actionsById.set(incoming.toolCallId, item.seq);
+    publishItemAppended(ctx, item);
+    return { ...ctx, streaming: null, actionsById };
+  }
+
+  if (kind === "plan") {
+    const payload = planFromUpdate(asRecord(update));
+    if (ctx.planSeq !== null) {
+      updateConversationItemPayload(ctx.store, ctx.session.id, ctx.planSeq, payload);
+      publishItemUpdated(ctx, ctx.planSeq, { payload, kind: "plan" });
+      return { ...ctx, streaming: null };
+    }
+    const item = appendConversationItem(ctx.store, {
+      sessionId: ctx.session.id,
+      kind: "plan",
+      runId: ctx.runId,
+      payload,
+    });
+    publishItemAppended(ctx, item);
+    return { ...ctx, streaming: null, planSeq: item.seq };
+  }
+
   if (kind === "session_info_update") {
     const title = "title" in update && typeof update.title === "string" ? update.title : undefined;
     if (title !== undefined && ctx.setTitle) {
@@ -129,7 +187,6 @@ export function applySessionUpdate(
     return { ...ctx, streaming: null };
   }
 
-  // US1: other variants (tool_call, plan, …) stored as placeholders until US2+.
   const item = appendConversationItem(ctx.store, {
     sessionId: ctx.session.id,
     kind: kind === "notice" ? "notice" : "unknown",
