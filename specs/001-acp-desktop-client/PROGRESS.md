@@ -31,3 +31,16 @@
 - **T184–T192 (2026-11-18)**: Phase 16 convergence — factory bridge token-only; managed Node official checksums + extract (no `execPath` seed default); attachment prompt content + caps + cwd confinement; requireChecksum for npx/uvx; allow-list on registry/icon/download; runs filters (model/date/rating/score) + duration/cost totals; finish/fail attention via `markViewed`; export dialog i18n. **Verified**: `pnpm check`, `pnpm test:e2e` (16/1), `pnpm test:security`, `pnpm example:headless` on macOS.
 - **Converge (2026-11-18, post-Phase 16)**: `/speckit-converge` — not clean. Prior F1–F9 verified fixed. Appended **Phase 17: Convergence** with **T193–T196** (session delete keep-without-text prompt, runs delete-by-filter, inclusive date `to`, session rename UI). Next iteration starts at T193. No PR to `main` yet.
 - **T193–T196 (2026-11-18)**: Phase 17 — HistoryView delete prompt (`delete` vs `keep-without-text`); `runs.delete` filter parity + delete-filtered UI; date-only `from`/`to` inclusive bounds; session rename control in ConversationPane. **Verified**: `pnpm check`, `pnpm test:e2e` (16/1), `pnpm test:security`, `pnpm example:headless` on macOS.
+- **Converge (2026-11-18, post-Phase 17)**: `/speckit-converge` — **clean**. N1–N4 verified fixed; no further actionable MUST gaps under documented exclusions (Windows/Linux interactive walks; live SC-003 three-registry-agent substitutes).
+
+## Final summary
+
+**Feature `001-acp-desktop-client` is implement-complete** for the specified scope (US1–US12 + polish + two convergence passes). Tip: `1b34bc7` on branch `001-acp-desktop-client`.
+
+**Delivered:** hardened Electron ACP desktop client + `@ster/core` (sessions, permissions, registry/install, commands, history, modes/models, i18n EN/PL, packaging/docs, org policy, factory definitions, run records/judging) with mock agent, security suites, and e2e coverage.
+
+**Final gates (macOS):** `pnpm check` (core coverage ≥80%, audit no high), `pnpm test:e2e` (16 passed / 1 skipped packaged-smoke), `pnpm test:security` (28), `pnpm example:headless` — all green after Phase 17.
+
+**Documented not-verified / out-of-scope substitutes:** Windows/Linux interactive quickstart tables; live three distinct registry-agent distribution walk (SC-003); packaged installer fuse matrix beyond local macOS automation.
+
+**Tasks:** T001–T196 marked done; no open unblocked tasks; clean converge — ready for PR to `main`.
