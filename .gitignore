@@ -4,7 +4,16 @@
 node_modules/
 dist/
 out/
+coverage/
 .DS_Store
+*.log
+*.tsbuildinfo
+.turbo/
+.vite/
+playwright-report/
+test-results/
+apps/desktop/out/
+apps/desktop/release/
 
 # Browser automation output
 .playwright-mcp/

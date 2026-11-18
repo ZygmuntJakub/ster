@@ -6,21 +6,39 @@ project folder, see what the agent does, and approve what it may do. It is desig
 open template that an organization can rebrand, restrict with policy, and extend into its
 own software factory.
 
-**Status: specification and design. There is no application code yet.**
+**Status: implementation in progress on branch `001-acp-desktop-client`.**
 
-## What is in this repository
+## Requirements
 
-- `.specify/memory/constitution.md` — the project's principles and quality gates.
-- `specs/001-acp-desktop-client/` — the feature specification, implementation plan,
-  research decisions, data model, contracts, and the task list for the first version.
-- `design/mockup/index.html` — a clickable design reference. Open it in a browser; it has
-  no dependencies.
+- Node.js >= 24 (see `.nvmrc`)
+- pnpm 10
 
-Implementation continues on the branch `001-acp-desktop-client`.
+## Setup
 
-The project follows the [Spec Kit](https://github.com/github/spec-kit) workflow:
-specification, plan, tasks, implementation, each feature on its own branch.
+```bash
+pnpm install
+pnpm dev
+```
+
+## Quality gates
+
+```bash
+pnpm check
+pnpm test:e2e
+pnpm test:security
+pnpm example:headless
+```
+
+## Repository layout
+
+- `packages/core` — UI-independent ACP client core
+- `packages/mock-agent` — scriptable ACP agent for tests
+- `apps/desktop` — Electron application (main, preload, renderer)
+- `specs/001-acp-desktop-client/` — specification, plan, research, tasks
+- `design/mockup/index.html` — clickable design reference
+- `.specify/memory/constitution.md` — project principles and quality gates
 
 ## License
 
-To be added before the first release (MIT is planned).
+MIT is planned. The `LICENSE` file is blocked until the copyright holder name is confirmed
+(see `specs/001-acp-desktop-client/BLOCKERS.md`).

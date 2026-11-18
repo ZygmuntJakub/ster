@@ -59,6 +59,12 @@ index, the registry repository, the agent adapter packages, and Zed's source. It
 - **Consequence**: an interactive pseudo-terminal is required for login only. Use
   `node-pty` with `xterm.js`, started only by a user action that shows the exact command.
   This is the single native dependency; see Complexity Tracking in the plan.
+- **[verified 2026-11-18, T012]**: `node-pty@1.1.0` ships prebuilt `pty.node` (and helpers)
+  for `darwin-arm64`, `darwin-x64`, `win32-arm64`, and `win32-x64`. It does **not** ship
+  Linux prebuilds (`linux-x64` / `linux-arm64`); install falls through to `node-gyp rebuild`
+  when `prebuilds/<platform>-<arch>` is missing. Keep `node-pty`; CI Linux images must have
+  build tools so the native addon compiles. If the login terminal still cannot start on a
+  given machine, show the documented “run the vendor CLI in your own terminal” fallback.
 - **Alternatives considered**: telling the user to run the vendor CLI in their own
   terminal — kept as the documented fallback and the message shown if the login terminal
   cannot start; opening the system terminal application — rejected, differs per platform
@@ -166,8 +172,10 @@ are bumped hourly without human review.
   mode `0700`, file `0600` on POSIX; default per-user profile ACL on Windows.
 - **Rationale**: run records need filtering and totals (FR-071); conversations need ordered
   append and paging (SC-008). A built-in driver avoids a second native module.
-- **[to verify]**: that the Electron version chosen ships a Node with `node:sqlite` usable
-  in the main process. Fallback behind the same interface: `better-sqlite3`.
+- **[verified 2026-11-18, T012]**: Electron `45.3.4` exposes `node:sqlite` (`DatabaseSync`)
+  in the main process (and under `ELECTRON_RUN_AS_NODE`). Host Node 24 also works. Keep
+  `node:sqlite`; retain `better-sqlite3` only as a documented emergency fallback behind the
+  same `Store` interface if a future Electron drop removes the module.
 - **Alternatives considered**: JSONL files — simple, but filtering and deletion by filter
   become full scans and rewrites.
 

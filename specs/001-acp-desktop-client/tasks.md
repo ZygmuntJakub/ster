@@ -30,18 +30,18 @@ description: "Task list for Ster — ACP Desktop Client"
 
 **Purpose**: Workspace, toolchain, and quality gates
 
-- [ ] T001 Create the pnpm workspace: `package.json`, `pnpm-workspace.yaml`, `tsconfig.base.json` (strict, `noUncheckedIndexedAccess`, `exactOptionalPropertyTypes`, ESM), `.nvmrc` (Node 24)
-- [ ] T002 [P] Scaffold `packages/core/` (`package.json` named `@ster/core`, `tsconfig.json`, `src/index.ts`) with `@agentclientprotocol/sdk` and `zod`
-- [ ] T003 [P] Scaffold `packages/mock-agent/` (`package.json`, `tsconfig.json`, `src/index.ts`, bin entry)
-- [ ] T004 Scaffold `apps/desktop/` with electron-vite: `electron.vite.config.ts`, `src/main/index.ts`, `src/preload/index.ts`, `src/renderer/index.html`, `src/renderer/main.tsx`
-- [ ] T005 [P] Configure ESLint (typescript-eslint strict-type-checked) and Prettier in `eslint.config.js` and `.prettierrc`, including an import-boundary rule that forbids `electron`, DOM, and `apps/*` imports inside `packages/core`
-- [ ] T006 [P] Configure Vitest with v8 coverage and an 80% line threshold in `packages/core/vitest.config.ts`
-- [ ] T007 [P] Configure Playwright for Electron in `apps/desktop/playwright.config.ts` with a launcher helper in `apps/desktop/tests/e2e/launch.ts`
-- [ ] T008 [P] Configure Tailwind CSS and base tokens (light and dark) in `apps/desktop/src/renderer/styles.css`, taking the tokens (colors, type, radii, light and dark sets) from `design/mockup/index.html` (research.md R20)
-- [ ] T009 Add root scripts `dev`, `check`, `test:e2e`, `test:security`, `example:headless` to `package.json` as defined in quickstart.md
-- [ ] T010 [P] Create the CI workflow `.github/workflows/ci.yml`: matrix macOS/Windows/Ubuntu running `pnpm check`, `pnpm test:e2e`, `pnpm test:security`, `pnpm audit --audit-level high`
-- [ ] T011 [P] Add `LICENSE` (MIT), `README.md` skeleton, `CHANGELOG.md`, and `SECURITY.md`
-- [ ] T012 Verify the two open items from plan.md in a throwaway spike and record the outcome in `specs/001-acp-desktop-client/research.md` (R3, R10): `node:sqlite` in the Electron main process, and `node-pty` prebuilt binaries for all six targets; switch to the documented fallback where needed
+- [x] T001 Create the pnpm workspace: `package.json`, `pnpm-workspace.yaml`, `tsconfig.base.json` (strict, `noUncheckedIndexedAccess`, `exactOptionalPropertyTypes`, ESM), `.nvmrc` (Node 24)
+- [x] T002 [P] Scaffold `packages/core/` (`package.json` named `@ster/core`, `tsconfig.json`, `src/index.ts`) with `@agentclientprotocol/sdk` and `zod`
+- [x] T003 [P] Scaffold `packages/mock-agent/` (`package.json`, `tsconfig.json`, `src/index.ts`, bin entry)
+- [x] T004 Scaffold `apps/desktop/` with electron-vite: `electron.vite.config.ts`, `src/main/index.ts`, `src/preload/index.ts`, `src/renderer/index.html`, `src/renderer/main.tsx`
+- [x] T005 [P] Configure ESLint (typescript-eslint strict-type-checked) and Prettier in `eslint.config.js` and `.prettierrc`, including an import-boundary rule that forbids `electron`, DOM, and `apps/*` imports inside `packages/core`
+- [x] T006 [P] Configure Vitest with v8 coverage and an 80% line threshold in `packages/core/vitest.config.ts`
+- [x] T007 [P] Configure Playwright for Electron in `apps/desktop/playwright.config.ts` with a launcher helper in `apps/desktop/tests/e2e/launch.ts`
+- [x] T008 [P] Configure Tailwind CSS and base tokens (light and dark) in `apps/desktop/src/renderer/styles.css`, taking the tokens (colors, type, radii, light and dark sets) from `design/mockup/index.html` (research.md R20)
+- [x] T009 Add root scripts `dev`, `check`, `test:e2e`, `test:security`, `example:headless` to `package.json` as defined in quickstart.md
+- [x] T010 [P] Create the CI workflow `.github/workflows/ci.yml`: matrix macOS/Windows/Ubuntu running `pnpm check`, `pnpm test:e2e`, `pnpm test:security`, `pnpm audit --audit-level high`
+- [x] T011 [P] Add `LICENSE` (MIT), `README.md` skeleton, `CHANGELOG.md`, and `SECURITY.md`
+- [x] T012 Verify the two open items from plan.md in a throwaway spike and record the outcome in `specs/001-acp-desktop-client/research.md` (R3, R10): `node:sqlite` in the Electron main process, and `node-pty` prebuilt binaries for all six targets; switch to the documented fallback where needed
 
 ---
 

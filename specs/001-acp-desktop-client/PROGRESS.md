@@ -1,0 +1,5 @@
+# Progress — 001-acp-desktop-client
+
+## Iteration log
+
+- **T001–T012 (2026-11-18)**: Scaffolded the pnpm workspace (`package.json`, `pnpm-workspace.yaml`, `tsconfig.base.json`, `.nvmrc`), `@ster/core`, `@ster/mock-agent`, `@ster/desktop` (electron-vite), ESLint strict-type-checked with core import-boundary rules, Prettier, Vitest v8 coverage (≥80% lines), Playwright Electron launcher + smoke e2e, Tailwind v4 + mockup light/dark tokens, root scripts (`dev`, `check`, `test:e2e`, `test:security`, `example:headless`), CI matrix workflow, README/CHANGELOG/SECURITY. **T011**: LICENSE omitted — copyright holder name needed (see BLOCKERS.md). **T012**: verified `node:sqlite` in Electron 45.3.4 main; `node-pty@1.1.0` has prebuilds for macOS/Windows (x64+arm64) but not Linux (compile via node-gyp); recorded in research.md R3/R10. **Verified on this macOS machine**: `pnpm check`, `pnpm test:e2e`, `pnpm test:security`, `pnpm example:headless` all exit 0. **Not verified here**: Windows/Linux CI runners, real agent logins, packaged installers, Linux `node-pty` compile in CI.

@@ -1,0 +1,37 @@
+{
+  "name": "ster",
+  "private": true,
+  "type": "module",
+  "packageManager": "pnpm@10.28.2",
+  "engines": {
+    "node": ">=24"
+  },
+  "scripts": {
+    "dev": "pnpm --filter @ster/desktop dev",
+    "check": "prettier --check . && pnpm -r typecheck && eslint . && node scripts/check-i18n.mjs && pnpm --filter @ster/core test && pnpm audit --audit-level high",
+    "test:e2e": "pnpm --filter @ster/desktop test:e2e",
+    "test:security": "pnpm --filter @ster/core test:security",
+    "example:headless": "tsx examples/headless.ts",
+    "format": "prettier --write ."
+  },
+  "dependencies": {
+    "@ster/core": "workspace:*"
+  },
+  "pnpm": {
+    "onlyBuiltDependencies": [
+      "electron",
+      "esbuild"
+    ]
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.39.1",
+    "eslint": "^9.39.1",
+    "eslint-import-resolver-typescript": "^4.4.4",
+    "eslint-plugin-import-x": "^4.16.1",
+    "globals": "^16.5.0",
+    "prettier": "^3.10.1",
+    "tsx": "^4.20.6",
+    "typescript": "^5.9.3",
+    "typescript-eslint": "^8.73.0"
+  }
+}
