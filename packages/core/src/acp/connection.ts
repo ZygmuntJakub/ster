@@ -8,7 +8,11 @@ import {
   type ClientConnection,
   type Implementation,
   type InitializeResponse,
+  type ReadTextFileRequest,
+  type RequestPermissionRequest,
+  type RequestPermissionResponse,
   type SessionNotification,
+  type WriteTextFileRequest,
 } from "@agentclientprotocol/sdk";
 import { Readable, Writable } from "node:stream";
 import { SterError } from "../errors.js";
@@ -38,12 +42,20 @@ export interface AcpConnection {
   close(): void;
 }
 
+export interface ConnectAgentClientHandlers {
+  requestPermission: (params: RequestPermissionRequest) => Promise<RequestPermissionResponse>;
+  readTextFile: (params: ReadTextFileRequest) => Promise<{ content: string }>;
+  writeTextFile: (params: WriteTextFileRequest) => Promise<Record<string, never>>;
+}
+
 export interface ConnectAgentOptions {
   process: AgentProcess;
   log: Logger;
   clientInfo?: Implementation;
   /** Supported protocol versions; defaults to the SDK stable version. */
   supportedProtocolVersions?: readonly number[];
+  /** Client-side request handlers (permissions + fs). */
+  handlers?: ConnectAgentClientHandlers;
 }
 
 /**
@@ -91,13 +103,13 @@ export async function connectAgent(options: ConnectAgentOptions): Promise<AcpCon
     Readable.toWeb(options.process.stdout) as ReadableStream<Uint8Array>,
   );
 
-  const handlers = new Map<string, Set<SessionUpdateHandler>>();
+  const updateHandlers = new Map<string, Set<SessionUpdateHandler>>();
   const queue = new SessionUpdateQueue();
 
-  const app = client({ name: options.clientInfo?.name ?? "ster" }).onNotification(
+  let app = client({ name: options.clientInfo?.name ?? "ster" }).onNotification(
     methods.client.session.update,
     ({ params }) => {
-      const sessionHandlers = handlers.get(params.sessionId);
+      const sessionHandlers = updateHandlers.get(params.sessionId);
       if (!sessionHandlers || sessionHandlers.size === 0) {
         return;
       }
@@ -106,6 +118,21 @@ export async function connectAgent(options: ConnectAgentOptions): Promise<AcpCon
       }
     },
   );
+
+  const clientHandlers = options.handlers;
+  if (clientHandlers) {
+    app = app
+      .onRequest(methods.client.session.requestPermission, ({ params }) =>
+        clientHandlers.requestPermission(params),
+      )
+      .onRequest(methods.client.fs.readTextFile, ({ params }) =>
+        clientHandlers.readTextFile(params),
+      )
+      .onRequest(methods.client.fs.writeTextFile, async ({ params }) => {
+        await clientHandlers.writeTextFile(params);
+        return {};
+      });
+  }
 
   const connection = app.connect(stream);
 
@@ -161,13 +188,13 @@ export async function connectAgent(options: ConnectAgentOptions): Promise<AcpCon
     client: connection.agent,
     closed: connection.closed,
     onSessionUpdate(sessionId, handler) {
-      const set = handlers.get(sessionId) ?? new Set();
+      const set = updateHandlers.get(sessionId) ?? new Set();
       set.add(handler);
-      handlers.set(sessionId, set);
+      updateHandlers.set(sessionId, set);
       return () => {
         set.delete(handler);
         if (set.size === 0) {
-          handlers.delete(sessionId);
+          updateHandlers.delete(sessionId);
         }
       };
     },

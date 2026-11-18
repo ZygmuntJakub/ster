@@ -1,13 +1,22 @@
-import { methods, type PromptResponse } from "@agentclientprotocol/sdk";
+import {
+  methods,
+  type PromptResponse,
+  type RequestPermissionResponse,
+} from "@agentclientprotocol/sdk";
 import { randomUUID } from "node:crypto";
 import { statSync } from "node:fs";
-import { connectAgent, type AcpConnection } from "../acp/connection.js";
+import {
+  connectAgent,
+  type AcpConnection,
+  type ConnectAgentClientHandlers,
+} from "../acp/connection.js";
 import { spawnAgentProcess, type AgentProcess } from "../acp/process.js";
 import type { AgentService } from "../agents/service.js";
 import { SterError } from "../errors.js";
 import type { EventStream, CoreEvent } from "../events/stream.js";
 import type { Logger } from "../log.js";
 import type { ConversationItem, SessionSummary } from "../model/events.js";
+import { createApprovalBroker } from "../permissions/approvals.js";
 import type { ResolvedEnv } from "../platform/shell-env.js";
 import {
   finalizeRun,
@@ -17,6 +26,20 @@ import {
   type RunRecord,
 } from "../runs/lifecycle.js";
 import type { Store } from "../store/store.js";
+import { assertWorkspaceAvailable } from "../workspace/availability.js";
+import {
+  readWorkspaceTextFile,
+  resolveWorkspacePath,
+  writeWorkspaceTextFile,
+} from "../workspace/files.js";
+import { createSnapshotStore } from "../workspace/snapshots.js";
+import {
+  describeTerminalLogin as buildTerminalLoginPlan,
+  isAuthRequiredError,
+  toAuthMethodInfo,
+  type AuthMethodInfo,
+  type TerminalLoginPlan,
+} from "./auth.js";
 import { appendConversationItem, listConversationItems } from "./items.js";
 import {
   transitionSessionStatus,
@@ -35,10 +58,8 @@ export interface PermissionRule {
   pattern: string;
 }
 
-export interface AuthMethod {
-  id: string;
-  name: string;
-}
+export type AuthMethod = AuthMethodInfo;
+export type { TerminalLoginPlan };
 
 export interface SessionService {
   create(input: { agentId: string; cwd: string; permissionMode?: string }): Promise<Session>;
@@ -58,6 +79,8 @@ export interface SessionService {
   killCommand(commandRunId: string): Promise<void>;
   authMethods(sessionId: string): Promise<AuthMethod[]>;
   authenticate(sessionId: string, methodId: string): Promise<void>;
+  /** Describe the relaunch command for a terminal auth method (research.md R3). */
+  describeTerminalLogin(sessionId: string, methodId: string): Promise<TerminalLoginPlan>;
   resume(sessionId: string): Promise<Session>;
   restart(sessionId: string): Promise<Session>;
   rename(sessionId: string, title: string): Promise<void>;
@@ -81,6 +104,7 @@ interface LiveSession {
   agentSessionId: string;
   promptInFlight: boolean;
   cancelRequested: boolean;
+  currentRunId?: string;
 }
 
 interface SessionPayload {
@@ -184,8 +208,14 @@ export interface SessionServiceHandle {
 /**
  * SessionService for US1: create, prompt, cancel, end, restart against a live ACP agent.
  */
+const STALE_WRITE_OPTIONS = [
+  { optionId: "allow", name: "Overwrite", kind: "allow_once" },
+  { optionId: "reject", name: "Cancel", kind: "reject_once" },
+] as const;
+
 export function createSessionService(options: CreateSessionServiceOptions): SessionServiceHandle {
   const live = new Map<string, LiveSession>();
+  const snapshots = createSnapshotStore();
   const defaultMode = options.defaultPermissionMode ?? "always-ask";
 
   const setStatus = (session: Session, next: SessionStatus): void => {
@@ -199,7 +229,26 @@ export function createSessionService(options: CreateSessionServiceOptions): Sess
     });
   };
 
+  const approvals = createApprovalBroker({
+    store: options.store,
+    events: options.events,
+    currentRunId: (sessionId) => live.get(sessionId)?.currentRunId,
+    onStatusChange: (sessionId, status) => {
+      const entry = live.get(sessionId);
+      if (!entry || entry.session.status === status) {
+        return;
+      }
+      try {
+        setStatus(entry.session, status);
+      } catch {
+        // Ignore illegal transitions during teardown.
+      }
+    },
+  });
+
   const failSession = async (entry: LiveSession, reason: string): Promise<void> => {
+    approvals.cancelSession(entry.session.id);
+    snapshots.clearSession(entry.session.id);
     entry.session.failureReason = reason;
     try {
       if (entry.session.status !== "failed" && entry.session.status !== "ended") {
@@ -231,6 +280,110 @@ export function createSessionService(options: CreateSessionServiceOptions): Sess
     }
     return session;
   };
+
+  const findByAgentSession = (agentSessionId: string): LiveSession | undefined => {
+    for (const entry of live.values()) {
+      if (entry.agentSessionId === agentSessionId) {
+        return entry;
+      }
+    }
+    return undefined;
+  };
+
+  const ensureWorkspaceOrFail = (entry: LiveSession): void => {
+    try {
+      assertWorkspaceAvailable(entry.session.cwd);
+    } catch (error) {
+      const reason =
+        error instanceof SterError
+          ? error.message
+          : error instanceof Error
+            ? error.message
+            : String(error);
+      void failSession(entry, reason);
+      throw error instanceof SterError
+        ? error
+        : new SterError("invalid-argument", reason, { cwd: entry.session.cwd });
+    }
+  };
+
+  const buildClientHandlers = (): ConnectAgentClientHandlers => ({
+    async requestPermission(params): Promise<RequestPermissionResponse> {
+      const entry = findByAgentSession(params.sessionId);
+      if (!entry) {
+        return { outcome: { outcome: "cancelled" } };
+      }
+      const outcome = await approvals.request({
+        sessionId: entry.session.id,
+        source: "agent",
+        subject: params.toolCall,
+        options: params.options,
+        toolCallId: params.toolCall.toolCallId,
+      });
+      if (outcome.by === "user") {
+        return { outcome: { outcome: "selected", optionId: outcome.optionId } };
+      }
+      return { outcome: { outcome: "cancelled" } };
+    },
+
+    async readTextFile(params) {
+      await Promise.resolve();
+      const entry = findByAgentSession(params.sessionId);
+      if (!entry) {
+        throw new SterError("not-found", "No live session for file read");
+      }
+      ensureWorkspaceOrFail(entry);
+      const readOpts: { line?: number | null; limit?: number | null } = {};
+      if (params.line !== undefined) {
+        readOpts.line = params.line;
+      }
+      if (params.limit !== undefined) {
+        readOpts.limit = params.limit;
+      }
+      const { content, resolvedPath } = readWorkspaceTextFile(
+        entry.session.cwd,
+        params.path,
+        readOpts,
+      );
+      snapshots.record(entry.session.id, resolvedPath, content);
+      return { content };
+    },
+
+    async writeTextFile(params) {
+      const entry = findByAgentSession(params.sessionId);
+      if (!entry) {
+        throw new SterError("not-found", "No live session for file write");
+      }
+      ensureWorkspaceOrFail(entry);
+      const resolvedForCheck = resolveWorkspacePath(entry.session.cwd, params.path);
+
+      if (snapshots.isStale(entry.session.id, resolvedForCheck)) {
+        const outcome = await approvals.request({
+          sessionId: entry.session.id,
+          source: "client-guard",
+          subject: {
+            reason: "stale-write",
+            path: params.path,
+            resolvedPath: resolvedForCheck,
+          },
+          options: STALE_WRITE_OPTIONS,
+        });
+        if (!(outcome.by === "user" && outcome.optionId === "allow")) {
+          throw new SterError("invalid-argument", "Stale write rejected", {
+            path: params.path,
+          });
+        }
+      }
+
+      const { resolvedPath } = writeWorkspaceTextFile(
+        entry.session.cwd,
+        params.path,
+        params.content,
+      );
+      snapshots.record(entry.session.id, resolvedPath, params.content);
+      return {};
+    },
+  });
 
   const startAgent = async (input: {
     agentId: string;
@@ -284,6 +437,7 @@ export function createSessionService(options: CreateSessionServiceOptions): Sess
         process: proc,
         log: options.log,
         clientInfo: { name: "ster", version: "0.0.0" },
+        handlers: buildClientHandlers(),
       });
     } catch (error) {
       await proc.kill();
@@ -293,17 +447,11 @@ export function createSessionService(options: CreateSessionServiceOptions): Sess
       throw error;
     }
 
-    const acpSession = await connection.client.buildSession(input.cwd).start();
-    session.agentSessionId = acpSession.sessionId;
-    session.status = transitionSessionStatus("starting", "idle");
-    session.lastActivityAt = new Date().toISOString();
-    persist(options.store, session);
-
     const entry: LiveSession = {
       session,
       process: proc,
       connection,
-      agentSessionId: acpSession.sessionId,
+      agentSessionId: "",
       promptInFlight: false,
       cancelRequested: false,
     };
@@ -320,6 +468,29 @@ export function createSessionService(options: CreateSessionServiceOptions): Sess
       });
       await failSession(entry, `Agent exited (code ${String(result.code)})`);
     });
+
+    try {
+      const acpSession = await connection.client.buildSession(input.cwd).start();
+      session.agentSessionId = acpSession.sessionId;
+      entry.agentSessionId = acpSession.sessionId;
+      session.status = transitionSessionStatus("starting", "idle");
+      session.lastActivityAt = new Date().toISOString();
+      persist(options.store, session);
+    } catch (error) {
+      if (isAuthRequiredError(error)) {
+        session.status = transitionSessionStatus("starting", "needs-login");
+        session.lastActivityAt = new Date().toISOString();
+        persist(options.store, session);
+      } else {
+        live.delete(session.id);
+        connection.close();
+        await proc.kill();
+        session.failureReason = error instanceof Error ? error.message : String(error);
+        session.status = "failed";
+        persist(options.store, session);
+        throw error;
+      }
+    }
 
     options.events.publish({
       type: "session.created",
@@ -380,14 +551,22 @@ export function createSessionService(options: CreateSessionServiceOptions): Sess
       if (entry.promptInFlight) {
         throw new SterError("invalid-argument", "A prompt is already in flight");
       }
+      if (entry.session.status === "needs-login") {
+        throw new SterError("login-required", "Session requires login before prompting");
+      }
       if (entry.session.status !== "idle") {
         throw new SterError("invalid-argument", `Session is ${entry.session.status}`);
       }
+      if (!entry.agentSessionId) {
+        throw new SterError("invalid-argument", "Session has no agent session yet");
+      }
+      ensureWorkspaceOrFail(entry);
 
       const text = promptText(content);
       const run = startRun({ sessionId, request: text });
       entry.promptInFlight = true;
       entry.cancelRequested = false;
+      entry.currentRunId = run.id;
       setStatus(entry.session, "working");
       options.events.publish({
         type: "run.started",
@@ -443,6 +622,8 @@ export function createSessionService(options: CreateSessionServiceOptions): Sess
       } catch (error) {
         unsubscribe();
         entry.promptInFlight = false;
+        delete entry.currentRunId;
+        approvals.cancelSession(sessionId);
         const message = error instanceof Error ? error.message : String(error);
         const failed = finalizeRun(run, {
           outcome: "failed",
@@ -463,6 +644,7 @@ export function createSessionService(options: CreateSessionServiceOptions): Sess
       await entry.connection.flushSessionUpdates(entry.agentSessionId);
       unsubscribe();
       entry.promptInFlight = false;
+      delete entry.currentRunId;
 
       if (!live.has(sessionId)) {
         const failed = finalizeRun(run, {
@@ -500,13 +682,18 @@ export function createSessionService(options: CreateSessionServiceOptions): Sess
     async cancel(sessionId) {
       const entry = requireLive(sessionId);
       entry.cancelRequested = true;
-      await entry.connection.client.notify(methods.agent.session.cancel, {
-        sessionId: entry.agentSessionId,
-      });
+      approvals.cancelSession(sessionId);
+      if (entry.agentSessionId) {
+        await entry.connection.client.notify(methods.agent.session.cancel, {
+          sessionId: entry.agentSessionId,
+        });
+      }
     },
 
-    resolveApproval: () =>
-      Promise.reject(new SterError("invalid-argument", "Approvals arrive in T046")),
+    resolveApproval: (approvalId, outcome) => {
+      approvals.resolve(approvalId, outcome);
+      return Promise.resolve();
+    },
     setPermissionMode: () =>
       Promise.reject(new SterError("invalid-argument", "Permission modes arrive in US3")),
     setConfigOption: () =>
@@ -517,18 +704,61 @@ export function createSessionService(options: CreateSessionServiceOptions): Sess
     authMethods: (sessionId) => {
       const entry = live.get(sessionId);
       if (entry) {
-        return Promise.resolve(
-          entry.connection.capabilities.authMethods.map((m) => ({
-            id: m.id,
-            name: m.name || m.id,
-          })),
-        );
+        return Promise.resolve(entry.connection.capabilities.authMethods.map(toAuthMethodInfo));
       }
       loadOrThrow(sessionId);
       return Promise.resolve([]);
     },
-    authenticate: () =>
-      Promise.reject(new SterError("invalid-argument", "Authenticate arrives in T050")),
+    async authenticate(sessionId, methodId) {
+      const entry = requireLive(sessionId);
+      if (entry.session.status !== "needs-login") {
+        throw new SterError("invalid-argument", "Session is not waiting for login");
+      }
+      const methodsList = entry.connection.capabilities.authMethods.map(toAuthMethodInfo);
+      const method = methodsList.find((m) => m.id === methodId);
+      if (!method) {
+        throw new SterError("not-found", `Unknown auth method ${methodId}`);
+      }
+      if (method.type === "terminal") {
+        throw new SterError(
+          "invalid-argument",
+          "Terminal auth methods must use the login terminal relaunch path",
+          { methodId },
+        );
+      }
+      setStatus(entry.session, "starting");
+      try {
+        await entry.connection.client.request(methods.agent.authenticate, { methodId });
+        const acpSession = await entry.connection.client.buildSession(entry.session.cwd).start();
+        entry.agentSessionId = acpSession.sessionId;
+        entry.session.agentSessionId = acpSession.sessionId;
+        setStatus(entry.session, "idle");
+      } catch (error) {
+        if (isAuthRequiredError(error)) {
+          setStatus(entry.session, "needs-login");
+          throw new SterError("login-required", "Authentication did not complete", {
+            methodId,
+          });
+        }
+        const message = error instanceof Error ? error.message : String(error);
+        await failSession(entry, message);
+        throw error;
+      }
+    },
+    async describeTerminalLogin(sessionId, methodId) {
+      await Promise.resolve();
+      const entry = requireLive(sessionId);
+      const agent = options.agents.get(entry.session.agentId);
+      if (!agent?.launch) {
+        throw new SterError("agent-not-ready", "Agent has no launch command");
+      }
+      const methodsList = entry.connection.capabilities.authMethods.map(toAuthMethodInfo);
+      const method = methodsList.find((m) => m.id === methodId);
+      if (!method) {
+        throw new SterError("not-found", `Unknown auth method ${methodId}`);
+      }
+      return buildTerminalLoginPlan(agent.launch, method);
+    },
     resume: () => Promise.reject(new SterError("not-resumable", "Resume arrives later")),
 
     async restart(sessionId) {
@@ -570,6 +800,8 @@ export function createSessionService(options: CreateSessionServiceOptions): Sess
     async end(sessionId) {
       const entry = live.get(sessionId);
       const session = entry?.session ?? loadOrThrow(sessionId);
+      approvals.cancelSession(sessionId);
+      snapshots.clearSession(sessionId);
       if (session.status !== "ended") {
         try {
           setStatus(session, "ended");
@@ -579,12 +811,14 @@ export function createSessionService(options: CreateSessionServiceOptions): Sess
         }
       }
       if (entry) {
-        try {
-          await entry.connection.client.request(methods.agent.session.close, {
-            sessionId: entry.agentSessionId,
-          });
-        } catch {
-          // Agent may already be gone.
+        if (entry.agentSessionId) {
+          try {
+            await entry.connection.client.request(methods.agent.session.close, {
+              sessionId: entry.agentSessionId,
+            });
+          } catch {
+            // Agent may already be gone.
+          }
         }
         entry.connection.close();
         await entry.process.kill();
