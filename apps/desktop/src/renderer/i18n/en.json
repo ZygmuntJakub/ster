@@ -1,0 +1,273 @@
+{
+  "app": {
+    "name": "Ster",
+    "tagline": "Agent conversations for your projects"
+  },
+  "nav": {
+    "conversation": "Conversation",
+    "agents": "Agents",
+    "runs": "Runs",
+    "settings": "Settings"
+  },
+  "board": {
+    "title": "Sessions",
+    "empty": "No sessions yet",
+    "emptyHint": "Start a conversation from a project folder once an agent is ready.",
+    "working": "Working",
+    "waiting": "Waiting",
+    "finished": "Finished",
+    "failed": "Failed",
+    "attention": "Needs attention",
+    "sessionCount_one": "{{count}} session",
+    "sessionCount_few": "{{count}} sessions",
+    "sessionCount_many": "{{count}} sessions",
+    "sessionCount_other": "{{count}} sessions"
+  },
+  "history": {
+    "readOnly": "This session is closed. You can read the history or continue if the agent supports resume.",
+    "continue": "Continue",
+    "notResumable": "This agent cannot resume the session.",
+    "newInFolder": "New session in this folder",
+    "delete": "Delete",
+    "deletePrompt": "Delete this session’s conversation. What should happen to its run records?",
+    "deleteWithRuns": "Delete runs too",
+    "keepRuns": "Keep runs (erase request text)",
+    "deleteCancel": "Cancel"
+  },
+  "conversation": {
+    "title": "Conversation",
+    "empty": "Select a session to read the conversation",
+    "placeholder": "Conversation items will appear here",
+    "emptySession": "Send a message to start this conversation",
+    "you": "You",
+    "agent": "Agent",
+    "thought": "Reasoning",
+    "notice": "Notice",
+    "unknown": "Unsupported item",
+    "unknownHint": "This {{kind}} item cannot be shown yet",
+    "copy": "Copy",
+    "copied": "Copied",
+    "imageBlocked": "Remote image blocked"
+  },
+  "composer": {
+    "placeholder": "Message the agent…",
+    "send": "Send",
+    "stop": "Stop",
+    "attach": "Attach",
+    "commands": "Agent commands",
+    "noCommands": "No matching commands"
+  },
+  "config": {
+    "modeLabel": "Mode",
+    "modelLabel": "Model",
+    "thoughtLabel": "Thought level"
+  },
+  "approval": {
+    "title": "Approval needed",
+    "guardTitle": "Confirm this guarded action",
+    "cancel": "Cancel"
+  },
+  "permission": {
+    "modeLabel": "Permission mode",
+    "defaultMode": "Default permission mode",
+    "remember": "Allow and remember for this session",
+    "rulesTitle": "Remembered decisions",
+    "revoke": "Revoke",
+    "confinementTitle": "What confinement covers",
+    "confinementBody": "File access through Ster is limited to the session folder after resolving symlinks, unless you approve an exception for a request. This does not sandbox the agent process, network access, or tools the agent runs on its own.",
+    "modes": {
+      "always-ask": "Always ask",
+      "ask-with-rules": "Ask with remembered decisions",
+      "auto-approve-reads": "Auto-approve reads"
+    },
+    "noticeByRule": "Approved automatically by a remembered decision",
+    "noticeByMode": "Approved automatically by the permission mode",
+    "noticeRuleCreated": "Remembered this decision for the session"
+  },
+  "action": {
+    "label": "Action"
+  },
+  "command": {
+    "label": "Command",
+    "stop": "Stop",
+    "waiting": "Waiting for output…",
+    "truncated": "Output truncated to the size limit.",
+    "exit": "Exit code {{code}} · signal {{signal}}"
+  },
+  "diff": {
+    "label": "Diff"
+  },
+  "plan": {
+    "label": "Plan",
+    "empty": "No plan steps yet"
+  },
+  "session": {
+    "new": "New",
+    "newTitle": "New session",
+    "newHint": "Choose an agent and a project folder.",
+    "agent": "Agent",
+    "folder": "Folder",
+    "pickFolder": "Choose folder",
+    "noFolder": "No folder selected",
+    "confirmLaunch": "I confirm starting {{command}} (origin: {{origin}})",
+    "confirmRequired": "Confirm the agent launch before starting",
+    "needAgentFolder": "Pick an agent and a folder",
+    "confinementTitle": "What confinement covers",
+    "confinementBody": "File access is limited to the chosen folder after resolving symlinks. It does not sandbox the agent process, network access, or commands the agent may run later.",
+    "cancel": "Cancel",
+    "start": "Start",
+    "failedTitle": "Session failed",
+    "restart": "Restart",
+    "rename": "Rename",
+    "renameSave": "Save",
+    "renameCancel": "Cancel"
+  },
+  "login": {
+    "title": "Sign in required",
+    "hint": "This agent needs you to sign in before the session can continue.",
+    "command": "Command",
+    "fallback": "If the login terminal cannot start, run the vendor CLI login in your own terminal, then restart the session.",
+    "terminalFailed": "Login terminal exited without success",
+    "terminalUnavailable": "Login terminal is unavailable on this machine"
+  },
+  "settings": {
+    "title": "Settings",
+    "language": "Language",
+    "languageEn": "English",
+    "languagePl": "Polski",
+    "theme": "Theme",
+    "themeSystem": "System",
+    "themeLight": "Light",
+    "themeDark": "Dark"
+  },
+  "policy": {
+    "managed": "Managed by your organization",
+    "invalidTitle": "Organization policy is invalid",
+    "invalidBody": "New sessions are blocked until the policy file is fixed and Ster is restarted. Existing conversation history stays readable.",
+    "agentBlocked": "This agent is not allowed by organization policy."
+  },
+  "factory": {
+    "trustTitle": "Trust this project factory?",
+    "trustBody": "A factory definition in this folder would change the following. Nothing is applied until you trust it.",
+    "changedTitle": "Factory definition changed",
+    "changedBody": "The trusted factory definition for this folder has changed. Review the new contents before trusting again.",
+    "trust": "Trust definition",
+    "trustAgain": "Trust new definition",
+    "skip": "Skip for now",
+    "trustRequired": "Trust or skip the factory definition before starting",
+    "summaryAgents": "Agents: {{agents}}",
+    "summaryDefaultAgent": "Default agent: {{agent}}",
+    "summaryMode": "Permission mode: {{mode}}",
+    "summaryTemplates": "Templates: {{templates}}",
+    "summaryJudging": "Judging criteria are defined",
+    "summaryCommandAgent": "Command agent {{name}}: {{command}}",
+    "droppedByPolicy": "Dropped by organization policy: {{parts}}",
+    "templates": "Templates",
+    "templateLabel": "Task template",
+    "insertTemplate": "Insert"
+  },
+  "dialogs": {
+    "cancel": "Cancel",
+    "open": "Open",
+    "openLink": "Open this link in your browser?",
+    "pickFolderTitle": "Choose a project folder",
+    "pickAttachmentsTitle": "Attach files",
+    "exportRunsTitle": "Export run records",
+    "exportRunsFilter": "JSON Lines"
+  },
+  "agents": {
+    "title": "Agents",
+    "refresh": "Refresh registry",
+    "registryReachable": "Registry reachable",
+    "registryOffline": "Registry offline{{error}}",
+    "install": "Install",
+    "update": "Update",
+    "remove": "Remove",
+    "installTitle": "Confirm install",
+    "verified": "Download checksum verified against the registry.",
+    "unverified": "No registry checksum — trust on first use; the launch hash will be recorded.",
+    "confirmInstall": "Install",
+    "installing": "Installing…",
+    "cancel": "Cancel",
+    "customTitle": "Custom agent",
+    "customName": "Name",
+    "customCommand": "Command",
+    "customArgs": "Arguments",
+    "saveCustom": "Save custom agent",
+    "readiness": {
+      "ready": "Ready",
+      "needs-login": "Needs login",
+      "not-installed": "Not installed",
+      "unavailable": "Unavailable on this system",
+      "blocked-by-policy": "Blocked by organization",
+      "update-available": "Update available",
+      "integrity-failed": "Integrity failed"
+    }
+  },
+  "runs": {
+    "title": "Runs",
+    "empty": "No run records yet",
+    "export": "Export",
+    "deleteFiltered": "Delete filtered",
+    "deleteFilteredConfirm": "Delete {{count}} filtered run records?",
+    "filterAgent": "Agent id",
+    "filterModel": "Model",
+    "filterOutcome": "Outcome",
+    "filterFolder": "Folder",
+    "filterFrom": "From",
+    "filterTo": "To",
+    "filterUserRating": "Min user rating",
+    "filterAgentScore": "Min agent score",
+    "any": "Any",
+    "outcomeCompleted": "Completed",
+    "outcomeCancelled": "Cancelled",
+    "outcomeFailed": "Failed",
+    "outcomeInterrupted": "Interrupted",
+    "applyFilters": "Apply",
+    "totals": "{{count}} runs · user avg {{userAvg}} · agent avg {{agentAvg}} · duration {{duration}} · cost {{cost}}",
+    "loading": "Loading run…",
+    "back": "Back to runs",
+    "detailTitle": "Run detail",
+    "request": "Request",
+    "requestRedacted": "(redacted)",
+    "started": "Started",
+    "actions": "Actions",
+    "approvals": "Approvals",
+    "commands": "Commands",
+    "rateTitle": "Your rating",
+    "rating": "Score (1–5)",
+    "note": "Note",
+    "saveRating": "Save rating",
+    "judgeTitle": "Judge with an agent",
+    "judgeAgent": "Judging agent",
+    "judge": "Judge run",
+    "scoresTitle": "Scores",
+    "noScores": "No scores yet",
+    "userScore": "User",
+    "agentScore": "Agent",
+    "delete": "Delete run"
+  },
+  "extensions": {
+    "example": {
+      "nav": "Example",
+      "title": "Example panel",
+      "body": "This panel is registered in apps/desktop/src/extensions/index.ts. Replace it with your own sidebar, session-side, or settings panel."
+    }
+  },
+  "errors": {
+    "policy-invalid": "Organization policy is invalid",
+    "blocked-by-policy": "Blocked by organization policy",
+    "agent-not-ready": "This agent is not ready",
+    "agent-not-confirmed": "Confirm the agent before the first start",
+    "integrity-failed": "Agent files failed an integrity check",
+    "login-required": "Sign in to the agent to continue",
+    "protocol-unsupported": "This agent uses an unsupported protocol version",
+    "agent-exited": "The agent process stopped unexpectedly",
+    "outside-workspace": "That path is outside the project folder",
+    "not-resumable": "This session cannot be resumed",
+    "definition-invalid": "The factory definition is invalid",
+    "definition-untrusted": "The factory definition is not trusted",
+    "not-found": "Not found",
+    "invalid-argument": "Invalid request"
+  }
+}

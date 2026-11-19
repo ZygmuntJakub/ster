@@ -30,18 +30,18 @@ description: "Task list for Ster — ACP Desktop Client"
 
 **Purpose**: Workspace, toolchain, and quality gates
 
-- [ ] T001 Create the pnpm workspace: `package.json`, `pnpm-workspace.yaml`, `tsconfig.base.json` (strict, `noUncheckedIndexedAccess`, `exactOptionalPropertyTypes`, ESM), `.nvmrc` (Node 24)
-- [ ] T002 [P] Scaffold `packages/core/` (`package.json` named `@ster/core`, `tsconfig.json`, `src/index.ts`) with `@agentclientprotocol/sdk` and `zod`
-- [ ] T003 [P] Scaffold `packages/mock-agent/` (`package.json`, `tsconfig.json`, `src/index.ts`, bin entry)
-- [ ] T004 Scaffold `apps/desktop/` with electron-vite: `electron.vite.config.ts`, `src/main/index.ts`, `src/preload/index.ts`, `src/renderer/index.html`, `src/renderer/main.tsx`
-- [ ] T005 [P] Configure ESLint (typescript-eslint strict-type-checked) and Prettier in `eslint.config.js` and `.prettierrc`, including an import-boundary rule that forbids `electron`, DOM, and `apps/*` imports inside `packages/core`
-- [ ] T006 [P] Configure Vitest with v8 coverage and an 80% line threshold in `packages/core/vitest.config.ts`
-- [ ] T007 [P] Configure Playwright for Electron in `apps/desktop/playwright.config.ts` with a launcher helper in `apps/desktop/tests/e2e/launch.ts`
-- [ ] T008 [P] Configure Tailwind CSS and base tokens (light and dark) in `apps/desktop/src/renderer/styles.css`, taking the tokens (colors, type, radii, light and dark sets) from `design/mockup/index.html` (research.md R20)
-- [ ] T009 Add root scripts `dev`, `check`, `test:e2e`, `test:security`, `example:headless` to `package.json` as defined in quickstart.md
-- [ ] T010 [P] Create the CI workflow `.github/workflows/ci.yml`: matrix macOS/Windows/Ubuntu running `pnpm check`, `pnpm test:e2e`, `pnpm test:security`, `pnpm audit --audit-level high`
-- [ ] T011 [P] Add `LICENSE` (MIT), `README.md` skeleton, `CHANGELOG.md`, and `SECURITY.md`
-- [ ] T012 Verify the two open items from plan.md in a throwaway spike and record the outcome in `specs/001-acp-desktop-client/research.md` (R3, R10): `node:sqlite` in the Electron main process, and `node-pty` prebuilt binaries for all six targets; switch to the documented fallback where needed
+- [x] T001 Create the pnpm workspace: `package.json`, `pnpm-workspace.yaml`, `tsconfig.base.json` (strict, `noUncheckedIndexedAccess`, `exactOptionalPropertyTypes`, ESM), `.nvmrc` (Node 24)
+- [x] T002 [P] Scaffold `packages/core/` (`package.json` named `@ster/core`, `tsconfig.json`, `src/index.ts`) with `@agentclientprotocol/sdk` and `zod`
+- [x] T003 [P] Scaffold `packages/mock-agent/` (`package.json`, `tsconfig.json`, `src/index.ts`, bin entry)
+- [x] T004 Scaffold `apps/desktop/` with electron-vite: `electron.vite.config.ts`, `src/main/index.ts`, `src/preload/index.ts`, `src/renderer/index.html`, `src/renderer/main.tsx`
+- [x] T005 [P] Configure ESLint (typescript-eslint strict-type-checked) and Prettier in `eslint.config.js` and `.prettierrc`, including an import-boundary rule that forbids `electron`, DOM, and `apps/*` imports inside `packages/core`
+- [x] T006 [P] Configure Vitest with v8 coverage and an 80% line threshold in `packages/core/vitest.config.ts`
+- [x] T007 [P] Configure Playwright for Electron in `apps/desktop/playwright.config.ts` with a launcher helper in `apps/desktop/tests/e2e/launch.ts`
+- [x] T008 [P] Configure Tailwind CSS and base tokens (light and dark) in `apps/desktop/src/renderer/styles.css`, taking the tokens (colors, type, radii, light and dark sets) from `design/mockup/index.html` (research.md R20)
+- [x] T009 Add root scripts `dev`, `check`, `test:e2e`, `test:security`, `example:headless` to `package.json` as defined in quickstart.md
+- [x] T010 [P] Create the CI workflow `.github/workflows/ci.yml`: matrix macOS/Windows/Ubuntu running `pnpm check`, `pnpm test:e2e`, `pnpm test:security`, `pnpm audit --audit-level high`
+- [x] T011 [P] Add `LICENSE` (MIT), `README.md` skeleton, `CHANGELOG.md`, and `SECURITY.md`
+- [x] T012 Verify the two open items from plan.md in a throwaway spike and record the outcome in `specs/001-acp-desktop-client/research.md` (R3, R10): `node:sqlite` in the Electron main process, and `node-pty` prebuilt binaries for all six targets; switch to the documented fallback where needed
 
 ---
 
@@ -51,29 +51,29 @@ description: "Task list for Ster — ACP Desktop Client"
 
 **⚠️ CRITICAL**: No user story work can begin until this phase is complete
 
-- [ ] T013 [P] Create `apps/desktop/resources/brand.json` and the `Brand` type and loader in `packages/core/src/brand.ts` (data-model.md `Brand`)
-- [ ] T014 [P] Implement `SterError` with the stable codes from contracts/core-api.md in `packages/core/src/errors.ts`
-- [ ] T015 [P] Implement a logger that redacts credentials and environment values in `packages/core/src/log.ts`, with tests in `packages/core/tests/unit/log.test.ts`
-- [ ] T016 Define the `Store` interface and the SQLite implementation with a migration runner in `packages/core/src/store/` (`store.ts`, `sqlite.ts`, `migrations/001_init.sql`), creating the data directory and database with user-only permissions (research.md R10)
-- [ ] T017 [P] Write store tests (migrations, ordered append, paging, permissions) in `packages/core/tests/unit/store.test.ts`
-- [ ] T018 [P] Implement the typed event stream with per-session ordering and the `CoreEvent` union from contracts/core-api.md in `packages/core/src/events/stream.ts`, with tests in `packages/core/tests/unit/events.test.ts`
-- [ ] T019 [P] Wire `SessionEventConsumer` extensions to the event stream in `packages/core/src/events/consumers.ts` (failures logged, never blocking a session), with tests in `packages/core/tests/unit/event-consumers.test.ts` (FR-060)
-- [ ] T020 [P] Define extension contracts and registries (`AgentSource`, `PermissionModeDefinition`, `PolicyItemDefinition`, `SessionEventConsumer`) in `packages/core/src/extensions/index.ts`
-- [ ] T021 Implement the scriptable mock ACP agent in `packages/mock-agent/src/` with scenarios selected from prompt text: `hello`, `long`, `edit-file`, `plan`, `read-then-edit`, `escape-workspace`, `crash`, `hostile-content`, `run-command`, `run-long`, `auth-required`, `config-options`, `commands`, `usage`, `unknown-update`, `permission-always`, `write-after-external-edit`
-- [ ] T022 [P] Implement shell environment resolution with timeout and fallback in `packages/core/src/platform/shell-env.ts` (research.md R19), with tests in `packages/core/tests/unit/shell-env.test.ts`
-- [ ] T023 Implement agent process management in `packages/core/src/acp/process.ts`: spawn with filtered environment (research.md R14), stderr capture to the log, process-tree termination on all three platforms, starting agents with the environment from `packages/core/src/platform/shell-env.ts`
-- [ ] T024 Implement the ACP connection in `packages/core/src/acp/connection.ts`: `ndJsonStream` over the child's stdio, `initialize` with client capabilities, protocol version check (`protocol-unsupported`), capability snapshot, per-session serial queue for `session/update`
-- [ ] T025 Write connection tests against the mock agent (handshake, ordering under concurrent updates, unsupported version, agent exit) in `packages/core/tests/integration/connection.test.ts`
-- [ ] T026 [P] Implement `PolicyService` with source loading hooks and the `absent` state, plus enforcement call sites as no-ops, in `packages/core/src/policy/service.ts` (full behavior arrives in US10)
-- [ ] T027 [P] Implement `SettingsService` in `packages/core/src/settings/service.ts` per data-model.md `Settings`: `Settings.language`, `Settings.defaultPermissionMode`, `Settings.defaultAgentId`, `Settings.customAgents`, `Settings.theme`
-- [ ] T028 Implement `createCore` and `Core.dispose` in `packages/core/src/index.ts` per contracts/core-api.md
-- [ ] T029 Implement the hardened window and application lifecycle in `apps/desktop/src/main/window.ts` and `apps/desktop/src/main/index.ts`: sandbox, context isolation, content security policy, navigation and `window.open` denial, permission-request denial (research.md R9)
-- [ ] T030 [P] Configure Electron fuses and ASAR integrity in `apps/desktop/electron-builder.yml` and `apps/desktop/scripts/fuses.mjs` (research.md R9)
-- [ ] T031 Implement the bridge infrastructure per contracts/ipc.md: schema registry in `apps/desktop/src/shared/bridge.ts`, validating handler registry with sender-frame check in `apps/desktop/src/main/bridge.ts`, fixed surface in `apps/desktop/src/preload/index.ts`; include `app.info`, `settings.get`, `settings.set`, `events.subscribe`
-- [ ] T032 Write bridge tests in `apps/desktop/tests/bridge.test.ts`: preload surface equals the contract list, invalid payloads rejected, non-top-level sender rejected
-- [ ] T033 [P] Set up i18next with typed keys in `apps/desktop/src/renderer/i18n/` (`index.ts`, `en.json`, `pl.json`) and a key-parity check in `scripts/check-i18n.mjs` wired into `pnpm check`
-- [ ] T034 Build the renderer shell in `apps/desktop/src/renderer/app/` (`App.tsx`, `layout/`, `stores/`): sidebar, main area, settings entry, theme from `Settings.theme`, translation of `SterError` codes to messages, laid out as in the mockup: icon rail, session board area, conversation area (research.md R20)
-- [ ] T035 [P] Write shell hardening tests in `apps/desktop/tests/e2e/hardening.spec.ts`: no Node globals in the page, navigation blocked, remote resource load blocked
+- [x] T013 [P] Create `apps/desktop/resources/brand.json` and the `Brand` type and loader in `packages/core/src/brand.ts` (data-model.md `Brand`)
+- [x] T014 [P] Implement `SterError` with the stable codes from contracts/core-api.md in `packages/core/src/errors.ts`
+- [x] T015 [P] Implement a logger that redacts credentials and environment values in `packages/core/src/log.ts`, with tests in `packages/core/tests/unit/log.test.ts`
+- [x] T016 Define the `Store` interface and the SQLite implementation with a migration runner in `packages/core/src/store/` (`store.ts`, `sqlite.ts`, `migrations/001_init.sql`), creating the data directory and database with user-only permissions (research.md R10)
+- [x] T017 [P] Write store tests (migrations, ordered append, paging, permissions) in `packages/core/tests/unit/store.test.ts`
+- [x] T018 [P] Implement the typed event stream with per-session ordering and the `CoreEvent` union from contracts/core-api.md in `packages/core/src/events/stream.ts`, with tests in `packages/core/tests/unit/events.test.ts`
+- [x] T019 [P] Wire `SessionEventConsumer` extensions to the event stream in `packages/core/src/events/consumers.ts` (failures logged, never blocking a session), with tests in `packages/core/tests/unit/event-consumers.test.ts` (FR-060)
+- [x] T020 [P] Define extension contracts and registries (`AgentSource`, `PermissionModeDefinition`, `PolicyItemDefinition`, `SessionEventConsumer`) in `packages/core/src/extensions/index.ts`
+- [x] T021 Implement the scriptable mock ACP agent in `packages/mock-agent/src/` with scenarios selected from prompt text: `hello`, `long`, `edit-file`, `plan`, `read-then-edit`, `escape-workspace`, `crash`, `hostile-content`, `run-command`, `run-long`, `auth-required`, `config-options`, `commands`, `usage`, `unknown-update`, `permission-always`, `write-after-external-edit`
+- [x] T022 [P] Implement shell environment resolution with timeout and fallback in `packages/core/src/platform/shell-env.ts` (research.md R19), with tests in `packages/core/tests/unit/shell-env.test.ts`
+- [x] T023 Implement agent process management in `packages/core/src/acp/process.ts`: spawn with filtered environment (research.md R14), stderr capture to the log, process-tree termination on all three platforms, starting agents with the environment from `packages/core/src/platform/shell-env.ts`
+- [x] T024 Implement the ACP connection in `packages/core/src/acp/connection.ts`: `ndJsonStream` over the child's stdio, `initialize` with client capabilities, protocol version check (`protocol-unsupported`), capability snapshot, per-session serial queue for `session/update`
+- [x] T025 Write connection tests against the mock agent (handshake, ordering under concurrent updates, unsupported version, agent exit) in `packages/core/tests/integration/connection.test.ts`
+- [x] T026 [P] Implement `PolicyService` with source loading hooks and the `absent` state, plus enforcement call sites as no-ops, in `packages/core/src/policy/service.ts` (full behavior arrives in US10)
+- [x] T027 [P] Implement `SettingsService` in `packages/core/src/settings/service.ts` per data-model.md `Settings`: `Settings.language`, `Settings.defaultPermissionMode`, `Settings.defaultAgentId`, `Settings.customAgents`, `Settings.theme`
+- [x] T028 Implement `createCore` and `Core.dispose` in `packages/core/src/index.ts` per contracts/core-api.md
+- [x] T029 Implement the hardened window and application lifecycle in `apps/desktop/src/main/window.ts` and `apps/desktop/src/main/index.ts`: sandbox, context isolation, content security policy, navigation and `window.open` denial, permission-request denial (research.md R9)
+- [x] T030 [P] Configure Electron fuses and ASAR integrity in `apps/desktop/electron-builder.yml` and `apps/desktop/scripts/fuses.mjs` (research.md R9)
+- [x] T031 Implement the bridge infrastructure per contracts/ipc.md: schema registry in `apps/desktop/src/shared/bridge.ts`, validating handler registry with sender-frame check in `apps/desktop/src/main/bridge.ts`, fixed surface in `apps/desktop/src/preload/index.ts`; include `app.info`, `settings.get`, `settings.set`, `events.subscribe`
+- [x] T032 Write bridge tests in `apps/desktop/tests/bridge.test.ts`: preload surface equals the contract list, invalid payloads rejected, non-top-level sender rejected
+- [x] T033 [P] Set up i18next with typed keys in `apps/desktop/src/renderer/i18n/` (`index.ts`, `en.json`, `pl.json`) and a key-parity check in `scripts/check-i18n.mjs` wired into `pnpm check`
+- [x] T034 Build the renderer shell in `apps/desktop/src/renderer/app/` (`App.tsx`, `layout/`, `stores/`): sidebar, main area, settings entry, theme from `Settings.theme`, translation of `SterError` codes to messages, laid out as in the mockup: icon rail, session board area, conversation area (research.md R20)
+- [x] T035 [P] Write shell hardening tests in `apps/desktop/tests/e2e/hardening.spec.ts`: no Node globals in the page, navigation blocked, remote resource load blocked
 
 **Checkpoint**: The application starts as an empty hardened shell in both languages, the core runs headless against the mock agent, and CI is green on three platforms
 
@@ -87,34 +87,34 @@ description: "Task list for Ster — ACP Desktop Client"
 
 ### Tests for User Story 1
 
-- [ ] T036 [P] [US1] Integration tests for prompt, streaming, cancel, and agent crash in `packages/core/tests/integration/session-turn.test.ts`
-- [ ] T037 [P] [US1] Integration tests for login-required and both auth method types in `packages/core/tests/integration/auth.test.ts`
-- [ ] T038 [P] [US1] Security tests for file access confinement, including symlinks and `..`, in `packages/core/tests/security/workspace-paths.test.ts`
-- [ ] T039 [P] [US1] End-to-end flow for US1 in `apps/desktop/tests/e2e/us1-conversation.spec.ts`
+- [x] T036 [P] [US1] Integration tests for prompt, streaming, cancel, and agent crash in `packages/core/tests/integration/session-turn.test.ts`
+- [x] T037 [P] [US1] Integration tests for login-required and both auth method types in `packages/core/tests/integration/auth.test.ts`
+- [x] T038 [P] [US1] Security tests for file access confinement, including symlinks and `..`, in `packages/core/tests/security/workspace-paths.test.ts`
+- [x] T039 [P] [US1] End-to-end flow for US1 in `apps/desktop/tests/e2e/us1-conversation.spec.ts`
 
 ### Implementation for User Story 1
 
-- [ ] T040 [P] [US1] Implement the `Agent` model and a minimal `AgentService` (`list`, `saveCustom`, `confirmFirstStart`) in `packages/core/src/agents/agent.ts` and `packages/core/src/agents/service.ts`; cite data-model.md `Agent.id`, `Agent.launch`, `Agent.confirmedAt`, `Agent.origin`; in development builds list the mock agent
-- [ ] T041 [P] [US1] Implement the `Session` model and state machine in `packages/core/src/sessions/session.ts` per data-model.md `Session.status`, `Session.cwd`, `Session.title`
-- [ ] T042 [P] [US1] Implement conversation item storage (append, in-place streaming update, paging) in `packages/core/src/sessions/items.ts` per data-model.md `ConversationItem.kind`
-- [ ] T043 [US1] Implement the mapping from `session/update` variants to conversation items for message chunks, thought chunks, session info, and unknown variants in `packages/core/src/sessions/updates.ts`
-- [ ] T044 [US1] Implement the run lifecycle skeleton (create on prompt, finalise on stop, `outcome` and `stopReason`) in `packages/core/src/runs/lifecycle.ts` per data-model.md `RunRecord.outcome`, `RunRecord.kind`
-- [ ] T045 [US1] Implement `SessionService` `create`, `get`, `items`, `prompt`, `cancel`, `end`, `restart` in `packages/core/src/sessions/service.ts`, refusing agents without first-start confirmation (`agent-not-confirmed`)
-- [ ] T046 [US1] Implement approval handling with prompt-always behavior in `packages/core/src/permissions/approvals.ts`: pending requests, `resolveApproval`, cancellation on turn cancel and session end, per data-model.md `ApprovalRequest.outcome`
-- [ ] T047 [US1] Implement confined `fs/read_text_file` and `fs/write_text_file` handlers in `packages/core/src/workspace/files.ts`, resolving symlinks and rejecting paths outside `Session.cwd` with `outside-workspace`
-- [ ] T048 [US1] Add file snapshots and stale-write detection to `packages/core/src/workspace/snapshots.ts` per data-model.md `FileSnapshot.contentHash`, raising a guard approval before overwriting (FR-079), with tests in `packages/core/tests/integration/stale-write.test.ts`
-- [ ] T049 [US1] Detect a deleted, moved, or unreadable working folder in `packages/core/src/workspace/availability.ts`, failing the session with an explanation and blocking further file and command operations, with tests in `packages/core/tests/integration/workspace-gone.test.ts`
-- [ ] T050 [US1] Implement login support in `packages/core/src/sessions/auth.ts`: detect error `-32000`, expose `authMethods`, call `authenticate` for agent-type methods, and describe the relaunch command for terminal-type methods (research.md R3)
-- [ ] T051 [US1] Implement the login terminal in `apps/desktop/src/main/login-terminal.ts` using `node-pty`, started only for an agent-declared method and reconnecting the session on exit code 0
-- [ ] T052 [US1] Add bridge functions `dialogs.pickFolder`, `dialogs.pickAttachments`, `agents.list`, `agents.confirmFirstStart`, `sessions.create`, `sessions.get`, `sessions.items`, `sessions.prompt`, `sessions.cancel`, `sessions.resolveApproval`, `sessions.authMethods`, `sessions.authenticate`, `sessions.restart`, `sessions.end`, `links.open`, `login.terminal.*` with schemas in `apps/desktop/src/shared/bridge.ts` and handlers in `apps/desktop/src/main/handlers/sessions.ts`, using folder and attachment tokens instead of paths
-- [ ] T053 [US1] Implement event forwarding with per-frame coalescing of streamed text in `apps/desktop/src/main/event-forwarder.ts` (research.md R18)
-- [ ] T054 [P] [US1] Build the new-session dialog (agent, folder, first-start confirmation showing the program and its origin) in `apps/desktop/src/renderer/features/sessions/NewSessionDialog.tsx`, and the statement of what confinement does and does not cover (FR-015)
-- [ ] T055 [P] [US1] Build safe Markdown rendering (no raw HTML, no remote images, links as confirm-to-open buttons, copy for text and code blocks) in `apps/desktop/src/renderer/features/conversation/Markdown.tsx`
-- [ ] T056 [US1] Build the conversation view with streaming agent messages, distinct reasoning text, notices, and unknown-item placeholders in `apps/desktop/src/renderer/features/conversation/ConversationView.tsx`
-- [ ] T057 [US1] Build the composer with send, stop, and attachments gated by agent prompt capabilities in `apps/desktop/src/renderer/features/conversation/Composer.tsx`
-- [ ] T058 [P] [US1] Build the approval prompt showing the action and the agent's options in `apps/desktop/src/renderer/features/approvals/ApprovalPrompt.tsx`, showing only one-time options (FR-011), presented as a bar docked above the composer for agent requests and as a blocking dialog for client-guard requests (research.md R20)
-- [ ] T059 [P] [US1] Build the error and restart banner and the login-required panel with the embedded login terminal (`xterm.js`) in `apps/desktop/src/renderer/features/sessions/SessionStatus.tsx` and `apps/desktop/src/renderer/features/sessions/LoginPanel.tsx`
-- [ ] T060 [US1] Add English and Polish strings for all US1 screens in `apps/desktop/src/renderer/i18n/en.json` and `apps/desktop/src/renderer/i18n/pl.json`
+- [x] T040 [P] [US1] Implement the `Agent` model and a minimal `AgentService` (`list`, `saveCustom`, `confirmFirstStart`) in `packages/core/src/agents/agent.ts` and `packages/core/src/agents/service.ts`; cite data-model.md `Agent.id`, `Agent.launch`, `Agent.confirmedAt`, `Agent.origin`; in development builds list the mock agent
+- [x] T041 [P] [US1] Implement the `Session` model and state machine in `packages/core/src/sessions/session.ts` per data-model.md `Session.status`, `Session.cwd`, `Session.title`
+- [x] T042 [P] [US1] Implement conversation item storage (append, in-place streaming update, paging) in `packages/core/src/sessions/items.ts` per data-model.md `ConversationItem.kind`
+- [x] T043 [US1] Implement the mapping from `session/update` variants to conversation items for message chunks, thought chunks, session info, and unknown variants in `packages/core/src/sessions/updates.ts`
+- [x] T044 [US1] Implement the run lifecycle skeleton (create on prompt, finalise on stop, `outcome` and `stopReason`) in `packages/core/src/runs/lifecycle.ts` per data-model.md `RunRecord.outcome`, `RunRecord.kind`
+- [x] T045 [US1] Implement `SessionService` `create`, `get`, `items`, `prompt`, `cancel`, `end`, `restart` in `packages/core/src/sessions/service.ts`, refusing agents without first-start confirmation (`agent-not-confirmed`)
+- [x] T046 [US1] Implement approval handling with prompt-always behavior in `packages/core/src/permissions/approvals.ts`: pending requests, `resolveApproval`, cancellation on turn cancel and session end, per data-model.md `ApprovalRequest.outcome`
+- [x] T047 [US1] Implement confined `fs/read_text_file` and `fs/write_text_file` handlers in `packages/core/src/workspace/files.ts`, resolving symlinks and rejecting paths outside `Session.cwd` with `outside-workspace`
+- [x] T048 [US1] Add file snapshots and stale-write detection to `packages/core/src/workspace/snapshots.ts` per data-model.md `FileSnapshot.contentHash`, raising a guard approval before overwriting (FR-079), with tests in `packages/core/tests/integration/stale-write.test.ts`
+- [x] T049 [US1] Detect a deleted, moved, or unreadable working folder in `packages/core/src/workspace/availability.ts`, failing the session with an explanation and blocking further file and command operations, with tests in `packages/core/tests/integration/workspace-gone.test.ts`
+- [x] T050 [US1] Implement login support in `packages/core/src/sessions/auth.ts`: detect error `-32000`, expose `authMethods`, call `authenticate` for agent-type methods, and describe the relaunch command for terminal-type methods (research.md R3)
+- [x] T051 [US1] Implement the login terminal in `apps/desktop/src/main/login-terminal.ts` using `node-pty`, started only for an agent-declared method and reconnecting the session on exit code 0
+- [x] T052 [US1] Add bridge functions `dialogs.pickFolder`, `dialogs.pickAttachments`, `agents.list`, `agents.confirmFirstStart`, `sessions.create`, `sessions.get`, `sessions.items`, `sessions.prompt`, `sessions.cancel`, `sessions.resolveApproval`, `sessions.authMethods`, `sessions.authenticate`, `sessions.restart`, `sessions.end`, `links.open`, `login.terminal.*` with schemas in `apps/desktop/src/shared/bridge.ts` and handlers in `apps/desktop/src/main/handlers/sessions.ts`, using folder and attachment tokens instead of paths
+- [x] T053 [US1] Implement event forwarding with per-frame coalescing of streamed text in `apps/desktop/src/main/event-forwarder.ts` (research.md R18)
+- [x] T054 [P] [US1] Build the new-session dialog (agent, folder, first-start confirmation showing the program and its origin) in `apps/desktop/src/renderer/features/sessions/NewSessionDialog.tsx`, and the statement of what confinement does and does not cover (FR-015)
+- [x] T055 [P] [US1] Build safe Markdown rendering (no raw HTML, no remote images, links as confirm-to-open buttons, copy for text and code blocks) in `apps/desktop/src/renderer/features/conversation/Markdown.tsx`
+- [x] T056 [US1] Build the conversation view with streaming agent messages, distinct reasoning text, notices, and unknown-item placeholders in `apps/desktop/src/renderer/features/conversation/ConversationView.tsx`
+- [x] T057 [US1] Build the composer with send, stop, and attachments gated by agent prompt capabilities in `apps/desktop/src/renderer/features/conversation/Composer.tsx`
+- [x] T058 [P] [US1] Build the approval prompt showing the action and the agent's options in `apps/desktop/src/renderer/features/approvals/ApprovalPrompt.tsx`, showing only one-time options (FR-011), presented as a bar docked above the composer for agent requests and as a blocking dialog for client-guard requests (research.md R20)
+- [x] T059 [P] [US1] Build the error and restart banner and the login-required panel with the embedded login terminal (`xterm.js`) in `apps/desktop/src/renderer/features/sessions/SessionStatus.tsx` and `apps/desktop/src/renderer/features/sessions/LoginPanel.tsx`
+- [x] T060 [US1] Add English and Polish strings for all US1 screens in `apps/desktop/src/renderer/i18n/en.json` and `apps/desktop/src/renderer/i18n/pl.json`
 
 **Checkpoint**: A user can hold a full conversation with an agent, approve requests one by one, stop it, and recover from a crash
 
@@ -128,18 +128,18 @@ description: "Task list for Ster — ACP Desktop Client"
 
 ### Tests for User Story 2
 
-- [ ] T061 [P] [US2] Unit tests for action merging and status ordering in `packages/core/tests/unit/actions.test.ts`
-- [ ] T062 [P] [US2] End-to-end flow for US2 in `apps/desktop/tests/e2e/us2-actions.spec.ts`
+- [x] T061 [P] [US2] Unit tests for action merging and status ordering in `packages/core/tests/unit/actions.test.ts`
+- [x] T062 [P] [US2] End-to-end flow for US2 in `apps/desktop/tests/e2e/us2-actions.spec.ts`
 
 ### Implementation for User Story 2
 
-- [ ] T063 [US2] Implement `tool_call` and `tool_call_update` merging by `toolCallId` in `packages/core/src/sessions/actions.ts` per data-model.md `AgentAction.status`, `AgentAction.kind`, `AgentAction.content`, `AgentAction.locations`
-- [ ] T064 [US2] Implement plan handling (latest state replaces earlier) in `packages/core/src/sessions/plan.ts` and wire both into `packages/core/src/sessions/updates.ts`
-- [ ] T065 [US2] Add the bridge function `files.openLocation` (indices only) in `apps/desktop/src/main/handlers/files.ts`, opening the file with the system default application after confirming it is inside the workspace or was approved
-- [ ] T066 [P] [US2] Build the action card (title, kind, status, result, locations) in `apps/desktop/src/renderer/features/actions/ActionCard.tsx`
-- [ ] T067 [P] [US2] Build the diff view using the `diff` package in `apps/desktop/src/renderer/features/diff/DiffView.tsx`
-- [ ] T068 [P] [US2] Build the plan view in `apps/desktop/src/renderer/features/plan/PlanView.tsx`
-- [ ] T069 [US2] Integrate action, diff, and plan items into `apps/desktop/src/renderer/features/conversation/ConversationView.tsx` and add EN/PL strings
+- [x] T063 [US2] Implement `tool_call` and `tool_call_update` merging by `toolCallId` in `packages/core/src/sessions/actions.ts` per data-model.md `AgentAction.status`, `AgentAction.kind`, `AgentAction.content`, `AgentAction.locations`
+- [x] T064 [US2] Implement plan handling (latest state replaces earlier) in `packages/core/src/sessions/plan.ts` and wire both into `packages/core/src/sessions/updates.ts`
+- [x] T065 [US2] Add the bridge function `files.openLocation` (indices only) in `apps/desktop/src/main/handlers/files.ts`, opening the file with the system default application after confirming it is inside the workspace or was approved
+- [x] T066 [P] [US2] Build the action card (title, kind, status, result, locations) in `apps/desktop/src/renderer/features/actions/ActionCard.tsx`
+- [x] T067 [P] [US2] Build the diff view using the `diff` package in `apps/desktop/src/renderer/features/diff/DiffView.tsx`
+- [x] T068 [P] [US2] Build the plan view in `apps/desktop/src/renderer/features/plan/PlanView.tsx`
+- [x] T069 [US2] Integrate action, diff, and plan items into `apps/desktop/src/renderer/features/conversation/ConversationView.tsx` and add EN/PL strings
 
 **Checkpoint**: The user can follow and inspect everything the agent does
 
@@ -153,19 +153,19 @@ description: "Task list for Ster — ACP Desktop Client"
 
 ### Tests for User Story 3
 
-- [ ] T070 [P] [US3] Table-driven unit tests for the permission engine (every mode × tool kind × option set) in `packages/core/tests/unit/permission-engine.test.ts`, including requests that offer only standing-permission options and requests without an `allow_once` option
-- [ ] T071 [P] [US3] Integration tests for rules, automatic approvals recorded as notices, and the guard for paths outside the folder in `packages/core/tests/integration/permissions.test.ts`
-- [ ] T072 [P] [US3] End-to-end flow for US3 in `apps/desktop/tests/e2e/us3-permissions.spec.ts`
+- [x] T070 [P] [US3] Table-driven unit tests for the permission engine (every mode × tool kind × option set) in `packages/core/tests/unit/permission-engine.test.ts`, including requests that offer only standing-permission options and requests without an `allow_once` option
+- [x] T071 [P] [US3] Integration tests for rules, automatic approvals recorded as notices, and the guard for paths outside the folder in `packages/core/tests/integration/permissions.test.ts`
+- [x] T072 [P] [US3] End-to-end flow for US3 in `apps/desktop/tests/e2e/us3-permissions.spec.ts`
 
 ### Implementation for User Story 3
 
-- [ ] T073 [US3] Implement the permission engine as a pure function and the three built-in modes in `packages/core/src/permissions/engine.ts` and `packages/core/src/permissions/modes.ts` (research.md R13), registered through `PermissionModeDefinition`; the engine never returns an option of kind `allow_always` or `reject_always` and offers the application's own remember choice only in `ask-with-rules`
-- [ ] T074 [US3] Implement session rules in `packages/core/src/permissions/rules.ts` per data-model.md `PermissionRule.match`, including list and revoke
-- [ ] T075 [US3] Implement the client-side guard in `packages/core/src/permissions/guard.ts`: prompt for `fs/*` paths outside `Session.cwd` (replacing the hard rejection from US1) and expose the hook for `terminal/create` used in US5; guard requests never create rules; implement the one-approval-per-command matching rule and stale-write prompts exactly as defined in research.md R13
-- [ ] T076 [US3] Wire the engine into `packages/core/src/permissions/approvals.ts`, recording outcomes decided by rule or mode as notices (FR-014), and implement `setPermissionMode`, `rules`, `revokeRule` in `packages/core/src/sessions/service.ts` with `Session.permissionMode` defaulting to `Settings.defaultPermissionMode`
-- [ ] T077 [US3] Add bridge functions `sessions.setPermissionMode`, `sessions.rules`, `sessions.revokeRule` in `apps/desktop/src/main/handlers/sessions.ts`
-- [ ] T078 [P] [US3] Build the permission mode selector in `apps/desktop/src/renderer/features/approvals/PermissionModeSelect.tsx` and the default-mode setting in `apps/desktop/src/renderer/features/settings/PermissionSettings.tsx`, repeating the confinement statement from FR-015 in the settings screen
-- [ ] T079 [P] [US3] Build the remembered-decisions panel with revoke in `apps/desktop/src/renderer/features/approvals/RulesPanel.tsx`, and add EN/PL strings
+- [x] T073 [US3] Implement the permission engine as a pure function and the three built-in modes in `packages/core/src/permissions/engine.ts` and `packages/core/src/permissions/modes.ts` (research.md R13), registered through `PermissionModeDefinition`; the engine never returns an option of kind `allow_always` or `reject_always` and offers the application's own remember choice only in `ask-with-rules`
+- [x] T074 [US3] Implement session rules in `packages/core/src/permissions/rules.ts` per data-model.md `PermissionRule.match`, including list and revoke
+- [x] T075 [US3] Implement the client-side guard in `packages/core/src/permissions/guard.ts`: prompt for `fs/*` paths outside `Session.cwd` (replacing the hard rejection from US1) and expose the hook for `terminal/create` used in US5; guard requests never create rules; implement the one-approval-per-command matching rule and stale-write prompts exactly as defined in research.md R13
+- [x] T076 [US3] Wire the engine into `packages/core/src/permissions/approvals.ts`, recording outcomes decided by rule or mode as notices (FR-014), and implement `setPermissionMode`, `rules`, `revokeRule` in `packages/core/src/sessions/service.ts` with `Session.permissionMode` defaulting to `Settings.defaultPermissionMode`
+- [x] T077 [US3] Add bridge functions `sessions.setPermissionMode`, `sessions.rules`, `sessions.revokeRule` in `apps/desktop/src/main/handlers/sessions.ts`
+- [x] T078 [P] [US3] Build the permission mode selector in `apps/desktop/src/renderer/features/approvals/PermissionModeSelect.tsx` and the default-mode setting in `apps/desktop/src/renderer/features/settings/PermissionSettings.tsx`, repeating the confinement statement from FR-015 in the settings screen
+- [x] T079 [P] [US3] Build the remembered-decisions panel with revoke in `apps/desktop/src/renderer/features/approvals/RulesPanel.tsx`, and add EN/PL strings
 
 **Checkpoint**: First usable version (increment 1): conversation, visibility, and consent control
 
@@ -179,28 +179,28 @@ description: "Task list for Ster — ACP Desktop Client"
 
 ### Tests for User Story 4
 
-- [ ] T080 [P] [US4] Unit tests for registry parsing (lenient to unknown keys), platform key resolution including musl, and readiness derivation in `packages/core/tests/unit/registry.test.ts`
-- [ ] T081 [P] [US4] Security tests for installation in `packages/core/tests/security/install.test.ts`: checksum mismatch, archive path traversal, `cmd` outside the install directory, non-HTTPS URL, tampered launch file before start
-- [ ] T082 [P] [US4] Integration tests for install, update, and remove against a local fixture registry in `packages/core/tests/integration/agents.test.ts`
-- [ ] T083 [P] [US4] End-to-end flow for US4 in `apps/desktop/tests/e2e/us4-agents.spec.ts`
+- [x] T080 [P] [US4] Unit tests for registry parsing (lenient to unknown keys), platform key resolution including musl, and readiness derivation in `packages/core/tests/unit/registry.test.ts`
+- [x] T081 [P] [US4] Security tests for installation in `packages/core/tests/security/install.test.ts`: checksum mismatch, archive path traversal, `cmd` outside the install directory, non-HTTPS URL, tampered launch file before start
+- [x] T082 [P] [US4] Integration tests for install, update, and remove against a local fixture registry in `packages/core/tests/integration/agents.test.ts`
+- [x] T083 [P] [US4] End-to-end flow for US4 in `apps/desktop/tests/e2e/us4-agents.spec.ts`
 
 ### Implementation for User Story 4
 
-- [ ] T084 [P] [US4] Implement the registry client with hourly throttle, ETag, and offline cache in `packages/core/src/agents/registry.ts` per data-model.md `RegistryEntry.distribution` (research.md R5)
-- [ ] T085 [P] [US4] Implement platform key resolution in `packages/core/src/agents/platform.ts`
-- [ ] T086 [P] [US4] Implement detection of installed agents in `packages/core/src/agents/detect.ts` using the `agentHints` option of `createCore` and the resolved shell environment (research.md R8, R19); load `apps/desktop/resources/agent-hints.json` in `apps/desktop/src/main/core-host.ts` and pass it in
-- [ ] T087 [US4] Implement `planInstall` in `packages/core/src/agents/plan.ts`, producing source, size, and verification status (FR-020, FR-077)
-- [ ] T088 [US4] Implement the binary installer in `packages/core/src/agents/install-binary.ts`: staged HTTPS download, SHA-256 verification when present, safe extraction, `cmd` validation, per data-model.md `Agent.install`, `Agent.launch`
-- [ ] T089 [US4] Implement the managed Node runtime (pinned version, embedded checksums) in `packages/core/src/agents/node-runtime.ts` (research.md R7)
-- [ ] T090 [US4] Implement the package installer in `packages/core/src/agents/install-npm.ts` (`npm install --save-exact --ignore-scripts`, per-agent opt-in for scripts, launch through the managed runtime) and `uvx` support when `uv` is present in `packages/core/src/agents/install-uvx.ts` (research.md R6)
-- [ ] T091 [US4] Implement launch-hash recording at install and re-check before every start in `packages/core/src/agents/integrity.ts`, surfacing `integrity-failed` (FR-077)
-- [ ] T092 [US4] Implement agent icon retrieval in `packages/core/src/agents/icons.ts` (same origin as the registry in effect, size limit, disk cache, placeholder otherwise; research.md R5) and the bridge function `agents.icon` in `apps/desktop/src/main/handlers/agents.ts`, with tests in `packages/core/tests/security/icons.test.ts`
-- [ ] T093 [US4] Wire `AgentSource` extensions into agent listing in `packages/core/src/agents/sources.ts`, with a test using a fake source in `packages/core/tests/unit/agent-sources.test.ts` (FR-059)
-- [ ] T094 [US4] Complete `AgentService` in `packages/core/src/agents/service.ts`: merged listing with data-model.md `Agent.readiness`, `refreshRegistry`, `install` with progress, update to a new version directory, `remove`, custom agent edit and delete
-- [ ] T095 [US4] Add bridge functions `agents.refreshRegistry`, `agents.planInstall`, `agents.install`, `agents.remove`, `agents.saveCustom`, `agents.deleteCustom` and the `install.progress` event in `apps/desktop/src/main/handlers/agents.ts`
-- [ ] T096 [P] [US4] Build the agent list with readiness states and registry status in `apps/desktop/src/renderer/features/agents/AgentList.tsx`, showing icons obtained through `agents.icon` or a placeholder
-- [ ] T097 [P] [US4] Build the install confirmation dialog (what, from where, verified or not, scripts opt-in) and progress view in `apps/desktop/src/renderer/features/agents/InstallDialog.tsx`
-- [ ] T098 [P] [US4] Build the custom agent form in `apps/desktop/src/renderer/features/agents/CustomAgentForm.tsx`, and add EN/PL strings
+- [x] T084 [P] [US4] Implement the registry client with hourly throttle, ETag, and offline cache in `packages/core/src/agents/registry.ts` per data-model.md `RegistryEntry.distribution` (research.md R5)
+- [x] T085 [P] [US4] Implement platform key resolution in `packages/core/src/agents/platform.ts`
+- [x] T086 [P] [US4] Implement detection of installed agents in `packages/core/src/agents/detect.ts` using the `agentHints` option of `createCore` and the resolved shell environment (research.md R8, R19); load `apps/desktop/resources/agent-hints.json` in `apps/desktop/src/main/core-host.ts` and pass it in
+- [x] T087 [US4] Implement `planInstall` in `packages/core/src/agents/plan.ts`, producing source, size, and verification status (FR-020, FR-077)
+- [x] T088 [US4] Implement the binary installer in `packages/core/src/agents/install-binary.ts`: staged HTTPS download, SHA-256 verification when present, safe extraction, `cmd` validation, per data-model.md `Agent.install`, `Agent.launch`
+- [x] T089 [US4] Implement the managed Node runtime (pinned version, embedded checksums) in `packages/core/src/agents/node-runtime.ts` (research.md R7)
+- [x] T090 [US4] Implement the package installer in `packages/core/src/agents/install-npm.ts` (`npm install --save-exact --ignore-scripts`, per-agent opt-in for scripts, launch through the managed runtime) and `uvx` support when `uv` is present in `packages/core/src/agents/install-uvx.ts` (research.md R6)
+- [x] T091 [US4] Implement launch-hash recording at install and re-check before every start in `packages/core/src/agents/integrity.ts`, surfacing `integrity-failed` (FR-077)
+- [x] T092 [US4] Implement agent icon retrieval in `packages/core/src/agents/icons.ts` (same origin as the registry in effect, size limit, disk cache, placeholder otherwise; research.md R5) and the bridge function `agents.icon` in `apps/desktop/src/main/handlers/agents.ts`, with tests in `packages/core/tests/security/icons.test.ts`
+- [x] T093 [US4] Wire `AgentSource` extensions into agent listing in `packages/core/src/agents/sources.ts`, with a test using a fake source in `packages/core/tests/unit/agent-sources.test.ts` (FR-059)
+- [x] T094 [US4] Complete `AgentService` in `packages/core/src/agents/service.ts`: merged listing with data-model.md `Agent.readiness`, `refreshRegistry`, `install` with progress, update to a new version directory, `remove`, custom agent edit and delete
+- [x] T095 [US4] Add bridge functions `agents.refreshRegistry`, `agents.planInstall`, `agents.install`, `agents.remove`, `agents.saveCustom`, `agents.deleteCustom` and the `install.progress` event in `apps/desktop/src/main/handlers/agents.ts`
+- [x] T096 [P] [US4] Build the agent list with readiness states and registry status in `apps/desktop/src/renderer/features/agents/AgentList.tsx`, showing icons obtained through `agents.icon` or a placeholder
+- [x] T097 [P] [US4] Build the install confirmation dialog (what, from where, verified or not, scripts opt-in) and progress view in `apps/desktop/src/renderer/features/agents/InstallDialog.tsx`
+- [x] T098 [P] [US4] Build the custom agent form in `apps/desktop/src/renderer/features/agents/CustomAgentForm.tsx`, and add EN/PL strings
 
 **Checkpoint**: Any registry agent available for the platform can be installed and used
 
@@ -214,16 +214,16 @@ description: "Task list for Ster — ACP Desktop Client"
 
 ### Tests for User Story 5
 
-- [ ] T099 [P] [US5] Integration tests for `terminal/*` (output, byte limit and truncation, wait, kill, release, cleanup on session end) in `packages/core/tests/integration/commands.test.ts`
-- [ ] T100 [P] [US5] End-to-end flow for US5 in `apps/desktop/tests/e2e/us5-commands.spec.ts`
+- [x] T099 [P] [US5] Integration tests for `terminal/*` (output, byte limit and truncation, wait, kill, release, cleanup on session end) in `packages/core/tests/integration/commands.test.ts`
+- [x] T100 [P] [US5] End-to-end flow for US5 in `apps/desktop/tests/e2e/us5-commands.spec.ts`
 
 ### Implementation for User Story 5
 
-- [ ] T101 [US5] Implement the command runner in `packages/core/src/workspace/commands.ts` per data-model.md `CommandRun.output`, `CommandRun.cwd`, `CommandRun.state` (research.md R4), using the resolved shell environment (research.md R19)
-- [ ] T102 [US5] Implement the `terminal/create`, `terminal/output`, `terminal/wait_for_exit`, `terminal/kill`, `terminal/release` handlers in `packages/core/src/acp/terminal-handlers.ts`, advertise the `terminal` client capability, and apply the guard from `packages/core/src/permissions/guard.ts`
-- [ ] T103 [US5] Emit `command.*` events with control sequences stripped for display, link `terminal` action content to command runs, and implement `killCommand` in `packages/core/src/sessions/service.ts`
-- [ ] T104 [US5] Add the bridge function `sessions.killCommand` in `apps/desktop/src/main/handlers/sessions.ts`
-- [ ] T105 [US5] Build the command output view (command, live output, truncation note, exit result, stop button) in `apps/desktop/src/renderer/features/terminal/CommandView.tsx`, integrate it into the action card, and add EN/PL strings
+- [x] T101 [US5] Implement the command runner in `packages/core/src/workspace/commands.ts` per data-model.md `CommandRun.output`, `CommandRun.cwd`, `CommandRun.state` (research.md R4), using the resolved shell environment (research.md R19)
+- [x] T102 [US5] Implement the `terminal/create`, `terminal/output`, `terminal/wait_for_exit`, `terminal/kill`, `terminal/release` handlers in `packages/core/src/acp/terminal-handlers.ts`, advertise the `terminal` client capability, and apply the guard from `packages/core/src/permissions/guard.ts`
+- [x] T103 [US5] Emit `command.*` events with control sequences stripped for display, link `terminal` action content to command runs, and implement `killCommand` in `packages/core/src/sessions/service.ts`
+- [x] T104 [US5] Add the bridge function `sessions.killCommand` in `apps/desktop/src/main/handlers/sessions.ts`
+- [x] T105 [US5] Build the command output view (command, live output, truncation note, exit result, stop button) in `apps/desktop/src/renderer/features/terminal/CommandView.tsx`, integrate it into the action card, and add EN/PL strings
 
 **Checkpoint**: Increment 2 complete: agents from the registry can edit files and verify their work
 
@@ -237,18 +237,18 @@ description: "Task list for Ster — ACP Desktop Client"
 
 ### Tests for User Story 6
 
-- [ ] T106 [P] [US6] Integration tests for concurrent sessions, startup recovery of interrupted runs, resume and load, and deletion in `packages/core/tests/integration/history.test.ts`
-- [ ] T107 [P] [US6] End-to-end flow for US6 in `apps/desktop/tests/e2e/us6-sessions.spec.ts`
+- [x] T106 [P] [US6] Integration tests for concurrent sessions, startup recovery of interrupted runs, resume and load, and deletion in `packages/core/tests/integration/history.test.ts`
+- [x] T107 [P] [US6] End-to-end flow for US6 in `apps/desktop/tests/e2e/us6-sessions.spec.ts`
 
 ### Implementation for User Story 6
 
-- [ ] T108 [US6] Implement the session manager for concurrent sessions and startup recovery (sessions left `working` become `ended`, open runs become `interrupted`) in `packages/core/src/sessions/manager.ts`
-- [ ] T109 [US6] Implement `list` with filters, `rename`, and `delete` with the run-record choice in `packages/core/src/sessions/service.ts` per data-model.md `Session.lastActivityAt`, `Session.title`
-- [ ] T110 [US6] Implement `resume` using `session/resume` or `session/load` gated by agent capabilities in `packages/core/src/sessions/resume.ts` per data-model.md `Session.resumable`, `Session.agentSessionId`
-- [ ] T111 [US6] Add bridge functions `sessions.list`, `sessions.resume`, `sessions.rename`, `sessions.delete` in `apps/desktop/src/main/handlers/sessions.ts`
-- [ ] T112 [P] [US6] Build the session list with status and attention indicators in `apps/desktop/src/renderer/features/sessions/SessionList.tsx`, as the session board of the mockup: status counts on top and one card per session with status chip, progress, agent, and model
-- [ ] T113 [P] [US6] Build the read-only history view with "continue" and "new session in this folder" in `apps/desktop/src/renderer/features/sessions/HistoryView.tsx`
-- [ ] T114 [US6] Make the renderer stores multi-session (per-session item caches, paging from the store) in `apps/desktop/src/renderer/app/stores/sessions.ts` and add EN/PL strings
+- [x] T108 [US6] Implement the session manager for concurrent sessions and startup recovery (sessions left `working` become `ended`, open runs become `interrupted`) in `packages/core/src/sessions/manager.ts`
+- [x] T109 [US6] Implement `list` with filters, `rename`, and `delete` with the run-record choice in `packages/core/src/sessions/service.ts` per data-model.md `Session.lastActivityAt`, `Session.title`
+- [x] T110 [US6] Implement `resume` using `session/resume` or `session/load` gated by agent capabilities in `packages/core/src/sessions/resume.ts` per data-model.md `Session.resumable`, `Session.agentSessionId`
+- [x] T111 [US6] Add bridge functions `sessions.list`, `sessions.resume`, `sessions.rename`, `sessions.delete` in `apps/desktop/src/main/handlers/sessions.ts`
+- [x] T112 [P] [US6] Build the session list with status and attention indicators in `apps/desktop/src/renderer/features/sessions/SessionList.tsx`, as the session board of the mockup: status counts on top and one card per session with status chip, progress, agent, and model
+- [x] T113 [P] [US6] Build the read-only history view with "continue" and "new session in this folder" in `apps/desktop/src/renderer/features/sessions/HistoryView.tsx`
+- [x] T114 [US6] Make the renderer stores multi-session (per-session item caches, paging from the store) in `apps/desktop/src/renderer/app/stores/sessions.ts` and add EN/PL strings
 
 **Checkpoint**: The application supports sustained daily use across tasks and days
 
@@ -262,16 +262,16 @@ description: "Task list for Ster — ACP Desktop Client"
 
 ### Tests for User Story 7
 
-- [ ] T115 [P] [US7] Integration tests for config options, legacy modes fallback, agent-initiated changes, and available commands in `packages/core/tests/integration/config-options.test.ts`
-- [ ] T116 [P] [US7] End-to-end flow for US7 in `apps/desktop/tests/e2e/us7-modes-models.spec.ts`
+- [x] T115 [P] [US7] Integration tests for config options, legacy modes fallback, agent-initiated changes, and available commands in `packages/core/tests/integration/config-options.test.ts`
+- [x] T116 [P] [US7] End-to-end flow for US7 in `apps/desktop/tests/e2e/us7-modes-models.spec.ts`
 
 ### Implementation for User Story 7
 
-- [ ] T117 [US7] Implement config option handling (`configOptions`, `config_option_update`, `current_mode_update`, legacy `modes` mapped to one option) in `packages/core/src/sessions/config-options.ts` per data-model.md `Session.configOptions` (research.md R2)
-- [ ] T118 [US7] Implement `available_commands_update` handling and `setConfigOption` in `packages/core/src/sessions/service.ts` per data-model.md `Session.availableCommands`
-- [ ] T119 [US7] Add the bridge function `sessions.setConfigOption` in `apps/desktop/src/main/handlers/sessions.ts`
-- [ ] T120 [P] [US7] Build mode and model selectors that render only for offered categories in `apps/desktop/src/renderer/features/sessions/ConfigOptionSelect.tsx`
-- [ ] T121 [P] [US7] Build the slash-command menu in the composer in `apps/desktop/src/renderer/features/conversation/CommandMenu.tsx`, and add EN/PL strings
+- [x] T117 [US7] Implement config option handling (`configOptions`, `config_option_update`, `current_mode_update`, legacy `modes` mapped to one option) in `packages/core/src/sessions/config-options.ts` per data-model.md `Session.configOptions` (research.md R2)
+- [x] T118 [US7] Implement `available_commands_update` handling and `setConfigOption` in `packages/core/src/sessions/service.ts` per data-model.md `Session.availableCommands`
+- [x] T119 [US7] Add the bridge function `sessions.setConfigOption` in `apps/desktop/src/main/handlers/sessions.ts`
+- [x] T120 [P] [US7] Build mode and model selectors that render only for offered categories in `apps/desktop/src/renderer/features/sessions/ConfigOptionSelect.tsx`
+- [x] T121 [P] [US7] Build the slash-command menu in the composer in `apps/desktop/src/renderer/features/conversation/CommandMenu.tsx`, and add EN/PL strings
 
 **Checkpoint**: Agent-specific power features work without agent-specific code
 
@@ -285,15 +285,15 @@ description: "Task list for Ster — ACP Desktop Client"
 
 ### Tests for User Story 8
 
-- [ ] T122 [P] [US8] Unit tests for first-launch language selection and fallback in `apps/desktop/tests/language.test.ts`
-- [ ] T123 [P] [US8] End-to-end flow for US8 that switches language and scans every screen for untranslated keys in `apps/desktop/tests/e2e/us8-language.spec.ts`, asserting that agent-produced content is left untranslated (FR-037)
+- [x] T122 [P] [US8] Unit tests for first-launch language selection and fallback in `apps/desktop/tests/language.test.ts`
+- [x] T123 [P] [US8] End-to-end flow for US8 that switches language and scans every screen for untranslated keys in `apps/desktop/tests/e2e/us8-language.spec.ts`, asserting that agent-produced content is left untranslated (FR-037)
 
 ### Implementation for User Story 8
 
-- [ ] T124 [US8] Implement language selection from the system locale with English fallback and persistence in `apps/desktop/src/main/language.ts` per data-model.md `Settings.language`
-- [ ] T125 [US8] Translate main-process text (menus, native dialogs, confirmations) through the shared resources in `apps/desktop/src/main/i18n.ts`
-- [ ] T126 [P] [US8] Build the language setting with live switching in `apps/desktop/src/renderer/features/settings/LanguageSettings.tsx`
-- [ ] T127 [US8] Review and complete `apps/desktop/src/renderer/i18n/pl.json` against `en.json`, with plural forms, and make `scripts/check-i18n.mjs` fail on hard-coded strings in `apps/desktop/src/renderer/`
+- [x] T124 [US8] Implement language selection from the system locale with English fallback and persistence in `apps/desktop/src/main/language.ts` per data-model.md `Settings.language`
+- [x] T125 [US8] Translate main-process text (menus, native dialogs, confirmations) through the shared resources in `apps/desktop/src/main/i18n.ts`
+- [x] T126 [P] [US8] Build the language setting with live switching in `apps/desktop/src/renderer/features/settings/LanguageSettings.tsx`
+- [x] T127 [US8] Review and complete `apps/desktop/src/renderer/i18n/pl.json` against `en.json`, with plural forms, and make `scripts/check-i18n.mjs` fail on hard-coded strings in `apps/desktop/src/renderer/`
 
 **Checkpoint**: Increment 3 complete
 
@@ -307,19 +307,19 @@ description: "Task list for Ster — ACP Desktop Client"
 
 ### Tests for User Story 9
 
-- [ ] T128 [P] [US9] Test that the brand is single-sourced: changing `apps/desktop/resources/brand.json` changes window title, about text, data directory, and installer name, in `apps/desktop/tests/brand.test.ts`
-- [ ] T129 [P] [US9] Run `examples/headless.ts` as an integration test in `packages/core/tests/integration/headless-example.test.ts`
+- [x] T128 [P] [US9] Test that the brand is single-sourced: changing `apps/desktop/resources/brand.json` changes window title, about text, data directory, and installer name, in `apps/desktop/tests/brand.test.ts`
+- [x] T129 [P] [US9] Run `examples/headless.ts` as an integration test in `packages/core/tests/integration/headless-example.test.ts`
 
 ### Implementation for User Story 9
 
-- [ ] T130 [US9] Complete `apps/desktop/electron-builder.yml`: dmg and zip (arm64, x64), NSIS (x64, arm64), AppImage and deb (x64, arm64), names from `brand.json`, documented placeholders for signing credentials; macOS builds are ad hoc signed, with a `codesign --verify` step in `.github/workflows/release.yml`
-- [ ] T131 [US9] Create `.github/workflows/release.yml`: on version tag, build on three runners and attach installers to a draft GitHub Release
-- [ ] T132 [US9] Add a smoke test of the packaged application (launch, start a mock-agent session, receive a reply) in `apps/desktop/tests/e2e/packaged-smoke.spec.ts`, run for each platform in `.github/workflows/release.yml`
-- [ ] T133 [P] [US9] Write `examples/headless.ts` driving the core without a UI (contracts/core-api.md, "Headless use")
-- [ ] T134 [P] [US9] Add an example panel extension and the single registration file in `apps/desktop/src/extensions/example-panel/index.tsx` and `apps/desktop/src/extensions/index.ts`, implementing `PanelExtension`
-- [ ] T135 [P] [US9] Write `README.md`: what Ster is, prerequisites, clone-to-run steps, how login works, the subscription-terms notice, installing unsigned builds on each platform
-- [ ] T136 [P] [US9] Write adopter guides in `docs/`: `rebranding.md`, `adding-a-language.md`, `default-agents.md`, `extensions.md` (panel, agent source, permission mode, policy item, event consumer, each with an example), `signing.md`, `security-model.md`; `security-model.md` states the limits of confinement for agents that use their own tools
-- [ ] T137 [US9] Document the extension-contract change policy in `CHANGELOG.md` and add a release checklist in `docs/releasing.md` (FR-062)
+- [x] T130 [US9] Complete `apps/desktop/electron-builder.yml`: dmg and zip (arm64, x64), NSIS (x64, arm64), AppImage and deb (x64, arm64), names from `brand.json`, documented placeholders for signing credentials; macOS builds are ad hoc signed, with a `codesign --verify` step in `.github/workflows/release.yml`
+- [x] T131 [US9] Create `.github/workflows/release.yml`: on version tag, build on three runners and attach installers to a draft GitHub Release
+- [x] T132 [US9] Add a smoke test of the packaged application (launch, start a mock-agent session, receive a reply) in `apps/desktop/tests/e2e/packaged-smoke.spec.ts`, run for each platform in `.github/workflows/release.yml`
+- [x] T133 [P] [US9] Write `examples/headless.ts` driving the core without a UI (contracts/core-api.md, "Headless use")
+- [x] T134 [P] [US9] Add an example panel extension and the single registration file in `apps/desktop/src/extensions/example-panel/index.tsx` and `apps/desktop/src/extensions/index.ts`, implementing `PanelExtension`
+- [x] T135 [P] [US9] Write `README.md`: what Ster is, prerequisites, clone-to-run steps, how login works, the subscription-terms notice, installing unsigned builds on each platform
+- [x] T136 [P] [US9] Write adopter guides in `docs/`: `rebranding.md`, `adding-a-language.md`, `default-agents.md`, `extensions.md` (panel, agent source, permission mode, policy item, event consumer, each with an example), `signing.md`, `security-model.md`; `security-model.md` states the limits of confinement for agents that use their own tools
+- [x] T137 [US9] Document the extension-contract change policy in `CHANGELOG.md` and add a release checklist in `docs/releasing.md` (FR-062)
 
 **Checkpoint**: The repository is usable as a template by someone who has never seen it
 
@@ -333,22 +333,22 @@ description: "Task list for Ster — ACP Desktop Client"
 
 ### Tests for User Story 10
 
-- [ ] T138 [P] [US10] Unit tests for policy validation and per-item merge of built-in and machine sources in `packages/core/tests/unit/policy.test.ts`
-- [ ] T139 [P] [US10] Integration tests for enforcement (blocked agent, custom agents off, custom and disabled registry with no request to the public registry, checksum requirement, mode limits, invalid policy blocks sessions) in `packages/core/tests/integration/policy-enforcement.test.ts` and that a policy change takes effect only at the next start (FR-052)
-- [ ] T140 [P] [US10] End-to-end flow for US10 in `apps/desktop/tests/e2e/us10-policy.spec.ts`
+- [x] T138 [P] [US10] Unit tests for policy validation and per-item merge of built-in and machine sources in `packages/core/tests/unit/policy.test.ts`
+- [x] T139 [P] [US10] Integration tests for enforcement (blocked agent, custom agents off, custom and disabled registry with no request to the public registry, checksum requirement, mode limits, invalid policy blocks sessions) in `packages/core/tests/integration/policy-enforcement.test.ts` and that a policy change takes effect only at the next start (FR-052)
+- [x] T140 [P] [US10] End-to-end flow for US10 in `apps/desktop/tests/e2e/us10-policy.spec.ts`
 
 ### Implementation for User Story 10
 
-- [ ] T141 [US10] Implement the `PolicySource` readers in `packages/core/src/policy/sources.ts` (a file source and an in-memory source) and build the two sources in `apps/desktop/src/main/core-host.ts`: built-in `apps/desktop/resources/policy.default.json` and the per-platform machine location derived from `Brand.policyDirName` (research.md R11); the core itself reads no application resources
-- [ ] T142 [US10] Implement validation mirroring contracts/policy.schema.json and per-item merge with source tracking in `packages/core/src/policy/validate.ts` and `packages/core/src/policy/merge.ts` per data-model.md `OrganizationPolicy.permissions.default`, `OrganizationPolicy.registry.url`, `OrganizationPolicy.agents.allow`, `OrganizationPolicy.registry.mode`
-- [ ] T143 [US10] Enforce agent items in `packages/core/src/agents/service.ts`: `OrganizationPolicy.agents.allow` and `OrganizationPolicy.agents.customAllowed` produce readiness `blocked-by-policy` and refuse start
-- [ ] T144 [US10] Enforce registry and install items in `packages/core/src/agents/registry.ts` and `packages/core/src/agents/plan.ts`: `OrganizationPolicy.registry.mode`, `OrganizationPolicy.install.requireChecksum`, `OrganizationPolicy.install.allowInstallScripts` (FR-046, FR-078); with `custom` or `disabled`, no request of any kind (index or icons) reaches the public registry
-- [ ] T145 [US10] Enforce permission items in `packages/core/src/permissions/modes.ts` and `packages/core/src/sessions/service.ts`: `OrganizationPolicy.permissions.modes`, `OrganizationPolicy.permissions.default`
-- [ ] T146 [US10] Refuse session creation with `policy-invalid` when the policy state is invalid, keeping history readable, in `packages/core/src/sessions/service.ts`; expose managed markers through `SettingsService` and `app.info`
-- [ ] T147 [US10] Wire `PolicyItemDefinition` extensions into validation and enforcement in `packages/core/src/policy/extensions.ts`, rejecting any item that would loosen a restriction, with tests in `packages/core/tests/unit/policy-extensions.test.ts` (FR-059)
-- [ ] T148 [P] [US10] Build managed-setting markers and locked controls in `apps/desktop/src/renderer/components/ManagedBadge.tsx` and apply them in settings, the agent list, and the permission mode selector
-- [ ] T149 [P] [US10] Build the invalid-policy screen and blocked-agent states in `apps/desktop/src/renderer/features/policy/PolicyStatus.tsx`, and add EN/PL strings
-- [ ] T150 [P] [US10] Write `docs/organization-policy.md`: every item, both delivery routes, file locations per platform, and a complete example for a company with a fixed agent set (FR-053)
+- [x] T141 [US10] Implement the `PolicySource` readers in `packages/core/src/policy/sources.ts` (a file source and an in-memory source) and build the two sources in `apps/desktop/src/main/core-host.ts`: built-in `apps/desktop/resources/policy.default.json` and the per-platform machine location derived from `Brand.policyDirName` (research.md R11); the core itself reads no application resources
+- [x] T142 [US10] Implement validation mirroring contracts/policy.schema.json and per-item merge with source tracking in `packages/core/src/policy/validate.ts` and `packages/core/src/policy/merge.ts` per data-model.md `OrganizationPolicy.permissions.default`, `OrganizationPolicy.registry.url`, `OrganizationPolicy.agents.allow`, `OrganizationPolicy.registry.mode`
+- [x] T143 [US10] Enforce agent items in `packages/core/src/agents/service.ts`: `OrganizationPolicy.agents.allow` and `OrganizationPolicy.agents.customAllowed` produce readiness `blocked-by-policy` and refuse start
+- [x] T144 [US10] Enforce registry and install items in `packages/core/src/agents/registry.ts` and `packages/core/src/agents/plan.ts`: `OrganizationPolicy.registry.mode`, `OrganizationPolicy.install.requireChecksum`, `OrganizationPolicy.install.allowInstallScripts` (FR-046, FR-078); with `custom` or `disabled`, no request of any kind (index or icons) reaches the public registry
+- [x] T145 [US10] Enforce permission items in `packages/core/src/permissions/modes.ts` and `packages/core/src/sessions/service.ts`: `OrganizationPolicy.permissions.modes`, `OrganizationPolicy.permissions.default`
+- [x] T146 [US10] Refuse session creation with `policy-invalid` when the policy state is invalid, keeping history readable, in `packages/core/src/sessions/service.ts`; expose managed markers through `SettingsService` and `app.info`
+- [x] T147 [US10] Wire `PolicyItemDefinition` extensions into validation and enforcement in `packages/core/src/policy/extensions.ts`, rejecting any item that would loosen a restriction, with tests in `packages/core/tests/unit/policy-extensions.test.ts` (FR-059)
+- [x] T148 [P] [US10] Build managed-setting markers and locked controls in `apps/desktop/src/renderer/components/ManagedBadge.tsx` and apply them in settings, the agent list, and the permission mode selector
+- [x] T149 [P] [US10] Build the invalid-policy screen and blocked-agent states in `apps/desktop/src/renderer/features/policy/PolicyStatus.tsx`, and add EN/PL strings
+- [x] T150 [P] [US10] Write `docs/organization-policy.md`: every item, both delivery routes, file locations per platform, and a complete example for a company with a fixed agent set (FR-053)
 
 **Checkpoint**: Increment 4 complete: the application can be rolled out inside an organization
 
@@ -362,20 +362,20 @@ description: "Task list for Ster — ACP Desktop Client"
 
 ### Tests for User Story 11
 
-- [ ] T151 [P] [US11] Unit tests for definition lookup (nearest ancestor), validation, and template rendering in `packages/core/tests/unit/factory.test.ts`
-- [ ] T152 [P] [US11] Security tests with hostile definitions in `packages/core/tests/security/factory-definition.test.ts`: untrusted definition has no effect, changed content resets trust, policy cannot be loosened, command-declared agent needs confirmation, template inputs are not evaluated (SC-018)
-- [ ] T153 [P] [US11] End-to-end flow for US11 in `apps/desktop/tests/e2e/us11-factory.spec.ts`
+- [x] T151 [P] [US11] Unit tests for definition lookup (nearest ancestor), validation, and template rendering in `packages/core/tests/unit/factory.test.ts`
+- [x] T152 [P] [US11] Security tests with hostile definitions in `packages/core/tests/security/factory-definition.test.ts`: untrusted definition has no effect, changed content resets trust, policy cannot be loosened, command-declared agent needs confirmation, template inputs are not evaluated (SC-018)
+- [x] T153 [P] [US11] End-to-end flow for US11 in `apps/desktop/tests/e2e/us11-factory.spec.ts`
 
 ### Implementation for User Story 11
 
-- [ ] T154 [P] [US11] Implement lookup and YAML parsing with validation mirroring contracts/factory.schema.json in `packages/core/src/factory/definition.ts` per data-model.md `FactoryDefinition.agents`, `FactoryDefinition.templates`, `FactoryDefinition.judging`
-- [ ] T155 [P] [US11] Implement folder trust in `packages/core/src/factory/trust.ts` per data-model.md `FolderTrust.folder`, `FolderTrust.contentHash`, including the change summary against the trusted version
-- [ ] T156 [US11] Implement application of a trusted definition at session creation in `packages/core/src/factory/apply.ts`: preselect agent and mode, filter through policy, report dropped parts, and route command-declared agents through first-start confirmation; record `Session.factoryDefinitionHash`
-- [ ] T157 [US11] Implement plain-text template rendering and `FactoryService` in `packages/core/src/factory/service.ts`
-- [ ] T158 [US11] Add bridge functions `factory.find`, `factory.trust`, `factory.revoke`, `factory.renderTemplate` in `apps/desktop/src/main/handlers/factory.ts`
-- [ ] T159 [P] [US11] Build the trust dialog showing what the definition would change, and the changed-definition prompt, in `apps/desktop/src/renderer/features/factory/TrustDialog.tsx`
-- [ ] T160 [P] [US11] Build the task template picker with input blanks in `apps/desktop/src/renderer/features/factory/TemplatePicker.tsx`, and add EN/PL strings
-- [ ] T161 [P] [US11] Write `docs/factory-definition.md` with every item and a complete example file (FR-069)
+- [x] T154 [P] [US11] Implement lookup and YAML parsing with validation mirroring contracts/factory.schema.json in `packages/core/src/factory/definition.ts` per data-model.md `FactoryDefinition.agents`, `FactoryDefinition.templates`, `FactoryDefinition.judging`
+- [x] T155 [P] [US11] Implement folder trust in `packages/core/src/factory/trust.ts` per data-model.md `FolderTrust.folder`, `FolderTrust.contentHash`, including the change summary against the trusted version
+- [x] T156 [US11] Implement application of a trusted definition at session creation in `packages/core/src/factory/apply.ts`: preselect agent and mode, filter through policy, report dropped parts, and route command-declared agents through first-start confirmation; record `Session.factoryDefinitionHash`
+- [x] T157 [US11] Implement plain-text template rendering and `FactoryService` in `packages/core/src/factory/service.ts`
+- [x] T158 [US11] Add bridge functions `factory.find`, `factory.trust`, `factory.revoke`, `factory.renderTemplate` in `apps/desktop/src/main/handlers/factory.ts`
+- [x] T159 [P] [US11] Build the trust dialog showing what the definition would change, and the changed-definition prompt, in `apps/desktop/src/renderer/features/factory/TrustDialog.tsx`
+- [x] T160 [P] [US11] Build the task template picker with input blanks in `apps/desktop/src/renderer/features/factory/TemplatePicker.tsx`, and add EN/PL strings
+- [x] T161 [P] [US11] Write `docs/factory-definition.md` with every item and a complete example file (FR-069)
 
 **Checkpoint**: A team shares one reviewed agent setup through its repository
 
@@ -389,22 +389,22 @@ description: "Task list for Ster — ACP Desktop Client"
 
 ### Tests for User Story 12
 
-- [ ] T162 [P] [US12] Integration tests that every turn (completed, cancelled, failed, interrupted) yields exactly one complete record in `packages/core/tests/integration/run-records.test.ts` (SC-019)
-- [ ] T163 [P] [US12] Unit tests for filters and totals, and a test validating exported lines against contracts/run-record.schema.json, in `packages/core/tests/unit/runs.test.ts`
-- [ ] T164 [P] [US12] Integration tests for judging (separate session, no file writes, no commands, score stored with judge identity) in `packages/core/tests/integration/judging.test.ts`, including a judging agent blocked by policy
-- [ ] T165 [P] [US12] End-to-end flow for US12 in `apps/desktop/tests/e2e/us12-runs.spec.ts`
+- [x] T162 [P] [US12] Integration tests that every turn (completed, cancelled, failed, interrupted) yields exactly one complete record in `packages/core/tests/integration/run-records.test.ts` (SC-019)
+- [x] T163 [P] [US12] Unit tests for filters and totals, and a test validating exported lines against contracts/run-record.schema.json, in `packages/core/tests/unit/runs.test.ts`
+- [x] T164 [P] [US12] Integration tests for judging (separate session, no file writes, no commands, score stored with judge identity) in `packages/core/tests/integration/judging.test.ts`, including a judging agent blocked by policy
+- [x] T165 [P] [US12] End-to-end flow for US12 in `apps/desktop/tests/e2e/us12-runs.spec.ts`
 
 ### Implementation for User Story 12
 
-- [ ] T166 [US12] Extend the run lifecycle in `packages/core/src/runs/lifecycle.ts` to capture the full record per data-model.md `RunRecord.request`, `RunRecord.agent`, `RunRecord.actions`, `RunRecord.approvals`, `RunRecord.commands`, `RunRecord.outcome`, and `RunRecord.usage` from `usage_update` (unknown when not reported)
-- [ ] T167 [US12] Implement `RunService.list` with filters and totals, `get`, and `delete` in `packages/core/src/runs/service.ts`, and the keep-without-text path used by session deletion; user rating and agent score are separate filters and separate totals (FR-071)
-- [ ] T168 [P] [US12] Implement scores and user rating in `packages/core/src/runs/scores.ts` per data-model.md `Score.value`, `Score.scale`, `Score.source`
-- [ ] T169 [US12] Implement on-demand judging in `packages/core/src/runs/judge.ts`: separate hidden session with reduced client capabilities, read-only permission handling, criteria from the trusted factory definition, lenient parsing of the JSON result (research.md R15); refuse a judging agent that organization policy does not allow (`blocked-by-policy`, FR-074); store per data-model.md `Score.judge`, `Score.scale`, and mark the run `RunRecord.kind` = `judging`
-- [ ] T170 [P] [US12] Implement JSON Lines export in `packages/core/src/runs/export.ts` conforming to contracts/run-record.schema.json
-- [ ] T171 [US12] Add bridge functions `runs.list`, `runs.get`, `runs.rate`, `runs.judge`, `runs.export` (native save dialog), `runs.delete` in `apps/desktop/src/main/handlers/runs.ts`
-- [ ] T172 [P] [US12] Build the runs view with filters and totals in `apps/desktop/src/renderer/features/runs/RunsView.tsx`
-- [ ] T173 [P] [US12] Build the run detail with rating, judge action, and scores in `apps/desktop/src/renderer/features/runs/RunDetail.tsx`, and add EN/PL strings
-- [ ] T174 [P] [US12] Write `docs/run-records.md` describing the export format and how a third-party tool reads it (SC-021)
+- [x] T166 [US12] Extend the run lifecycle in `packages/core/src/runs/lifecycle.ts` to capture the full record per data-model.md `RunRecord.request`, `RunRecord.agent`, `RunRecord.actions`, `RunRecord.approvals`, `RunRecord.commands`, `RunRecord.outcome`, and `RunRecord.usage` from `usage_update` (unknown when not reported)
+- [x] T167 [US12] Implement `RunService.list` with filters and totals, `get`, and `delete` in `packages/core/src/runs/service.ts`, and the keep-without-text path used by session deletion; user rating and agent score are separate filters and separate totals (FR-071)
+- [x] T168 [P] [US12] Implement scores and user rating in `packages/core/src/runs/scores.ts` per data-model.md `Score.value`, `Score.scale`, `Score.source`
+- [x] T169 [US12] Implement on-demand judging in `packages/core/src/runs/judge.ts`: separate hidden session with reduced client capabilities, read-only permission handling, criteria from the trusted factory definition, lenient parsing of the JSON result (research.md R15); refuse a judging agent that organization policy does not allow (`blocked-by-policy`, FR-074); store per data-model.md `Score.judge`, `Score.scale`, and mark the run `RunRecord.kind` = `judging`
+- [x] T170 [P] [US12] Implement JSON Lines export in `packages/core/src/runs/export.ts` conforming to contracts/run-record.schema.json
+- [x] T171 [US12] Add bridge functions `runs.list`, `runs.get`, `runs.rate`, `runs.judge`, `runs.export` (native save dialog), `runs.delete` in `apps/desktop/src/main/handlers/runs.ts`
+- [x] T172 [P] [US12] Build the runs view with filters and totals in `apps/desktop/src/renderer/features/runs/RunsView.tsx`
+- [x] T173 [P] [US12] Build the run detail with rating, judge action, and scores in `apps/desktop/src/renderer/features/runs/RunDetail.tsx`, and add EN/PL strings
+- [x] T174 [P] [US12] Write `docs/run-records.md` describing the export format and how a third-party tool reads it (SC-021)
 
 **Checkpoint**: Increment 5 complete: the local foundations of the software factory are in place
 
@@ -414,15 +414,15 @@ description: "Task list for Ster — ACP Desktop Client"
 
 **Purpose**: Qualities that span stories
 
-- [ ] T175 [P] Complete the hostile-content suite for agent output (script injection, remote resources, oversized and malformed updates, control sequences) in `packages/core/tests/security/agent-content.test.ts` and `apps/desktop/tests/e2e/hostile-content.spec.ts` (SC-016)
-- [ ] T176 [P] Add hostile-renderer tests for every bridge function added since phase 2 in `apps/desktop/tests/bridge.test.ts`
-- [ ] T177 [P] Add a network allow-list test in `apps/desktop/tests/e2e/network.spec.ts`: across the US1, US4, and US10 flows the application contacts only the registry in effect and confirmed download hosts, and nothing when the registry is disabled (FR-042, FR-046, SC-012)
-- [ ] T178 Virtualise the conversation list with TanStack Virtual and add a performance test with 1,000 items and 5 concurrent sessions in `apps/desktop/src/renderer/features/conversation/ConversationView.tsx` and `apps/desktop/tests/e2e/performance.spec.ts` (SC-002, SC-006, SC-008)
-- [ ] T179 [P] Keyboard and contrast pass over all main flows, with fixes, recorded in `docs/accessibility.md`
-- [ ] T180 [P] Review every public function and extension contract in `packages/core/src/` for documentation comments (Constitution VII)
-- [ ] T181 Remove dead code and unexplained TODOs, confirm coverage of `packages/core` is at least 80%, and confirm `pnpm audit --audit-level high` is clean
-- [ ] T182 Run all manual validation tables in `specs/001-acp-desktop-client/quickstart.md` on macOS, Windows, and Linux and record results in `docs/releasing.md`
-- [ ] T183 Run the reference task with three real registry agents of different distribution types and record results in the release notes in `CHANGELOG.md` (SC-003)
+- [x] T175 [P] Complete the hostile-content suite for agent output (script injection, remote resources, oversized and malformed updates, control sequences) in `packages/core/tests/security/agent-content.test.ts` and `apps/desktop/tests/e2e/hostile-content.spec.ts` (SC-016)
+- [x] T176 [P] Add hostile-renderer tests for every bridge function added since phase 2 in `apps/desktop/tests/bridge.test.ts`
+- [x] T177 [P] Add a network allow-list test in `apps/desktop/tests/e2e/network.spec.ts`: across the US1, US4, and US10 flows the application contacts only the registry in effect and confirmed download hosts, and nothing when the registry is disabled (FR-042, FR-046, SC-012)
+- [x] T178 Virtualise the conversation list with TanStack Virtual and add a performance test with 1,000 items and 5 concurrent sessions in `apps/desktop/src/renderer/features/conversation/ConversationView.tsx` and `apps/desktop/tests/e2e/performance.spec.ts` (SC-002, SC-006, SC-008)
+- [x] T179 [P] Keyboard and contrast pass over all main flows, with fixes, recorded in `docs/accessibility.md`
+- [x] T180 [P] Review every public function and extension contract in `packages/core/src/` for documentation comments (Constitution VII)
+- [x] T181 Remove dead code and unexplained TODOs, confirm coverage of `packages/core` is at least 80%, and confirm `pnpm audit --audit-level high` is clean
+- [x] T182 Run all manual validation tables in `specs/001-acp-desktop-client/quickstart.md` on macOS, Windows, and Linux and record results in `docs/releasing.md`
+- [x] T183 Run the reference task with three real registry agents of different distribution types and record results in the release notes in `CHANGELOG.md` (SC-003)
 
 ---
 
@@ -528,3 +528,30 @@ Each increment is tagged and can be released as installers once US9's release wo
 - Every task that adds an untrusted input (agent message type, registry field, policy item, definition item, bridge function) adds a security test in the same change (Constitution VI)
 - Core code never imports from `apps/desktop`; the lint rule from Phase 1 enforces it
 - Commit after each task or logical group; stop at any checkpoint to validate the story on its own
+
+---
+
+## Phase 16: Convergence
+
+**Purpose**: Close remaining gaps found by `/speckit-converge` against the current codebase (checkboxes are not evidence).
+
+- [x] T184 CRITICAL: Reject raw `cwd`/`folder` on `factory.find`/`trust`/`revoke` (token-only) and make hostile-renderer tests fail closed on path payloads per Constitution VI / contracts/ipc.md rule 3 (contradicts)
+- [x] T185 CRITICAL: Implement real managed-Node download with non-zero checksums and archive extract; stop default-seeding npm installs from system/`process.execPath`; align install-plan copy with what is installed per plan:R7 / Constitution VI / FR-020 (contradicts)
+- [x] T186 Wire attachment tokens into ACP prompt content (files/images), gate Attach on agent prompt capabilities, and confine picks to the session working folder per FR-004 / FR-023 / T057 (partial)
+- [x] T187 Enforce `install.requireChecksum` for npx/uvx (and any unverified) plans, not only binary archives lacking `sha256`, per FR-078 (partial)
+- [x] T188 Call `assertAllowedHttpsUrl` on every main-process registry/download fetch using the registry-in-effect plus confirmed install hosts per FR-042 / Constitution VI / T177 (partial)
+- [x] T189 Expose run filters for model, date range, user rating, and agent score in `apps/desktop/src/renderer/features/runs/RunsView.tsx` per FR-071 / US12/AC3 (partial)
+- [x] T190 Include filtered-set totals for duration and reported cost alongside count and score averages in `packages/core/src/runs/service.ts` and the runs UI per FR-071 / US12/AC3 (partial)
+- [x] T191 Signal attention when a non-viewed session finishes or fails, not only waiting-approval/needs-login, in `packages/core/src/sessions/service.ts` per FR-029 (partial)
+- [x] T192 Translate the export save-dialog title (and other main-process user-visible strings) via i18n in `apps/desktop/src/main/handlers/runs.ts` per FR-036 / Constitution IV (partial)
+
+---
+
+## Phase 17: Convergence
+
+**Purpose**: Close remaining gaps found by `/speckit-converge` after Phase 16.
+
+- [x] T193 Prompt on session delete for `runRecords: "delete"` vs `"keep-without-text"` in `apps/desktop/src/renderer/features/sessions/HistoryView.tsx` per FR-076 / US12 AC7 (partial)
+- [x] T194 Widen `runs.delete` bridge filter to match `runs.list` and add UI delete-by-filter in RunsView per FR-076 (partial)
+- [x] T195 Make date-only `to` inclusive (end-of-day) in run filter matching and the RunsView date inputs per FR-071 / US12/AC3 (contradicts)
+- [x] T196 Add rename UI calling existing `sessions.rename` in the conversation/session chrome per FR-032 (partial)

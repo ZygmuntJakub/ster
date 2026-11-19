@@ -1,0 +1,13 @@
+pnpm-lock.yaml
+dist
+out
+coverage
+node_modules
+design/mockup
+*.min.js
+.specify/**
+.claude/**
+specs/**
+CHANGELOG.md
+SECURITY.md
+README.md

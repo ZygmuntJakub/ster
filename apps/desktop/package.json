@@ -1,0 +1,49 @@
+{
+  "name": "@ster/desktop",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "main": "./out/main/index.js",
+  "scripts": {
+    "dev": "electron-vite dev",
+    "build": "electron-vite build",
+    "typecheck": "tsc -p tsconfig.node.json --noEmit && tsc -p tsconfig.web.json --noEmit",
+    "preview": "electron-vite preview",
+    "test": "vitest run",
+    "test:e2e": "electron-vite build && node -e \"import('electron').then(() => process.exit(0))\" && playwright test",
+    "dist": "electron-vite build && electron-builder --config electron-builder.config.mjs",
+    "dist:dir": "electron-vite build && electron-builder --config electron-builder.config.mjs --dir"
+  },
+  "dependencies": {
+    "@ster/core": "workspace:*",
+    "@tanstack/react-virtual": "^3.14.26",
+    "@xterm/addon-fit": "~0.10.0",
+    "@xterm/xterm": "^5.5.0",
+    "diff": "^8.0.4",
+    "i18next": "^27.1.5",
+    "node-pty": "1.1.0",
+    "react": "^19.3.1",
+    "react-dom": "^19.3.1",
+    "react-i18next": "^18.0.2",
+    "react-markdown": "^10.1.0",
+    "zod": "^4.6.7"
+  },
+  "devDependencies": {
+    "@electron/fuses": "^2.1.3",
+    "@playwright/test": "^1.65.1",
+    "@tailwindcss/vite": "^4.3.5",
+    "@types/diff": "^7.0.2",
+    "@types/node": "^24.10.1",
+    "@types/react": "^19.2.7",
+    "@types/react-dom": "^19.2.3",
+    "@vitejs/plugin-react": "^5.1.4",
+    "electron": "^45.3.4",
+    "electron-builder": "^26.18.0",
+    "electron-vite": "^6.0.0",
+    "playwright": "^1.65.1",
+    "tailwindcss": "^4.3.5",
+    "typescript": "^5.9.3",
+    "vite": "^7.3.8",
+    "vitest": "^5.1.1"
+  }
+}

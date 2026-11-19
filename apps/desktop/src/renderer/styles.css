@@ -1,0 +1,422 @@
+@import "tailwindcss";
+
+/*
+ * Design tokens from design/mockup/index.html (research.md R20).
+ * Light is the default; dark is the inversion via data-theme="dark".
+ */
+:root {
+  --bg: #e7e7e4;
+  --canvas: #f6f6f4;
+  --side: #efefec;
+  --surface: #ffffff;
+  --surface2: #f6f6f4;
+  --surface3: #ebebe8;
+  --line: #e2e2de;
+  --line-strong: #c9c9c4;
+  --ink: #111113;
+  --ink2: #4e4e55;
+  --ink3: #62626a;
+  --accent: #111113;
+  --accent-ink: #ffffff;
+  --accent-soft: #ebebe8;
+  --brass: #9a5b00;
+  --brass-soft: #fff4d6;
+  --ok: #15803d;
+  --ok-soft: #e6f4ea;
+  --bad: #b42318;
+  --bad-soft: #fdebea;
+  --danger: var(--bad);
+  --danger-soft: var(--bad-soft);
+  --surface-2: var(--surface2);
+  --run: #3f3f46;
+  --run-soft: #ebebe8;
+  --code-bg: #f3f3f0;
+  --add-bg: #e5f4e9;
+  --del-bg: #fcebe8;
+  --shadow: 0 1px 2px rgba(17, 17, 19, 0.06), 0 8px 24px rgba(17, 17, 19, 0.08);
+  --scrim: rgba(17, 17, 19, 0.4);
+  --ui: "Inter", "Geist", system-ui, -apple-system, "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+  --mono: ui-monospace, "SF Mono", "Geist Mono", Menlo, Consolas, "Liberation Mono", monospace;
+  --r-sm: 6px;
+  --r-md: 9px;
+  --r-lg: 14px;
+}
+
+:root[data-theme="dark"] {
+  --bg: #050505;
+  --canvas: #0d0d0e;
+  --side: #111112;
+  --surface: #171719;
+  --surface2: #1c1c1f;
+  --surface3: #262629;
+  --line: #2a2a2e;
+  --line-strong: #44444a;
+  --ink: #f2f2f0;
+  --ink2: #b4b4ba;
+  --ink3: #97979e;
+  --accent: #f2f2f0;
+  --accent-ink: #0a0a0a;
+  --accent-soft: #262629;
+  --brass: #f0b84a;
+  --brass-soft: #2d2410;
+  --ok: #4ade80;
+  --ok-soft: #12261a;
+  --bad: #ff8a80;
+  --bad-soft: #331715;
+  --danger: var(--bad);
+  --danger-soft: var(--bad-soft);
+  --surface-2: var(--surface2);
+  --run: #d4d4d8;
+  --run-soft: #262629;
+  --code-bg: #0b0b0c;
+  --add-bg: #12281a;
+  --del-bg: #301816;
+  --shadow: 0 1px 2px rgba(0, 0, 0, 0.5), 0 8px 24px rgba(0, 0, 0, 0.55);
+  --scrim: rgba(0, 0, 0, 0.65);
+}
+
+html,
+body,
+#root {
+  height: 100%;
+  margin: 0;
+}
+
+body {
+  font-family: var(--ui);
+  background: var(--bg);
+  color: var(--ink);
+  -webkit-font-smoothing: antialiased;
+}
+
+code,
+pre,
+.mono {
+  font-family: var(--mono);
+}
+
+#app {
+  padding: 10px;
+  background: var(--bg);
+}
+
+.frame {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  background: var(--canvas);
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  overflow: hidden;
+}
+
+.col {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  min-height: 0;
+}
+
+.grow {
+  flex: 1;
+}
+
+.scroll {
+  overflow: auto;
+  min-height: 0;
+}
+
+.muted {
+  color: var(--ink2);
+}
+
+.faint {
+  color: var(--ink3);
+}
+
+.lbl {
+  font-family: var(--mono);
+  font-size: 10.5px;
+  font-weight: 500;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ink2);
+}
+
+.logo-sq {
+  width: 28px;
+  height: 28px;
+  border-radius: 8px;
+  background: var(--accent);
+  display: grid;
+  place-items: center;
+  flex: none;
+}
+
+.logo-sq svg {
+  width: 18px;
+  height: 18px;
+  stroke: var(--accent-ink);
+  stroke-width: 2.2;
+  fill: none;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+svg.ic {
+  width: 16px;
+  height: 16px;
+  flex: none;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.7;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.rail {
+  width: 64px;
+  flex: none;
+  align-self: stretch;
+  background: var(--side);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 12px 0;
+  overflow-y: auto;
+  min-height: 0;
+}
+
+.rail button {
+  width: 52px;
+  padding: 7px 0 5px;
+  border: 1px solid transparent;
+  background: transparent;
+  border-radius: 10px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+  color: var(--ink2);
+  font-size: 10.5px;
+  font-weight: 500;
+}
+
+.rail button svg {
+  width: 18px;
+  height: 18px;
+}
+
+.rail button:hover {
+  background: var(--surface3);
+}
+
+.rail button[aria-current="page"] {
+  background: var(--surface);
+  border-color: var(--line);
+  color: var(--ink);
+}
+
+.board-C {
+  width: 316px;
+  flex: none;
+  background: var(--canvas);
+  border-right: 1px solid var(--line);
+  padding: 4px 12px 12px;
+  gap: 10px;
+}
+
+.tally {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 6px;
+}
+
+.tally div {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--r-md);
+  padding: 6px 4px;
+  text-align: center;
+  font-size: 10.5px;
+  color: var(--ink2);
+  line-height: 1.25;
+}
+
+.tally b {
+  display: block;
+  font-size: 18px;
+  font-family: var(--mono);
+  font-weight: 500;
+  color: var(--ink);
+}
+
+.conv {
+  flex: 1;
+  min-width: 0;
+  min-height: 0;
+  background: var(--canvas);
+  position: relative;
+}
+
+/* Full-width screens (Agents / Runs / Settings) — match design/mockup `.screen`. */
+.screen {
+  flex: 1;
+  min-width: 0;
+  min-height: 0;
+  overflow: auto;
+  background: var(--canvas);
+}
+
+.mainc {
+  min-width: 0;
+  min-height: 0;
+}
+
+.chead {
+  flex: none;
+  padding: 12px 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.chead .title,
+.title {
+  margin: 0;
+  font-weight: 600;
+  font-size: 20px;
+  letter-spacing: -0.01em;
+  line-height: 1.25;
+}
+
+.msgs {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 4px 18px 20px;
+}
+
+label.f {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-family: var(--mono);
+  font-size: 10.5px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ink2);
+  font-weight: 500;
+}
+
+label.f select {
+  font-family: var(--ui);
+  font-weight: 400;
+  color: var(--ink);
+  font-size: 13px;
+  padding: 6px 8px;
+  text-transform: none;
+  letter-spacing: 0;
+  background: var(--surface);
+  border: 1px solid var(--line-strong);
+  border-radius: var(--r-sm);
+}
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  border: 1px solid var(--line-strong);
+  background: var(--surface);
+  border-radius: var(--r-sm);
+  padding: 5px 11px;
+  font-weight: 500;
+  font-size: 13px;
+  color: var(--ink);
+  cursor: pointer;
+}
+
+.btn:hover {
+  background: var(--surface3);
+}
+
+.btn.primary {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--accent-ink);
+}
+
+.btn.primary:hover {
+  opacity: 0.88;
+  background: var(--accent);
+}
+
+.btn.ghost {
+  background: transparent;
+}
+
+.btn[disabled] {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 1px 8px 1px 7px;
+  border-radius: 99px;
+  font-size: 11.5px;
+  font-weight: 500;
+  background: var(--surface);
+  border: 1px solid var(--line-strong);
+  color: var(--ink);
+  white-space: nowrap;
+}
+
+.chip::before {
+  content: "";
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--ink3);
+}
+
+.chip.working::before,
+.chip.in_progress::before {
+  background: var(--ink);
+}
+
+.chip.waiting::before,
+.chip.pending::before {
+  background: var(--brass);
+}
+
+.chip.finished::before,
+.chip.completed::before {
+  background: var(--ok);
+}
+
+.chip.failed::before {
+  background: var(--bad);
+}
+
+.input {
+  font-family: var(--ui);
+  color: var(--ink);
+  font-size: 13px;
+  padding: 8px 10px;
+  background: var(--surface);
+  border: 1px solid var(--line-strong);
+  border-radius: var(--r-sm);
+}
+
+.link-btn {
+  background: none;
+  border: none;
+  padding: 0;
+  color: var(--ink);
+  cursor: pointer;
+  font: inherit;
+}

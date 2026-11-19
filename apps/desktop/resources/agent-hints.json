@@ -1,0 +1,5 @@
+{
+  "claude-agent-acp": ["claude-agent-acp"],
+  "codex-acp": ["codex-acp"],
+  "gemini-cli": ["gemini"]
+}

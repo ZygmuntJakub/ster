@@ -1,0 +1,25 @@
+# Normalize text to LF so Prettier `endOfLine: "lf"` passes on Windows CI.
+* text=auto eol=lf
+
+# Windows scripts may keep CRLF.
+*.bat text eol=crlf
+*.cmd text eol=crlf
+*.ps1 text eol=crlf
+
+# Binary assets
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.ico binary
+*.icns binary
+*.woff binary
+*.woff2 binary
+*.ttf binary
+*.eot binary
+*.zip binary
+*.gz binary
+*.tgz binary
+*.dmg binary
+*.exe binary
+*.node binary

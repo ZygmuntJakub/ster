@@ -1,0 +1,273 @@
+{
+  "app": {
+    "name": "Ster",
+    "tagline": "Rozmowy z agentami w Twoich projektach"
+  },
+  "nav": {
+    "conversation": "Rozmowa",
+    "agents": "Agenci",
+    "runs": "Przebiegi",
+    "settings": "Ustawienia"
+  },
+  "board": {
+    "title": "Sesje",
+    "empty": "Brak sesji",
+    "emptyHint": "Rozpocznij rozmowę w folderze projektu, gdy agent będzie gotowy.",
+    "working": "Praca",
+    "waiting": "Oczekuje",
+    "finished": "Zakończone",
+    "failed": "Błąd",
+    "attention": "Wymaga uwagi",
+    "sessionCount_one": "{{count}} sesja",
+    "sessionCount_few": "{{count}} sesje",
+    "sessionCount_many": "{{count}} sesji",
+    "sessionCount_other": "{{count}} sesji"
+  },
+  "history": {
+    "readOnly": "Ta sesja jest zamknięta. Możesz czytać historię lub kontynuować, jeśli agent obsługuje wznawianie.",
+    "continue": "Kontynuuj",
+    "notResumable": "Ten agent nie może wznowić sesji.",
+    "newInFolder": "Nowa sesja w tym folderze",
+    "delete": "Usuń",
+    "deletePrompt": "Usuń rozmowę tej sesji. Co zrobić z zapisami przebiegów?",
+    "deleteWithRuns": "Usuń też przebiegi",
+    "keepRuns": "Zachowaj przebiegi (usuń treść zapytań)",
+    "deleteCancel": "Anuluj"
+  },
+  "conversation": {
+    "title": "Rozmowa",
+    "empty": "Wybierz sesję, aby zobaczyć rozmowę",
+    "placeholder": "Elementy rozmowy pojawią się tutaj",
+    "emptySession": "Wyślij wiadomość, aby rozpocząć rozmowę",
+    "you": "Ty",
+    "agent": "Agent",
+    "thought": "Rozumowanie",
+    "notice": "Powiadomienie",
+    "unknown": "Nieobsługiwany element",
+    "unknownHint": "Element {{kind}} nie może jeszcze być pokazany",
+    "copy": "Kopiuj",
+    "copied": "Skopiowano",
+    "imageBlocked": "Zdalny obraz zablokowany"
+  },
+  "composer": {
+    "placeholder": "Napisz do agenta…",
+    "send": "Wyślij",
+    "stop": "Stop",
+    "attach": "Dołącz",
+    "commands": "Polecenia agenta",
+    "noCommands": "Brak pasujących poleceń"
+  },
+  "config": {
+    "modeLabel": "Tryb",
+    "modelLabel": "Model",
+    "thoughtLabel": "Poziom rozumowania"
+  },
+  "approval": {
+    "title": "Wymagana zgoda",
+    "guardTitle": "Potwierdź chronioną akcję",
+    "cancel": "Anuluj"
+  },
+  "permission": {
+    "modeLabel": "Tryb uprawnień",
+    "defaultMode": "Domyślny tryb uprawnień",
+    "remember": "Zezwól i zapamiętaj w tej sesji",
+    "rulesTitle": "Zapamiętane decyzje",
+    "revoke": "Cofnij",
+    "confinementTitle": "Co obejmuje ograniczenie dostępu",
+    "confinementBody": "Dostęp do plików przez Ster jest ograniczony do folderu sesji po rozwinięciu dowiązań symbolicznych, chyba że zatwierdzisz wyjątek dla konkretnego żądania. Nie izoluje to procesu agenta, sieci ani narzędzi, które agent uruchamia samodzielnie.",
+    "modes": {
+      "always-ask": "Zawsze pytaj",
+      "ask-with-rules": "Pytaj z zapamiętywaniem decyzji",
+      "auto-approve-reads": "Automatycznie zatwierdzaj odczyty"
+    },
+    "noticeByRule": "Zatwierdzono automatycznie na podstawie zapamiętanej decyzji",
+    "noticeByMode": "Zatwierdzono automatycznie przez tryb uprawnień",
+    "noticeRuleCreated": "Zapamiętano tę decyzję w sesji"
+  },
+  "action": {
+    "label": "Akcja"
+  },
+  "command": {
+    "label": "Polecenie",
+    "stop": "Zatrzymaj",
+    "waiting": "Oczekiwanie na wynik…",
+    "truncated": "Wynik skrócono do limitu rozmiaru.",
+    "exit": "Kod wyjścia {{code}} · sygnał {{signal}}"
+  },
+  "diff": {
+    "label": "Różnice"
+  },
+  "plan": {
+    "label": "Plan",
+    "empty": "Brak kroków planu"
+  },
+  "session": {
+    "new": "Nowa",
+    "newTitle": "Nowa sesja",
+    "newHint": "Wybierz agenta i folder projektu.",
+    "agent": "Agent",
+    "folder": "Folder",
+    "pickFolder": "Wybierz folder",
+    "noFolder": "Nie wybrano folderu",
+    "confirmLaunch": "Potwierdzam uruchomienie {{command}} (pochodzenie: {{origin}})",
+    "confirmRequired": "Potwierdź uruchomienie agenta przed startem",
+    "needAgentFolder": "Wybierz agenta i folder",
+    "confinementTitle": "Co obejmuje ograniczenie dostępu",
+    "confinementBody": "Dostęp do plików jest ograniczony do wybranego folderu po rozwinięciu dowiązań symbolicznych. Nie izoluje procesu agenta, sieci ani poleceń, które agent może później uruchomić.",
+    "cancel": "Anuluj",
+    "start": "Start",
+    "failedTitle": "Sesja zakończyła się błędem",
+    "restart": "Uruchom ponownie",
+    "rename": "Zmień nazwę",
+    "renameSave": "Zapisz",
+    "renameCancel": "Anuluj"
+  },
+  "login": {
+    "title": "Wymagane logowanie",
+    "hint": "Ten agent wymaga logowania, zanim sesja będzie mogła być kontynuowana.",
+    "command": "Polecenie",
+    "fallback": "Jeśli terminal logowania nie może się uruchomić, zaloguj się w CLI dostawcy we własnym terminalu, a następnie uruchom sesję ponownie.",
+    "terminalFailed": "Terminal logowania zakończył się bez sukcesu",
+    "terminalUnavailable": "Terminal logowania jest niedostępny na tej maszynie"
+  },
+  "settings": {
+    "title": "Ustawienia",
+    "language": "Język",
+    "languageEn": "English",
+    "languagePl": "Polski",
+    "theme": "Motyw",
+    "themeSystem": "Systemowy",
+    "themeLight": "Jasny",
+    "themeDark": "Ciemny"
+  },
+  "policy": {
+    "managed": "Zarządzane przez organizację",
+    "invalidTitle": "Polityka organizacji jest nieprawidłowa",
+    "invalidBody": "Nowe sesje są zablokowane, dopóki plik polityki nie zostanie poprawiony i Ster nie zostanie uruchomiony ponownie. Historia rozmów pozostaje czytelna.",
+    "agentBlocked": "Ten agent nie jest dozwolony przez politykę organizacji."
+  },
+  "factory": {
+    "trustTitle": "Zaufać fabryce projektu?",
+    "trustBody": "Definicja fabryki w tym folderze zmieniłaby poniższe elementy. Nic nie zostanie zastosowane, dopóki jej nie zaufasz.",
+    "changedTitle": "Definicja fabryki się zmieniła",
+    "changedBody": "Zaufana definicja fabryki dla tego folderu się zmieniła. Przejrzyj nową treść przed ponownym zaufaniem.",
+    "trust": "Zaufaj definicji",
+    "trustAgain": "Zaufaj nowej definicji",
+    "skip": "Pomiń na razie",
+    "trustRequired": "Zaufaj lub pomiń definicję fabryki przed startem",
+    "summaryAgents": "Agenci: {{agents}}",
+    "summaryDefaultAgent": "Domyślny agent: {{agent}}",
+    "summaryMode": "Tryb uprawnień: {{mode}}",
+    "summaryTemplates": "Szablony: {{templates}}",
+    "summaryJudging": "Zdefiniowano kryteria oceny",
+    "summaryCommandAgent": "Agent z polecenia {{name}}: {{command}}",
+    "droppedByPolicy": "Odrzucone przez politykę organizacji: {{parts}}",
+    "templates": "Szablony",
+    "templateLabel": "Szablon zadania",
+    "insertTemplate": "Wstaw"
+  },
+  "dialogs": {
+    "cancel": "Anuluj",
+    "open": "Otwórz",
+    "openLink": "Otworzyć ten odnośnik w przeglądarce?",
+    "pickFolderTitle": "Wybierz folder projektu",
+    "pickAttachmentsTitle": "Dołącz pliki",
+    "exportRunsTitle": "Eksportuj przebiegi",
+    "exportRunsFilter": "JSON Lines"
+  },
+  "agents": {
+    "title": "Agenci",
+    "refresh": "Odśwież rejestr",
+    "registryReachable": "Rejestr dostępny",
+    "registryOffline": "Rejestr niedostępny{{error}}",
+    "install": "Zainstaluj",
+    "update": "Aktualizuj",
+    "remove": "Usuń",
+    "installTitle": "Potwierdź instalację",
+    "verified": "Suma kontrolna pobrania zweryfikowana względem rejestru.",
+    "unverified": "Brak sumy kontrolnej w rejestrze — zaufanie przy pierwszym użyciu; skrót pliku startowego zostanie zapisany.",
+    "confirmInstall": "Zainstaluj",
+    "installing": "Instalowanie…",
+    "cancel": "Anuluj",
+    "customTitle": "Własny agent",
+    "customName": "Nazwa",
+    "customCommand": "Polecenie",
+    "customArgs": "Argumenty",
+    "saveCustom": "Zapisz własnego agenta",
+    "readiness": {
+      "ready": "Gotowy",
+      "needs-login": "Wymaga logowania",
+      "not-installed": "Nie zainstalowany",
+      "unavailable": "Niedostępny na tym systemie",
+      "blocked-by-policy": "Zablokowany przez organizację",
+      "update-available": "Dostępna aktualizacja",
+      "integrity-failed": "Błąd integralności"
+    }
+  },
+  "runs": {
+    "title": "Przebiegi",
+    "empty": "Brak zapisanych przebiegów",
+    "export": "Eksportuj",
+    "deleteFiltered": "Usuń przefiltrowane",
+    "deleteFilteredConfirm": "Usunąć {{count}} przefiltrowanych przebiegów?",
+    "filterAgent": "Id agenta",
+    "filterModel": "Model",
+    "filterOutcome": "Wynik",
+    "filterFolder": "Folder",
+    "filterFrom": "Od",
+    "filterTo": "Do",
+    "filterUserRating": "Min. ocena użytkownika",
+    "filterAgentScore": "Min. ocena agenta",
+    "any": "Dowolny",
+    "outcomeCompleted": "Ukończony",
+    "outcomeCancelled": "Anulowany",
+    "outcomeFailed": "Nieudany",
+    "outcomeInterrupted": "Przerwany",
+    "applyFilters": "Zastosuj",
+    "totals": "{{count}} przebiegów · średnia użytkownika {{userAvg}} · średnia agenta {{agentAvg}} · czas {{duration}} · koszt {{cost}}",
+    "loading": "Ładowanie przebiegu…",
+    "back": "Wróć do listy",
+    "detailTitle": "Szczegóły przebiegu",
+    "request": "Zapytanie",
+    "requestRedacted": "(ukryte)",
+    "started": "Start",
+    "actions": "Akcje",
+    "approvals": "Zgody",
+    "commands": "Polecenia",
+    "rateTitle": "Twoja ocena",
+    "rating": "Ocena (1–5)",
+    "note": "Notatka",
+    "saveRating": "Zapisz ocenę",
+    "judgeTitle": "Oceń agentem",
+    "judgeAgent": "Agent oceniający",
+    "judge": "Oceń przebieg",
+    "scoresTitle": "Oceny",
+    "noScores": "Brak ocen",
+    "userScore": "Użytkownik",
+    "agentScore": "Agent",
+    "delete": "Usuń przebieg"
+  },
+  "extensions": {
+    "example": {
+      "nav": "Przykład",
+      "title": "Panel przykładowy",
+      "body": "Ten panel jest zarejestrowany w apps/desktop/src/extensions/index.ts. Zastąp go własnym panelem w pasku bocznym, obok sesji lub w ustawieniach."
+    }
+  },
+  "errors": {
+    "policy-invalid": "Polityka organizacji jest nieprawidłowa",
+    "blocked-by-policy": "Zablokowane przez politykę organizacji",
+    "agent-not-ready": "Ten agent nie jest gotowy",
+    "agent-not-confirmed": "Potwierdź agenta przed pierwszym uruchomieniem",
+    "integrity-failed": "Pliki agenta nie przeszły kontroli integralności",
+    "login-required": "Zaloguj się do agenta, aby kontynuować",
+    "protocol-unsupported": "Agent używa nieobsługiwanej wersji protokołu",
+    "agent-exited": "Proces agenta zakończył się nieoczekiwanie",
+    "outside-workspace": "Ta ścieżka jest poza folderem projektu",
+    "not-resumable": "Tej sesji nie można wznowić",
+    "definition-invalid": "Definicja fabryki jest nieprawidłowa",
+    "definition-untrusted": "Definicja fabryki nie jest zaufana",
+    "not-found": "Nie znaleziono",
+    "invalid-argument": "Nieprawidłowe żądanie"
+  }
+}
