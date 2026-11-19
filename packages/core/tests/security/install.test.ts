@@ -1,19 +1,72 @@
-import { execFile } from "node:child_process";
 import { createHash } from "node:crypto";
 import { createServer } from "node:http";
 import { mkdtempSync, readFileSync, rmSync, writeFileSync, chmodSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { promisify } from "node:util";
 import { afterEach, describe, expect, it } from "vitest";
-import { gzipSync } from "node:zlib";
+import { crc32, gzipSync } from "node:zlib";
 import { installBinaryAgent } from "../../src/agents/install-binary.js";
 import { assertSafeBinaryCmd } from "../../src/agents/integrity.js";
 import { extractTarGz } from "../../src/agents/extract.js";
 import { isSterError } from "../../src/errors.js";
 import type { InstallPlan } from "../../src/agents/plan.js";
 
-const execFileAsync = promisify(execFile);
+/** Minimal store-method ZIP (no shell) so Windows CI avoids PowerShell cold start. */
+function storeZip(entries: ReadonlyArray<{ name: string; data: Buffer }>): Buffer {
+  const locals: Buffer[] = [];
+  const centrals: Buffer[] = [];
+  let offset = 0;
+  for (const entry of entries) {
+    const nameBuf = Buffer.from(entry.name, "utf8");
+    const crc = crc32(entry.data) >>> 0;
+    const local = Buffer.alloc(30 + nameBuf.length);
+    local.writeUInt32LE(0x04034b50, 0);
+    local.writeUInt16LE(20, 4);
+    local.writeUInt16LE(0, 6);
+    local.writeUInt16LE(0, 8); // store
+    local.writeUInt16LE(0, 10);
+    local.writeUInt16LE(0, 12);
+    local.writeUInt32LE(crc, 14);
+    local.writeUInt32LE(entry.data.length, 18);
+    local.writeUInt32LE(entry.data.length, 22);
+    local.writeUInt16LE(nameBuf.length, 26);
+    local.writeUInt16LE(0, 28);
+    nameBuf.copy(local, 30);
+    const central = Buffer.alloc(46 + nameBuf.length);
+    central.writeUInt32LE(0x02014b50, 0);
+    central.writeUInt16LE(20, 4);
+    central.writeUInt16LE(20, 6);
+    central.writeUInt16LE(0, 8);
+    central.writeUInt16LE(0, 10);
+    central.writeUInt16LE(0, 12);
+    central.writeUInt16LE(0, 14);
+    central.writeUInt32LE(crc, 16);
+    central.writeUInt32LE(entry.data.length, 20);
+    central.writeUInt32LE(entry.data.length, 24);
+    central.writeUInt16LE(nameBuf.length, 28);
+    central.writeUInt16LE(0, 30);
+    central.writeUInt16LE(0, 32);
+    central.writeUInt16LE(0, 34);
+    central.writeUInt16LE(0, 36);
+    central.writeUInt32LE(0, 38);
+    central.writeUInt32LE(offset, 42);
+    nameBuf.copy(central, 46);
+    locals.push(local, entry.data);
+    centrals.push(central);
+    offset += local.length + entry.data.length;
+  }
+  const centralDir = Buffer.concat(centrals);
+  const end = Buffer.alloc(22);
+  end.writeUInt32LE(0x06054b50, 0);
+  end.writeUInt16LE(0, 4);
+  end.writeUInt16LE(0, 6);
+  end.writeUInt16LE(entries.length, 8);
+  end.writeUInt16LE(entries.length, 10);
+  end.writeUInt32LE(centralDir.length, 12);
+  end.writeUInt32LE(offset, 16);
+  end.writeUInt16LE(0, 20);
+  return Buffer.concat([...locals, centralDir, end]);
+}
 
 const tempDirs: string[] = [];
 const servers: Array<ReturnType<typeof createServer>> = [];
@@ -165,21 +218,7 @@ describe("install security", () => {
 
   it("extracts .zip binary archives instead of treating them as the launch file", async () => {
     const payload = Buffer.from("#!/bin/sh\necho zip-ok\n");
-    const staging = mkdtempSync(join(tmpdir(), "ster-zip-src-"));
-    tempDirs.push(staging);
-    const member = join(staging, "agent");
-    writeFileSync(member, payload, { mode: 0o755 });
-    const zipPath = join(staging, "agent.zip");
-    if (process.platform === "win32") {
-      await execFileAsync("powershell.exe", [
-        "-NoProfile",
-        "-Command",
-        `Compress-Archive -LiteralPath '${member.replace(/'/g, "''")}' -DestinationPath '${zipPath.replace(/'/g, "''")}' -Force`,
-      ]);
-    } else {
-      await execFileAsync("zip", ["-j", zipPath, member]);
-    }
-    const zipBytes = readFileSync(zipPath);
+    const zipBytes = storeZip([{ name: "agent", data: payload }]);
     const base = await serve({ "/agent.zip": zipBytes });
     const dataDir = mkdtempSync(join(tmpdir(), "ster-zip-"));
     tempDirs.push(dataDir);

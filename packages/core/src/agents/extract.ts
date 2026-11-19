@@ -76,11 +76,18 @@ export async function extractTarGz(archivePath: string, destDir: string): Promis
 }
 
 /**
- * Extract a .zip archive (macOS/Windows registry binaries). Prefer `tar -xf`,
- * then `unzip`, PowerShell on Windows — same approach as managed Node install.
+ * Extract a .zip archive (macOS/Windows registry binaries). Prefer `tar -xf`
+ * (available on modern Windows too — much faster than PowerShell cold start),
+ * then `unzip`, then Expand-Archive on Windows.
  */
 export async function extractZip(archivePath: string, destDir: string): Promise<void> {
   mkdirSync(destDir, { recursive: true });
+  try {
+    await execFileAsync("tar", ["-xf", archivePath, "-C", destDir]);
+    return;
+  } catch {
+    // Fall through to platform tools.
+  }
   if (process.platform === "win32") {
     await execFileAsync("powershell.exe", [
       "-NoProfile",
@@ -89,11 +96,7 @@ export async function extractZip(archivePath: string, destDir: string): Promise<
     ]);
     return;
   }
-  try {
-    await execFileAsync("tar", ["-xf", archivePath, "-C", destDir]);
-  } catch {
-    await execFileAsync("unzip", ["-o", archivePath, "-d", destDir]);
-  }
+  await execFileAsync("unzip", ["-o", archivePath, "-d", destDir]);
 }
 
 /**
