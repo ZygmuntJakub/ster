@@ -4,8 +4,20 @@ import { existsSync } from "node:fs";
 import { join } from "node:path";
 import { windowTitleFromBrand } from "./brand-surface.js";
 
-const CSP =
+/** Packaged / e2e loads (file:); no inline scripts or remote origins. */
+const CSP_PRODUCTION =
   "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self'; font-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'";
+
+/**
+ * electron-vite injects an inline React-refresh preamble and needs eval + ws for HMR.
+ * Only used when ELECTRON_RENDERER_URL is set (`pnpm dev`).
+ */
+const CSP_DEVELOPMENT =
+  "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self' ws: wss:; font-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'";
+
+function contentSecurityPolicy(): string {
+  return process.env["ELECTRON_RENDERER_URL"] ? CSP_DEVELOPMENT : CSP_PRODUCTION;
+}
 
 function resolvePreloadPath(): string {
   const candidates = [
@@ -30,7 +42,7 @@ export function applySessionHardening(): void {
 
   ses.webRequest.onHeadersReceived((details, callback) => {
     const headers = { ...details.responseHeaders };
-    headers["Content-Security-Policy"] = [CSP];
+    headers["Content-Security-Policy"] = [contentSecurityPolicy()];
     callback({ responseHeaders: headers });
   });
 

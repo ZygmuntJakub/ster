@@ -50,9 +50,9 @@ export function PermissionModeSelect({
         aria-label={t("permission.modeLabel")}
         onChange={(event) => {
           const next = event.target.value;
-          void window.ster.sessions.setPermissionMode({ sessionId, mode: next }).then(() => {
-            onChanged?.(next);
-          });
+          // Update UI immediately so e2e / follow-up prompts do not race the IPC round-trip.
+          onChanged?.(next);
+          void window.ster.sessions.setPermissionMode({ sessionId, mode: next });
         }}
       >
         {modes.map((id) => (

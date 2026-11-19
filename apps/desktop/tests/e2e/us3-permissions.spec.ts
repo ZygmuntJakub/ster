@@ -40,6 +40,31 @@ test("US3: remember edits, auto-approve reads, reject outside guard", async () =
     const mode = page.getByTestId("permission-mode").locator("select");
     await mode.selectOption("ask-with-rules");
     await expect(mode).toHaveValue("ask-with-rules");
+    // Ensure main-process mode is committed before the first prompt (macOS IPC can lag the UI).
+    await expect
+      .poll(async () => {
+        return page.evaluate(async () => {
+          const ster = globalThis as unknown as {
+            document: {
+              querySelector: (sel: string) => { getAttribute: (n: string) => string | null } | null;
+            };
+            ster: {
+              sessions: {
+                get: (payload: { sessionId: string }) => Promise<{ permissionMode?: string }>;
+              };
+            };
+          };
+          const sessionId = ster.document
+            .querySelector("[data-testid='session-title']")
+            ?.getAttribute("data-session-id");
+          if (!sessionId) {
+            return null;
+          }
+          const session = await ster.ster.sessions.get({ sessionId });
+          return session.permissionMode ?? null;
+        });
+      })
+      .toBe("ask-with-rules");
 
     const composer = page.getByPlaceholder(/Message the agent|Napisz do agenta/);
     await composer.fill("scenario: edit-file");
@@ -51,11 +76,18 @@ test("US3: remember edits, auto-approve reads, reject outside guard", async () =
     await page.getByRole("button", { name: /remember|zapamiętaj/i }).click();
     await expect(page.getByTestId("rules-panel")).toBeVisible({ timeout: 15_000 });
     await expect(page.getByTestId("permission-notice").first()).toBeVisible();
+    await expect(page.getByRole("button", { name: /Allow once|Allow/i })).toHaveCount(0);
 
+    const noticesBefore = await page.getByTestId("permission-notice").count();
     await composer.fill("scenario: edit-file");
     await page.getByRole("button", { name: /^Send$|^Wyślij$/ }).click();
+    await expect(page.getByTestId("permission-notice")).toHaveCount(noticesBefore + 1, {
+      timeout: 30_000,
+    });
     await expect(
-      page.getByText(/Approved automatically by a remembered decision|automatycznie na podstawie/i),
+      page.getByTestId("permission-notice").filter({
+        hasText: /Approved automatically by a remembered decision|automatycznie na podstawie/i,
+      }),
     ).toBeVisible({
       timeout: 30_000,
     });
