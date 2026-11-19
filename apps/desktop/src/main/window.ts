@@ -41,6 +41,19 @@ export function applySessionHardening(): void {
         callback({});
         return;
       }
+      // electron-vite serves the renderer over localhost in `pnpm dev`; allow that origin only.
+      const rendererUrl = process.env["ELECTRON_RENDERER_URL"];
+      if (
+        rendererUrl &&
+        (url.protocol === "http:" || url.protocol === "https:") &&
+        (url.hostname === "localhost" || url.hostname === "127.0.0.1")
+      ) {
+        const allowed = new URL(rendererUrl);
+        if (url.origin === allowed.origin) {
+          callback({});
+          return;
+        }
+      }
       if (url.protocol === "http:" || url.protocol === "https:") {
         // Renderer must not reach the network; main-process Node fetch is separate.
         callback({ cancel: true });
