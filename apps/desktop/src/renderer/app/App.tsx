@@ -59,7 +59,7 @@ export function App(): JSX.Element {
   const ExtensionComponent = extension?.component;
 
   return (
-    <div id="app" className="flex h-full min-h-screen">
+    <div id="app" className="flex h-full min-h-0">
       <div className="frame flex min-h-0 flex-1 flex-col">
         <PolicyStatus />
         <div className="flex min-h-0 flex-1">
@@ -78,14 +78,14 @@ export function App(): JSX.Element {
           ) : section === "runs" ? (
             <RunsView />
           ) : section === "conversation" ? (
-            <div className="mainc flex min-w-0 flex-1">
+            <div className="mainc flex min-h-0 min-w-0 flex-1">
               <SessionBoard />
               <ConversationPane />
             </div>
           ) : ExtensionComponent ? (
             <ExtensionComponent />
           ) : (
-            <section className="conv col px-6 py-4">
+            <section className="screen col px-6 py-4">
               <h1 className="title">{i18n.t(`nav.${section}`)}</h1>
               <p className="muted mt-2 text-sm">{i18n.t("board.emptyHint")}</p>
             </section>

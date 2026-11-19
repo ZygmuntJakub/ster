@@ -13,7 +13,11 @@ export function AgentsPane(): JSX.Element {
   const [plan, setPlan] = useState<InstallPlanView | null>(null);
 
   return (
-    <section className="conv col px-6 py-4" aria-label={t("agents.title")}>
+    <section
+      className="screen col px-6 py-4"
+      aria-label={t("agents.title")}
+      data-testid="agents-pane"
+    >
       <h1 className="title mb-4">{t("agents.title")}</h1>
       <AgentList
         refreshKey={refreshKey}

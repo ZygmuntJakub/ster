@@ -177,12 +177,15 @@ svg.ic {
 .rail {
   width: 64px;
   flex: none;
+  align-self: stretch;
   background: var(--side);
   display: flex;
   flex-direction: column;
   align-items: center;
   gap: 4px;
   padding: 12px 0;
+  overflow-y: auto;
+  min-height: 0;
 }
 
 .rail button {
@@ -252,8 +255,23 @@ svg.ic {
 .conv {
   flex: 1;
   min-width: 0;
+  min-height: 0;
   background: var(--canvas);
   position: relative;
+}
+
+/* Full-width screens (Agents / Runs / Settings) — match design/mockup `.screen`. */
+.screen {
+  flex: 1;
+  min-width: 0;
+  min-height: 0;
+  overflow: auto;
+  background: var(--canvas);
+}
+
+.mainc {
+  min-width: 0;
+  min-height: 0;
 }
 
 .chead {

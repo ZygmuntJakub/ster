@@ -82,14 +82,14 @@ export function RunDetail({ runId, onBack }: RunDetailProps): JSX.Element {
 
   if (!run) {
     return (
-      <section className="conv col px-6 py-4">
+      <section className="screen col px-6 py-4">
         <p className="muted">{t("runs.loading")}</p>
       </section>
     );
   }
 
   return (
-    <section className="conv col px-6 py-4" data-testid="run-detail">
+    <section className="screen col px-6 py-4" data-testid="run-detail">
       <button type="button" className="btn mb-4 self-start" onClick={onBack}>
         {t("runs.back")}
       </button>

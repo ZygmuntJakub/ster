@@ -9,7 +9,7 @@ function ExamplePanel({ sessionId }: { sessionId?: string }): JSX.Element {
   const { t } = useTranslation();
   return (
     <section
-      className="conv col px-6 py-4"
+      className="screen col px-6 py-4"
       aria-label={t("extensions.example.title")}
       data-testid="example-panel"
       data-session-id={sessionId ?? ""}

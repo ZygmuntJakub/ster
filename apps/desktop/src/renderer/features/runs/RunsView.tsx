@@ -130,7 +130,7 @@ export function RunsView(): JSX.Element {
       : `${totals.totalCost.amount.toFixed(4)} ${totals.totalCost.currency}`;
 
   return (
-    <section className="conv col px-6 py-4" aria-label={t("runs.title")} data-testid="runs-view">
+    <section className="screen col px-6 py-4" aria-label={t("runs.title")} data-testid="runs-view">
       <div className="mb-4 flex flex-wrap items-baseline justify-between gap-4">
         <h1 className="title">{t("runs.title")}</h1>
         <div className="flex flex-wrap gap-2">

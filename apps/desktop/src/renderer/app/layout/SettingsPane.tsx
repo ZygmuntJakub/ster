@@ -22,7 +22,7 @@ export function SettingsPane({
 
   return (
     <section
-      className="conv col px-6 py-4"
+      className="screen col px-6 py-4"
       aria-label={t("settings.title")}
       data-testid="settings-pane"
     >
