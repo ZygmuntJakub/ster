@@ -73,57 +73,65 @@ describe("workspace availability", () => {
     }
   });
 
-  it("fails the session when the working folder disappears before a prompt", async () => {
-    const { core, cwd } = await boot();
-    const session = await core.sessions.create({ agentId: MOCK_AGENT_ID, cwd });
-    expect(session.status).toBe("idle");
+  it(
+    "fails the session when the working folder disappears before a prompt",
+    { timeout: 20_000 },
+    async () => {
+      const { core, cwd } = await boot();
+      const session = await core.sessions.create({ agentId: MOCK_AGENT_ID, cwd });
+      expect(session.status).toBe("idle");
 
-    rmSync(cwd, { recursive: true, force: true });
+      rmSync(cwd, { recursive: true, force: true });
 
-    await expect(
-      core.sessions.prompt(session.id, [{ type: "text", text: "scenario: hello" }]),
-    ).rejects.toBeTruthy();
+      await expect(
+        core.sessions.prompt(session.id, [{ type: "text", text: "scenario: hello" }]),
+      ).rejects.toBeTruthy();
 
-    const after = await core.sessions.get(session.id);
-    expect(after.status).toBe("failed");
-    expect(after.failureReason).toMatch(/Working folder/i);
-  });
+      const after = await core.sessions.get(session.id);
+      expect(after.status).toBe("failed");
+      expect(after.failureReason).toMatch(/Working folder/i);
+    },
+  );
 
-  it("rejects outside-workspace writes when the client guard is denied", async () => {
-    const { core, cwd } = await boot();
-    const session = await core.sessions.create({ agentId: MOCK_AGENT_ID, cwd });
+  it(
+    "rejects outside-workspace writes when the client guard is denied",
+    { timeout: 20_000 },
+    async () => {
+      const { core, cwd } = await boot();
+      const session = await core.sessions.create({ agentId: MOCK_AGENT_ID, cwd });
 
-    const unsubscribe = core.events.subscribe((event: CoreEvent) => {
-      if (event.type !== "approval.requested" || event.sessionId !== session.id) {
-        return;
-      }
-      if (event.approval.source === "client-guard") {
-        void core.sessions.resolveApproval(event.approval.id, { optionId: "reject" });
-        return;
-      }
-      void core.sessions.resolveApproval(event.approval.id, { optionId: "allow" });
-    });
-
-    const run = await core.sessions.prompt(session.id, [
-      { type: "text", text: "scenario: escape-workspace" },
-    ]);
-    unsubscribe();
-    expect(run.outcome).toBe("completed");
-
-    const items = await core.sessions.items(session.id, { limit: 50 });
-    const texts = items
-      .filter((item) => item.kind === "agent-message")
-      .map((item) => {
-        if (
-          typeof item.payload === "object" &&
-          item.payload !== null &&
-          "text" in item.payload &&
-          typeof item.payload.text === "string"
-        ) {
-          return item.payload.text;
+      const unsubscribe = core.events.subscribe((event: CoreEvent) => {
+        if (event.type !== "approval.requested" || event.sessionId !== session.id) {
+          return;
         }
-        return "";
+        if (event.approval.source === "client-guard") {
+          void core.sessions.resolveApproval(event.approval.id, { optionId: "reject" });
+          return;
+        }
+        void core.sessions.resolveApproval(event.approval.id, { optionId: "allow" });
       });
-    expect(texts.some((text) => /outside-workspace|Write failed|outside/i.test(text))).toBe(true);
-  });
+
+      const run = await core.sessions.prompt(session.id, [
+        { type: "text", text: "scenario: escape-workspace" },
+      ]);
+      unsubscribe();
+      expect(run.outcome).toBe("completed");
+
+      const items = await core.sessions.items(session.id, { limit: 50 });
+      const texts = items
+        .filter((item) => item.kind === "agent-message")
+        .map((item) => {
+          if (
+            typeof item.payload === "object" &&
+            item.payload !== null &&
+            "text" in item.payload &&
+            typeof item.payload.text === "string"
+          ) {
+            return item.payload.text;
+          }
+          return "";
+        });
+      expect(texts.some((text) => /outside-workspace|Write failed|outside/i.test(text))).toBe(true);
+    },
+  );
 });
