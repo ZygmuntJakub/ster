@@ -775,11 +775,9 @@ export function createSessionService(options: CreateSessionServiceOptions): Sess
       if (error instanceof SterError) {
         throw error;
       }
-      throw new SterError(
-        "agent-exited",
-        error instanceof Error ? error.message : String(error),
-        { agentId: agent.id },
-      );
+      throw new SterError("agent-exited", error instanceof Error ? error.message : String(error), {
+        agentId: agent.id,
+      });
     }
 
     const entry: LiveSession = {
@@ -905,11 +903,9 @@ export function createSessionService(options: CreateSessionServiceOptions): Sess
       if (error instanceof SterError) {
         throw error;
       }
-      throw new SterError(
-        "agent-exited",
-        error instanceof Error ? error.message : String(error),
-        { agentId: agent.id },
-      );
+      throw new SterError("agent-exited", error instanceof Error ? error.message : String(error), {
+        agentId: agent.id,
+      });
     }
 
     const caps = connection.capabilities.agentCapabilities;

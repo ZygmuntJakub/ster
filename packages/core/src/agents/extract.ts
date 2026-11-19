@@ -1,12 +1,6 @@
 import { execFile } from "node:child_process";
 import { createGunzip } from "node:zlib";
-import {
-  createReadStream,
-  createWriteStream,
-  mkdirSync,
-  existsSync,
-  writeFileSync,
-} from "node:fs";
+import { createReadStream, createWriteStream, mkdirSync, existsSync, writeFileSync } from "node:fs";
 import { dirname, join, normalize, sep } from "node:path";
 import { pipeline } from "node:stream/promises";
 import { promisify } from "node:util";
@@ -130,5 +124,11 @@ export function isZip(urlOrPath: string): boolean {
 
 /** ZIP local-file header magic (`PK\x03\x04`). */
 export function looksLikeZip(bytes: Uint8Array): boolean {
-  return bytes.length >= 4 && bytes[0] === 0x50 && bytes[1] === 0x4b && bytes[2] === 0x03 && bytes[3] === 0x04;
+  return (
+    bytes.length >= 4 &&
+    bytes[0] === 0x50 &&
+    bytes[1] === 0x4b &&
+    bytes[2] === 0x03 &&
+    bytes[3] === 0x04
+  );
 }
