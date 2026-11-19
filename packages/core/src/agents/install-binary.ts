@@ -1,4 +1,4 @@
-import { mkdirSync, readFileSync, renameSync, rmSync, writeFileSync } from "node:fs";
+import { chmodSync, mkdirSync, readFileSync, renameSync, rmSync, writeFileSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
 import { SterError } from "../errors.js";
 import {
@@ -7,7 +7,14 @@ import {
   type NetworkAllowlist,
 } from "../net/allowlist.js";
 import type { Agent, AgentInstall, AgentLaunch, Progress } from "./agent.js";
-import { extractTarGz, installRawBinary, isTarGz } from "./extract.js";
+import {
+  extractTarGz,
+  extractZip,
+  installRawBinary,
+  isTarGz,
+  isZip,
+  looksLikeZip,
+} from "./extract.js";
 import { assertSafeBinaryCmd, hashBuffer, hashFile } from "./integrity.js";
 import type { InstallPlan } from "./plan.js";
 
@@ -138,8 +145,11 @@ export async function installBinaryAgent(input: {
     input.onProgress?.({ phase: "extract", message: "Extracting archive" });
     const extractDir = join(staging, "extract");
     mkdirSync(extractDir, { recursive: true });
+    const archiveHeader = readFileSync(archivePath).subarray(0, 4);
     if (isTarGz(detail.archive)) {
       await extractTarGz(archivePath, extractDir);
+    } else if (isZip(detail.archive) || looksLikeZip(archiveHeader)) {
+      await extractZip(archivePath, extractDir);
     } else {
       await installRawBinary(archivePath, extractDir, detail.cmd);
     }
@@ -151,7 +161,7 @@ export async function installBinaryAgent(input: {
         cmd: detail.cmd,
       });
     }
-    // Ensure file exists (raw install already placed it; tar may have nested layout).
+    // Ensure file exists (raw install already placed it; tar/zip may have nested layout).
     try {
       readFileSync(launchPath);
     } catch {
@@ -160,6 +170,14 @@ export async function installBinaryAgent(input: {
         launchPath,
       });
     }
+    if (looksLikeZip(readFileSync(launchPath).subarray(0, 4))) {
+      throw new SterError(
+        "agent-not-ready",
+        "Installed launch file is still a ZIP archive; extraction failed",
+        { launchPath },
+      );
+    }
+    chmodSync(launchPath, 0o755);
 
     rmSync(versionDir, { recursive: true, force: true });
     mkdirSync(dirname(versionDir), { recursive: true });

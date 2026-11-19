@@ -1,4 +1,3 @@
-import { execFile } from "node:child_process";
 import {
   chmodSync,
   cpSync,
@@ -10,15 +9,12 @@ import {
   writeFileSync,
 } from "node:fs";
 import { dirname, join } from "node:path";
-import { promisify } from "node:util";
 import { SterError } from "../errors.js";
 import { assertAllowedHttpsUrl, createNetworkAllowlist } from "../net/allowlist.js";
 import type { Progress } from "./agent.js";
-import { extractTarGz, isTarGz } from "./extract.js";
+import { extractTarGz, extractZip, isTarGz } from "./extract.js";
 import { downloadToFile } from "./install-binary.js";
 import type { PlatformKey } from "./platform.js";
-
-const execFileAsync = promisify(execFile);
 
 /**
  * Pinned Node.js for npm-distributed agents (research.md R7).
@@ -91,23 +87,6 @@ function distFor(platformKey: PlatformKey): NodeDist {
     );
   }
   return dist;
-}
-
-async function extractZip(archivePath: string, destDir: string): Promise<void> {
-  mkdirSync(destDir, { recursive: true });
-  if (process.platform === "win32") {
-    await execFileAsync("powershell.exe", [
-      "-NoProfile",
-      "-Command",
-      `Expand-Archive -LiteralPath '${archivePath.replace(/'/g, "''")}' -DestinationPath '${destDir.replace(/'/g, "''")}' -Force`,
-    ]);
-    return;
-  }
-  try {
-    await execFileAsync("tar", ["-xf", archivePath, "-C", destDir]);
-  } catch {
-    await execFileAsync("unzip", ["-o", archivePath, "-d", destDir]);
-  }
 }
 
 /**

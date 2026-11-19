@@ -772,7 +772,14 @@ export function createSessionService(options: CreateSessionServiceOptions): Sess
       session.failureReason = error instanceof Error ? error.message : String(error);
       session.status = "failed";
       persist(options.store, session);
-      throw error;
+      if (error instanceof SterError) {
+        throw error;
+      }
+      throw new SterError(
+        "agent-exited",
+        error instanceof Error ? error.message : String(error),
+        { agentId: agent.id },
+      );
     }
 
     const entry: LiveSession = {
@@ -833,7 +840,14 @@ export function createSessionService(options: CreateSessionServiceOptions): Sess
         session.failureReason = error instanceof Error ? error.message : String(error);
         session.status = "failed";
         persist(options.store, session);
-        throw error;
+        if (error instanceof SterError) {
+          throw error;
+        }
+        throw new SterError(
+          "agent-exited",
+          error instanceof Error ? error.message : String(error),
+          { agentId: agent.id },
+        );
       }
     }
 
@@ -888,7 +902,14 @@ export function createSessionService(options: CreateSessionServiceOptions): Sess
       session.failureReason = error instanceof Error ? error.message : String(error);
       session.status = "failed";
       persist(options.store, session);
-      throw error;
+      if (error instanceof SterError) {
+        throw error;
+      }
+      throw new SterError(
+        "agent-exited",
+        error instanceof Error ? error.message : String(error),
+        { agentId: agent.id },
+      );
     }
 
     const caps = connection.capabilities.agentCapabilities;

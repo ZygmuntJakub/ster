@@ -1,8 +1,18 @@
+import { execFile } from "node:child_process";
 import { createGunzip } from "node:zlib";
-import { createReadStream, createWriteStream, mkdirSync, existsSync, writeFileSync } from "node:fs";
+import {
+  createReadStream,
+  createWriteStream,
+  mkdirSync,
+  existsSync,
+  writeFileSync,
+} from "node:fs";
 import { dirname, join, normalize, sep } from "node:path";
 import { pipeline } from "node:stream/promises";
+import { promisify } from "node:util";
 import { SterError } from "../errors.js";
+
+const execFileAsync = promisify(execFile);
 
 function assertSafeEntryName(name: string): string {
   const normalized = name.replace(/\\/g, "/");
@@ -72,6 +82,27 @@ export async function extractTarGz(archivePath: string, destDir: string): Promis
 }
 
 /**
+ * Extract a .zip archive (macOS/Windows registry binaries). Prefer `tar -xf`,
+ * then `unzip`, PowerShell on Windows — same approach as managed Node install.
+ */
+export async function extractZip(archivePath: string, destDir: string): Promise<void> {
+  mkdirSync(destDir, { recursive: true });
+  if (process.platform === "win32") {
+    await execFileAsync("powershell.exe", [
+      "-NoProfile",
+      "-Command",
+      `Expand-Archive -LiteralPath '${archivePath.replace(/'/g, "''")}' -DestinationPath '${destDir.replace(/'/g, "''")}' -Force`,
+    ]);
+    return;
+  }
+  try {
+    await execFileAsync("tar", ["-xf", archivePath, "-C", destDir]);
+  } catch {
+    await execFileAsync("unzip", ["-o", archivePath, "-d", destDir]);
+  }
+}
+
+/**
  * Copy a raw (non-archive) download into dest as the launch command path.
  */
 export async function installRawBinary(
@@ -91,4 +122,13 @@ export async function installRawBinary(
 
 export function isTarGz(urlOrPath: string): boolean {
   return /\.tar\.gz($|\?)/i.test(urlOrPath) || /\.tgz($|\?)/i.test(urlOrPath);
+}
+
+export function isZip(urlOrPath: string): boolean {
+  return /\.zip($|\?)/i.test(urlOrPath);
+}
+
+/** ZIP local-file header magic (`PK\x03\x04`). */
+export function looksLikeZip(bytes: Uint8Array): boolean {
+  return bytes.length >= 4 && bytes[0] === 0x50 && bytes[1] === 0x4b && bytes[2] === 0x03 && bytes[3] === 0x04;
 }

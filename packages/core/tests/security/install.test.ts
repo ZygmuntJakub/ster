@@ -1,8 +1,10 @@
+import { execFile } from "node:child_process";
 import { createHash } from "node:crypto";
 import { createServer } from "node:http";
-import { mkdtempSync, rmSync, writeFileSync, chmodSync } from "node:fs";
+import { mkdtempSync, readFileSync, rmSync, writeFileSync, chmodSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
+import { promisify } from "node:util";
 import { afterEach, describe, expect, it } from "vitest";
 import { gzipSync } from "node:zlib";
 import { installBinaryAgent } from "../../src/agents/install-binary.js";
@@ -10,6 +12,8 @@ import { assertSafeBinaryCmd } from "../../src/agents/integrity.js";
 import { extractTarGz } from "../../src/agents/extract.js";
 import { isSterError } from "../../src/errors.js";
 import type { InstallPlan } from "../../src/agents/plan.js";
+
+const execFileAsync = promisify(execFile);
 
 const tempDirs: string[] = [];
 const servers: Array<ReturnType<typeof createServer>> = [];
@@ -157,6 +161,50 @@ describe("install security", () => {
     await expect(installBinaryAgent({ plan, dataDir })).rejects.toSatisfy(
       (error: unknown) => isSterError(error) && error.code === "invalid-argument",
     );
+  });
+
+  it("extracts .zip binary archives instead of treating them as the launch file", async () => {
+    const payload = Buffer.from("#!/bin/sh\necho zip-ok\n");
+    const staging = mkdtempSync(join(tmpdir(), "ster-zip-src-"));
+    tempDirs.push(staging);
+    const member = join(staging, "agent");
+    writeFileSync(member, payload, { mode: 0o755 });
+    const zipPath = join(staging, "agent.zip");
+    if (process.platform === "win32") {
+      await execFileAsync("powershell.exe", [
+        "-NoProfile",
+        "-Command",
+        `Compress-Archive -LiteralPath '${member.replace(/'/g, "''")}' -DestinationPath '${zipPath.replace(/'/g, "''")}' -Force`,
+      ]);
+    } else {
+      await execFileAsync("zip", ["-j", zipPath, member]);
+    }
+    const zipBytes = readFileSync(zipPath);
+    const base = await serve({ "/agent.zip": zipBytes });
+    const dataDir = mkdtempSync(join(tmpdir(), "ster-zip-"));
+    tempDirs.push(dataDir);
+    const plan: InstallPlan = {
+      id: "p-zip",
+      agentId: "zip-demo",
+      version: "1.0.0",
+      source: `${base}/agent.zip`,
+      verified: true,
+      distribution: "binary",
+      scriptsAllowed: false,
+      requiresManagedNode: false,
+      lines: [],
+      detail: {
+        kind: "binary",
+        archive: `${base}/agent.zip`,
+        cmd: "./agent",
+        args: [],
+        env: {},
+        sha256: sha256(zipBytes),
+      },
+    };
+    const { agent } = await installBinaryAgent({ plan, dataDir });
+    expect(readFileSync(agent.launch.command, "utf8")).toBe(payload.toString("utf8"));
+    expect(readFileSync(agent.launch.command).subarray(0, 2).toString("utf8")).not.toBe("PK");
   });
 
   it("detects a tampered launch file before start via hash mismatch", async () => {
